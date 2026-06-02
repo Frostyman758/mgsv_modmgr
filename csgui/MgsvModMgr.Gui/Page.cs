@@ -5,4 +5,5 @@ public enum Page
 {
     Mods,
     Settings,
+    Log,
 }

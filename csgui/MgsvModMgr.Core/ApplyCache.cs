@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.IO;
 using System.Security.Cryptography;
@@ -20,7 +21,7 @@ namespace MgsvModMgr.Core;
 public sealed class ApplyCache
 {
     private readonly string _path;
-    private readonly Dictionary<string, string> _entries = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, string> _entries = new(StringComparer.OrdinalIgnoreCase);
 
     public ApplyCache(string cacheFilePath)
     {
@@ -55,7 +56,7 @@ public sealed class ApplyCache
         => _entries.TryGetValue(diskPath, out var stored) && stored == fingerprint;
 
     public void Set(string diskPath, string fingerprint) => _entries[diskPath] = fingerprint;
-    public void Invalidate(string diskPath) => _entries.Remove(diskPath);
+    public void Invalidate(string diskPath) => _entries.TryRemove(diskPath, out _);
     public void Clear() => _entries.Clear();
 
     /// <summary>

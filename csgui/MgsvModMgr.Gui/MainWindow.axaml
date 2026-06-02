@@ -8,7 +8,7 @@
         Title="MGSV Mod Manager"
         Icon="avares://modmgr_gui/Assets/app.ico"
         Width="1180" Height="780"
-        MinWidth="900" MinHeight="560"
+        MinWidth="980" MinHeight="600"
         Background="{DynamicResource Bg}">
 
   <Grid ColumnDefinitions="64,*">
@@ -36,8 +36,8 @@
                   ToolTip.Tip="Restore the original game files; undo every mod change in the install"
                   Content="&#xE7A7;"
                   Command="{Binding RevertCommand}"/>
-          <Button Classes="sidebar"
-                  ToolTip.Tip="Show or hide the activity log"
+          <Button Classes="sidebar" Classes.active="{Binding IsLogPage}"
+                  ToolTip.Tip="Activity log from the last Apply"
                   Content="&#xE756;"
                   Command="{Binding ToggleLogCommand}"/>
           <Button Classes="sidebar"
@@ -108,13 +108,14 @@
 
           <Border Grid.Row="0" Background="{DynamicResource PanelAlt}"
                   BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1">
-            <Grid ColumnDefinitions="60,2*,80,1.2*,80,80" Margin="14,10">
+            <Grid ColumnDefinitions="60,2*,130,80,1.2*,80,80" Margin="14,10">
               <TextBlock Grid.Column="0" Text="ENABLED" Foreground="{DynamicResource TextDim}" FontSize="11" FontWeight="SemiBold"/>
               <TextBlock Grid.Column="1" Text="MOD"     Foreground="{DynamicResource TextDim}" FontSize="11" FontWeight="SemiBold"/>
-              <TextBlock Grid.Column="2" Text="VERSION" Foreground="{DynamicResource TextDim}" FontSize="11" FontWeight="SemiBold"/>
-              <TextBlock Grid.Column="3" Text="AUTHOR"  Foreground="{DynamicResource TextDim}" FontSize="11" FontWeight="SemiBold"/>
-              <TextBlock Grid.Column="4" Text="QAR"     Foreground="{DynamicResource TextDim}" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Right"/>
-              <TextBlock Grid.Column="5" Text="GAMEDIR" Foreground="{DynamicResource TextDim}" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+              <!-- Col 2 is the status / PENDING APPLY column. Header intentionally blank. -->
+              <TextBlock Grid.Column="3" Text="VERSION" Foreground="{DynamicResource TextDim}" FontSize="11" FontWeight="SemiBold"/>
+              <TextBlock Grid.Column="4" Text="AUTHOR"  Foreground="{DynamicResource TextDim}" FontSize="11" FontWeight="SemiBold"/>
+              <TextBlock Grid.Column="5" Text="QAR"     Foreground="{DynamicResource TextDim}" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+              <TextBlock Grid.Column="6" Text="GAMEDIR" Foreground="{DynamicResource TextDim}" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Right"/>
             </Grid>
           </Border>
 
@@ -142,7 +143,7 @@
                                   CommandParameter="{Binding}"/>
                       </ContextMenu>
                     </Border.ContextMenu>
-                    <Grid ColumnDefinitions="60,2*,80,1.2*,80,80" VerticalAlignment="Center">
+                    <Grid ColumnDefinitions="60,2*,130,80,1.2*,80,80" VerticalAlignment="Center">
                       <Panel x:Name="MoveUpParam"   IsVisible="False">
                         <Panel.Tag>
                           <cmd:MoveArg Delta="-1" Row="{Binding}"/>
@@ -157,22 +158,26 @@
                                     Classes.pending="{Binding IsPending}"
                                     IsChecked="{Binding Enabled, Mode=TwoWay}"
                                     HorizontalAlignment="Left"/>
-                      <StackPanel Grid.Column="1" Spacing="2">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                          <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14"
-                                     VerticalAlignment="Center"/>
-                          <Border Classes="chip-pending"
-                                  VerticalAlignment="Center"
-                                  IsVisible="{Binding IsPending}">
-                            <TextBlock Text="PENDING APPLY"/>
-                          </Border>
-                        </StackPanel>
-                        <TextBlock Text="{Binding Id}"   Foreground="{DynamicResource TextDim}" FontSize="11"/>
+                      <StackPanel Grid.Column="1" Spacing="2" Margin="0,0,8,0">
+                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14"
+                                   TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Text="{Binding Id}" Foreground="{DynamicResource TextDim}" FontSize="11"
+                                   TextTrimming="CharacterEllipsis"/>
                       </StackPanel>
-                      <TextBlock Grid.Column="2" Text="{Binding Version}" VerticalAlignment="Center"/>
-                      <TextBlock Grid.Column="3" Text="{Binding Author}"  VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                      <TextBlock Grid.Column="4" Text="{Binding QarCount}"     HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{DynamicResource TextDim}"/>
-                      <TextBlock Grid.Column="5" Text="{Binding GameDirCount}" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{DynamicResource TextDim}"/>
+                      <!-- Status chip sits in its own row-centered column so it
+                           lines up with Version/Author rather than floating above
+                           them. Fixed column width keeps alignment stable whether
+                           or not a given row is pending. -->
+                      <Border Grid.Column="2" Classes="chip-pending"
+                              HorizontalAlignment="Left" VerticalAlignment="Center"
+                              IsVisible="{Binding IsPending}">
+                        <TextBlock Text="PENDING APPLY"/>
+                      </Border>
+                      <TextBlock Grid.Column="3" Text="{Binding Version}" VerticalAlignment="Center"
+                                 TextTrimming="CharacterEllipsis" Margin="0,0,8,0"/>
+                      <TextBlock Grid.Column="4" Text="{Binding Author}"  VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                      <TextBlock Grid.Column="5" Text="{Binding QarCount}"     HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{DynamicResource TextDim}"/>
+                      <TextBlock Grid.Column="6" Text="{Binding GameDirCount}" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{DynamicResource TextDim}"/>
                     </Grid>
                   </Border>
                 </DataTemplate>
@@ -201,7 +206,7 @@
                          Watermark="C:\Program Files (x86)\Steam\steamapps\common\MGS_TPP"
                          Text="{Binding GameRootField, Mode=TwoWay}"/>
                 <Button Grid.Column="1" Classes="ghost" Content="Browse..."
-                        Margin="8,0,0,0" Padding="14,8"
+                        Margin="8,0,0,0" Width="100"
                         Command="{Binding BrowseGameRootCommand}"/>
               </Grid>
             </StackPanel>
@@ -217,68 +222,80 @@
                          Watermark="C:\tools\datfpk.exe"
                          Text="{Binding DatFpkField, Mode=TwoWay}"/>
                 <Button Grid.Column="1" Classes="ghost" Content="Browse..."
-                        Margin="8,0,0,0" Padding="14,8"
+                        Margin="8,0,0,0" Width="100"
                         Command="{Binding BrowseDatFpkCommand}"/>
               </Grid>
             </StackPanel>
 
-            <!-- Save -->
+            <!-- Save / Cancel: sized to match the Browse buttons above so the
+                 right edges line up neatly with the form fields. -->
             <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" Margin="0,8,0,0">
-              <Button Classes="ghost"   Content="Back to mods"
-                      Command="{Binding ShowModsCommand}"
-                      IsEnabled="{Binding IsModsPage, FallbackValue=True}"/>
-              <Button Classes="primary" Content="Save"
-                      MinWidth="96"
+              <Button Classes="ghost"   Content="Back"  Width="100"
+                      Command="{Binding ShowModsCommand}"/>
+              <Button Classes="primary" Content="Save"  Width="100"
                       Command="{Binding SaveSettingsCommand}"/>
             </StackPanel>
           </StackPanel>
         </ScrollViewer>
       </Border>
 
-      <!-- log panel (toggled from sidebar) -->
-      <Grid Grid.Row="2" Margin="24,0,24,8"
-            IsVisible="{Binding LogExpanded}">
-        <Border Background="{DynamicResource Panel}"
-                BorderBrush="{DynamicResource Border}" BorderThickness="1"
-                CornerRadius="10" Padding="0">
-          <DockPanel LastChildFill="True">
-            <Border DockPanel.Dock="Top"
-                    BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1"
-                    Padding="14,10">
-              <Grid ColumnDefinitions="*,auto">
-                <TextBlock Grid.Column="0" Text="ACTIVITY LOG"
-                           Foreground="{DynamicResource TextDim}"
-                           FontSize="11" FontWeight="SemiBold"
-                           VerticalAlignment="Center"/>
-                <Button Grid.Column="1" Classes="ghost" Content="Hide"
-                        Command="{Binding ToggleLogCommand}" Padding="10,4"/>
-              </Grid>
-            </Border>
-            <TextBox Classes="log"
-                     Height="200" Margin="0"
-                     BorderThickness="0" CornerRadius="0"
-                     IsReadOnly="True"
-                     AcceptsReturn="True"
-                     TextWrapping="NoWrap"
-                     Text="{Binding LogText}"
-                     Name="LogBox"/>
-          </DockPanel>
-        </Border>
-      </Grid>
-
-      <!-- status footer -->
-      <Border Grid.Row="3" Background="{DynamicResource Panel}"
-              BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0"
-              Padding="24,8">
-        <StackPanel Orientation="Horizontal" Spacing="20">
-          <TextBlock Foreground="{DynamicResource TextDim}" FontSize="11">
-            <Run Text="Game root:"/><Run Text=" "/><Run Text="{Binding GameRoot}" Foreground="{DynamicResource Text}"/>
-          </TextBlock>
-          <TextBlock Foreground="{DynamicResource TextDim}" FontSize="11">
-            <Run Text="datfpk:"/><Run Text=" "/><Run Text="{Binding DatFpk}" Foreground="{DynamicResource Text}"/>
-          </TextBlock>
-        </StackPanel>
+      <!-- ─── Log page content (Row 1, page-routed) ─── -->
+      <Border Grid.Row="1" Margin="24,4,24,8"
+              Background="{DynamicResource Panel}"
+              BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="10"
+              IsVisible="{Binding IsLogPage}">
+        <DockPanel LastChildFill="True">
+          <Border DockPanel.Dock="Top" Background="{DynamicResource PanelAlt}"
+                  BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1"
+                  Padding="14,10">
+            <Grid ColumnDefinitions="*,auto">
+              <TextBlock Grid.Column="0" Text="ACTIVITY LOG"
+                         Foreground="{DynamicResource TextDim}"
+                         FontSize="11" FontWeight="SemiBold"
+                         VerticalAlignment="Center"/>
+              <Button Grid.Column="1" Classes="ghost" Content="Back to mods"
+                      Padding="10,4"
+                      Command="{Binding ShowModsCommand}"/>
+            </Grid>
+          </Border>
+          <TextBox Classes="log"
+                   BorderThickness="0" CornerRadius="0"
+                   IsReadOnly="True"
+                   AcceptsReturn="True"
+                   TextWrapping="NoWrap"
+                   Text="{Binding LogText}"
+                   Name="LogBox"/>
+        </DockPanel>
       </Border>
+
+      <!-- Row 2 unused (the old log expander lived here). -->
+
+      <!-- status footer with thin Apply-progress bar pinned above it -->
+      <DockPanel Grid.Row="3" LastChildFill="True">
+        <!-- Progress: 2px tall, accent red, spans the status footer's width.
+             Visible only while an Apply is in flight. -->
+        <ProgressBar DockPanel.Dock="Top"
+                     Height="2" Minimum="0" Maximum="1"
+                     Value="{Binding ApplyProgress}"
+                     IsVisible="{Binding IsApplying}"
+                     Foreground="{DynamicResource Accent}"
+                     Background="Transparent"
+                     BorderThickness="0"
+                     CornerRadius="0"
+                     ShowProgressText="False"/>
+        <Border Background="{DynamicResource Panel}"
+                BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0"
+                Padding="24,8">
+          <StackPanel Orientation="Horizontal" Spacing="20">
+            <TextBlock Foreground="{DynamicResource TextDim}" FontSize="11">
+              <Run Text="Game root:"/><Run Text=" "/><Run Text="{Binding GameRoot}" Foreground="{DynamicResource Text}"/>
+            </TextBlock>
+            <TextBlock Foreground="{DynamicResource TextDim}" FontSize="11">
+              <Run Text="datfpk:"/><Run Text=" "/><Run Text="{Binding DatFpk}" Foreground="{DynamicResource Text}"/>
+            </TextBlock>
+          </StackPanel>
+        </Border>
+      </DockPanel>
     </Grid>
   </Grid>
 </Window>

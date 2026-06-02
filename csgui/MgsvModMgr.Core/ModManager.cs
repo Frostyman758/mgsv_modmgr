@@ -58,8 +58,23 @@ public sealed class ModManager
 
     public State State { get; } = new();
 
-    /// <summary>Sink for human-readable progress lines.</summary>
+    /// <summary>Sink for human-readable progress lines. Thread-safe — callers should marshal.</summary>
     public Action<string> Log { get; set; } = _ => { };
+
+    /// <summary>
+    /// Reports Apply progress as a fraction 0.0 .. 1.0 (1.0 = done). Called
+    /// once per host completion. May fire from worker threads — marshal to
+    /// the UI thread in the handler.
+    /// </summary>
+    public Action<double>? ApplyProgressed { get; set; }
+
+    /// <summary>
+    /// Max concurrent host rebuilds in <see cref="ApplyAll"/>. Each running
+    /// rebuild spawns its own datfpk process. On SSD/NVMe 4–8 is a good
+    /// range; on HDD use 1–2 to avoid head thrash. Default: half of logical
+    /// processor count, clamped to [2, 8].
+    /// </summary>
+    public int ApplyParallelism { get; set; } = Math.Clamp(Environment.ProcessorCount / 2, 2, 8);
 
     // ─── State I/O ─────────────────────────────────────────────────────────
 
@@ -215,18 +230,37 @@ public sealed class ModManager
 
         var cache = new ApplyCache(Path.Combine(WorkspaceDir, "apply-cache.txt"));
 
+        // Pre-extract every enabled mod's archive once. ModPayloadFor would
+        // do this lazily otherwise, but lazy extraction under Parallel.ForEach
+        // means two workers could race on the same target dir.
+        foreach (var mod in State.Mods)
+        {
+            if (!mod.Enabled) continue;
+            var unpacked = ModUnpackDir(mod.Id);
+            if (!Directory.Exists(unpacked) && File.Exists(mod.Source))
+                ExtractZip(mod.Source, unpacked);
+        }
+
         var hosts = new SortedSet<string>(StringComparer.Ordinal);
         foreach (var mod in State.Mods)
             foreach (var qar in mod.QarPaths) hosts.Add(qar);
 
-        int fpkCount = 0, rawCount = 0, skipped = 0;
-        foreach (var qar in hosts)
+        int fpkCount = 0, rawCount = 0, skipped = 0, done = 0;
+        var totalHosts = hosts.Count;
+
+        // The host rebuilds are independent (each writes to its own work-dir
+        // and its own disk path), so we Parallel.ForEach them. datfpk is
+        // process-isolated so it has no shared state between invocations.
+        // Cap concurrency via ApplyParallelism — single-drive I/O contention
+        // makes wider settings counter-productive past ~8.
+        var parallelOpts = new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, ApplyParallelism) };
+        Log($"Apply: {totalHosts} host(s) with up to {parallelOpts.MaxDegreeOfParallelism} worker(s).");
+        ApplyProgressed?.Invoke(0);
+
+        Parallel.ForEach(hosts, parallelOpts, qar =>
         {
             var disk = Paths.ResolveQar(qar, State.GameRoot);
 
-            // Cache check: collect the contributors in load order, fingerprint
-            // them with the baseline, and skip the rebuild if disk already
-            // reflects this exact state.
             var contributors = new List<(ModInfo, string)>();
             foreach (var m in State.Mods)
                 if (m.Enabled && m.QarPaths.Contains(qar))
@@ -238,15 +272,18 @@ public sealed class ModManager
 
             if (cache.Matches(disk, fingerprint) && File.Exists(disk))
             {
-                skipped++;
-                continue;
+                Interlocked.Increment(ref skipped);
+            }
+            else
+            {
+                if (Paths.QarIsFpk(qar)) { RebuildFpkHost(qar, disk); Interlocked.Increment(ref fpkCount); }
+                else                      { RebuildRawFile(qar, disk); Interlocked.Increment(ref rawCount); }
+                cache.Set(disk, fingerprint);
             }
 
-            if (Paths.QarIsFpk(qar)) { RebuildFpkHost(qar, disk); fpkCount++; }
-            else                      { RebuildRawFile(qar, disk); rawCount++; }
-
-            cache.Set(disk, fingerprint);
-        }
+            var d = Interlocked.Increment(ref done);
+            ApplyProgressed?.Invoke(totalHosts == 0 ? 1.0 : (double)d / totalHosts);
+        });
 
         Log("");
         Log($"fpk hosts rebuilt: {fpkCount}, raw files copied: {rawCount}, skipped (unchanged): {skipped}");
@@ -496,7 +533,11 @@ public sealed class ModManager
             }
         }
 
-        var work = Path.Combine(TmpDir, "host_" + Path.GetFileName(diskPath));
+        // Work-dir name must be unique per qar path, not per filename — two
+        // distinct qar paths can share a filename (e.g. .../EngText/mgo_player_subtitles.fpkd
+        // and .../FreText/mgo_player_subtitles.fpkd). Aliasing them onto the
+        // same scratch dir is unsafe under parallel Apply.
+        var work = Path.Combine(TmpDir, "host_" + SafeHostKey(qarPath, Path.GetFileName(diskPath)));
         if (Directory.Exists(work)) Directory.Delete(work, recursive: true);
         Directory.CreateDirectory(work);
         var diskExt           = Path.GetExtension(diskPath);
@@ -585,6 +626,18 @@ public sealed class ModManager
             Directory.CreateDirectory(Path.GetDirectoryName(target)!);
             File.Copy(file, target, overwrite: true);
         }
+    }
+
+    /// <summary>
+    /// Build a filesystem-safe work-dir key that disambiguates qar paths with
+    /// the same filename. Format: <c>{filename}_{8hex}</c>, where the hex is
+    /// derived from the full qar path. Stable across runs.
+    /// </summary>
+    private static string SafeHostKey(string qarPath, string fileName)
+    {
+        var bytes = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(qarPath));
+        var hex = Convert.ToHexStringLower(bytes, 0, 4);
+        return fileName + "_" + hex;
     }
 
     private static List<string> WalkAsQarEntries(string root)

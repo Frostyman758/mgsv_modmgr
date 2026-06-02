@@ -29,7 +29,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public MainViewModel(Window window)
     {
         _window  = window;
-        _manager = new ModManager { Log = AppendLog };
+        _manager = new ModManager
+        {
+            Log             = AppendLog,
+            ApplyProgressed = p => Dispatcher.UIThread.Post(() => ApplyProgress = p),
+        };
         _manager.LoadState();
 
         // Drain queued log lines onto the UI thread on a fixed cadence rather
@@ -48,7 +52,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         ApplyCommand         = new RelayCommand(ApplyAsync);
         RevertCommand        = new RelayCommand(RevertAsync);
         AboutCommand         = new RelayCommand(ShowAbout);
-        ToggleLogCommand     = new RelayCommand(() => LogExpanded = !LogExpanded);
+        ToggleLogCommand     = new RelayCommand(() => CurrentPage = IsLogPage ? Page.Mods : Page.Log);
         ExportDictCommand    = new RelayCommand(ExportDictionariesAsync);
 
         // Page navigation.
@@ -93,8 +97,6 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private string _logText = "";
     public  string  LogText  { get => _logText; private set => Set(ref _logText, value); }
 
-    private bool _logExpanded;
-    public  bool  LogExpanded { get => _logExpanded; set => Set(ref _logExpanded, value); }
 
     /// <summary>
     /// True when the user has made changes (add / remove / toggle / move)
@@ -118,11 +120,20 @@ public sealed class MainViewModel : INotifyPropertyChanged
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsModsPage));
             OnPropertyChanged(nameof(IsSettingsPage));
+            OnPropertyChanged(nameof(IsLogPage));
         }
     }
 
+    // ── Apply progress (drives the bottom progress bar) ──────────────────
+    private bool _isApplying;
+    public  bool  IsApplying    { get => _isApplying;    private set => Set(ref _isApplying, value); }
+
+    private double _applyProgress;
+    public  double ApplyProgress { get => _applyProgress; private set => Set(ref _applyProgress, value); }
+
     public bool IsModsPage     => CurrentPage == Page.Mods;
     public bool IsSettingsPage => CurrentPage == Page.Settings;
+    public bool IsLogPage      => CurrentPage == Page.Log;
 
     // Settings form fields. Bound two-way; the running manager state isn't
     // touched until Save fires.
@@ -208,8 +219,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
     {
         var files = await _window.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
-            Title          = "Select .mgsv mod",
-            AllowMultiple  = false,
+            Title          = "Select .mgsv mod(s)",
+            AllowMultiple  = true,
             FileTypeFilter = new[]
             {
                 new FilePickerFileType("SnakeBite mods") { Patterns = new[] { "*.mgsv" } },
@@ -217,20 +228,52 @@ public sealed class MainViewModel : INotifyPropertyChanged
         });
         if (files.Count == 0) return;
 
-        var path = files[0].TryGetLocalPath();
-        if (path is null) return;
+        var paths = files
+            .Select(f => f.TryGetLocalPath())
+            .Where(p => !string.IsNullOrEmpty(p))
+            .Cast<string>()
+            .ToList();
+        if (paths.Count == 0) return;
 
-        // Heavy I/O (zip extract + metadata.xml parse + dictionary update).
-        // Big mods like Infinite Heaven can chew on this for tens of seconds;
-        // push it off the UI thread so the window stays responsive.
-        AppendLog($"Adding mod from {path} ...");
-        try
+        // Heavy I/O (zip extract + metadata.xml parse + dictionary update),
+        // pushed off the UI thread. Adds run sequentially because state.txt
+        // and the two PathDictionary files are append-only single-writer.
+        AppendLog(paths.Count == 1
+            ? $"Adding mod from {System.IO.Path.GetFileName(paths[0])} ..."
+            : $"Adding {paths.Count} mods ...");
+
+        var failures = new List<(string Name, string Error)>();
+        await Task.Run(() =>
         {
-            await Task.Run(() => _manager.AddMod(path));
-            SyncRows();
-            MarkDirty();
+            foreach (var path in paths)
+            {
+                try
+                {
+                    if (paths.Count > 1)
+                        AppendLog($"  adding {System.IO.Path.GetFileName(path)}");
+                    _manager.AddMod(path);
+                }
+                catch (Exception ex)
+                {
+                    failures.Add((System.IO.Path.GetFileName(path), ex.Message));
+                    AppendLog($"  ERROR adding {System.IO.Path.GetFileName(path)}: {ex.Message}");
+                }
+            }
+        });
+
+        SyncRows();
+        if (paths.Count > failures.Count) MarkDirty();
+
+        if (failures.Count > 0)
+        {
+            var head    = failures.Take(8).Select(f => $"• {f.Name}: {f.Error}");
+            var summary = string.Join("\n", head);
+            if (failures.Count > 8)
+                summary += $"\n• and {failures.Count - 8} more failure(s)";
+            await ShowError(
+                $"{failures.Count} of {paths.Count} could not be added",
+                summary);
         }
-        catch (Exception ex) { await ShowError("Add failed", ex.Message); }
     }
 
     private async Task RemoveSelectedAsync()
@@ -267,13 +310,24 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private async Task ApplyAsync()
     {
-        await Task.Run(() =>
+        if (IsApplying) return;
+        IsApplying    = true;
+        ApplyProgress = 0;
+        try
         {
-            try { _manager.ApplyAll(); }
-            catch (Exception ex) { AppendLog("ERROR: " + ex.Message); }
-        });
-        SyncRows();          // refresh PENDING chips
-        IsDirty = false;
+            await Task.Run(() =>
+            {
+                try { _manager.ApplyAll(); }
+                catch (Exception ex) { AppendLog("ERROR: " + ex.Message); }
+            });
+            SyncRows();          // refresh PENDING chips
+            IsDirty = false;
+        }
+        finally
+        {
+            ApplyProgress = 1;
+            IsApplying    = false;
+        }
     }
 
     private async Task RevertAsync()
@@ -379,7 +433,6 @@ public sealed class MainViewModel : INotifyPropertyChanged
     {
         if (_logQueue.IsEmpty) return;
 
-        var openLog = !LogExpanded;
         while (_logQueue.TryDequeue(out var line))
         {
             _logBuffer.Append(line);
@@ -398,7 +451,6 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
 
         LogText = _logBuffer.ToString();
-        if (openLog) LogExpanded = true;
     }
 
     // ─── Dialog helpers ────────────────────────────────────────────────────
