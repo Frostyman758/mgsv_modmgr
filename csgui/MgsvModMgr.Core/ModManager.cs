@@ -432,13 +432,47 @@ public sealed class ModManager
         Log("== rebuild fpk " + qarPath);
         Log("   disk: " + diskPath);
 
-        var work = Path.Combine(TmpDir, "host_" + Path.GetFileName(diskPath));
-        if (Directory.Exists(work)) Directory.Delete(work, recursive: true);
-        Directory.CreateDirectory(work);
-
+        // Mods ship PARTIAL fpks containing only their edits; we must merge
+        // them onto the vanilla baseline. The one exception is mod-introduced
+        // files (no vanilla baseline at all): there's no merge to do because
+        // the entire pack belongs to the mod. In that case the mod's fpk IS
+        // the final file and we copy through to avoid the lossy datfpk
+        // unpack/repack round-trip (which drops hash-only Path fields inside
+        // vehicle bodies, etc.).
         EnsureBaseline(diskPath);
         var baseline       = BaselineFor(diskPath);
         var baselineExists = File.Exists(baseline);
+
+        if (!baselineExists)
+        {
+            var loneContrib = (ModInfo?)null;
+            var contribCount = 0;
+            foreach (var m in State.Mods)
+            {
+                if (!m.Enabled || !m.QarPaths.Contains(qarPath)) continue;
+                contribCount++;
+                loneContrib ??= m;
+            }
+
+            if (contribCount == 1 && loneContrib is not null)
+            {
+                var payload = ModPayloadFor(loneContrib, qarPath);
+                if (!File.Exists(payload))
+                {
+                    Log("   WARN: single contributor's payload missing: " + loneContrib.Id);
+                    return;
+                }
+                Directory.CreateDirectory(Path.GetDirectoryName(diskPath)!);
+                File.Copy(payload, diskPath, overwrite: true);
+                Log($"   passthrough from {loneContrib.Id} (mod-introduced, no merge needed)");
+                Log($"   -> wrote {diskPath}");
+                return;
+            }
+        }
+
+        var work = Path.Combine(TmpDir, "host_" + Path.GetFileName(diskPath));
+        if (Directory.Exists(work)) Directory.Delete(work, recursive: true);
+        Directory.CreateDirectory(work);
         var diskExt           = Path.GetExtension(diskPath);
         var refsUnion         = new List<string>();
         var type              = "fpkd";
@@ -500,7 +534,8 @@ public sealed class ModManager
         var refs = refsUnion.Distinct(StringComparer.Ordinal)
                             .OrderBy(x => x, StringComparer.Ordinal)
                             .ToList();
-        var entries = WalkAsQarEntries(extractedRoot);
+        var entries  = WalkAsQarEntries(extractedRoot);
+        entries      = SortEntriesForArchive(entries, type);
         var manifest = FpkJson.Write(type, entries, refs);
 
         var mergedJson = Path.Combine(work, "merged" + diskExt + ".json");
@@ -535,8 +570,76 @@ public sealed class ModManager
             var rel = Path.GetRelativePath(root, file).Replace('\\', '/');
             if (rel.Length > 0) entries.Add("/" + rel);
         }
-        entries.Sort(StringComparer.Ordinal);
         return entries;
+    }
+
+    // ─── Fpk entry ordering ────────────────────────────────────────────────
+    //
+    // Vanilla TPP fpk(d) archives have a strict, non-obvious entry order that
+    // the game's loader depends on. Ports of SnakeBite's table; with these,
+    // SnakeBite repacks every vanilla fpk byte-identically. Plain alphabetical
+    // ordering is *almost* right for .fpk but wrong for .fpkd (alpha is
+    // descending there), and both formats additionally regroup entries by a
+    // hardcoded extension priority — get this wrong and the game reads e.g.
+    // a vehicle's .veh blob in the wrong slot and crashes in BodyBase init.
+    //
+    // Source: SnakeBite/Classes/GzsLib.cs (SortFpksFiles, archiveExtensions).
+
+    private static readonly string[] FpkExtensionOrder = new[]
+    {
+        "caar", "fnt", "atsh", "frig", "adm", "frt", "fpkl", "fsm", "ftdp",
+        "geobv", "ftex", "geoms", "gimr", "gpfp", "grxla", "grxoc", "htre",
+        "lba", "lpsh", "mog", "mtar", "nav2", "nta", "rdf", "ends", "sand",
+        "mbl", "tcvp", "spch", "trap", "uigb", "uilb", "pcsp", "tre2", "fstb",
+        "twpf", "fv2t", "fmdl", "geom", "gskl", "fcnp", "frdv", "fdes", "fclo",
+        "uif", "uia", "subp", "sani", "ladb", "frl", "fv2", "obr", "lng2",
+        "mtard", "obrb", "dfrm",
+    };
+
+    private static readonly string[] FpkdExtensionOrder = new[]
+    {
+        "fox2", "evf", "parts", "vfxlb", "vfx", "vfxlf", "veh", "frld",
+        "des", "bnd", "tgt", "phsd", "ph", "sim", "clo", "fsd", "sdf",
+        "lua", "lng",
+    };
+
+    /// <summary>
+    /// Sort entries into the order an fpk/fpkd's loader expects.
+    /// <paramref name="archiveType"/> is the literal "fpk" or "fpkd".
+    /// </summary>
+    private static List<string> SortEntriesForArchive(List<string> entries, string archiveType)
+    {
+        if (entries.Count <= 1) return entries;
+
+        var isFpkd = string.Equals(archiveType, "fpkd", StringComparison.OrdinalIgnoreCase);
+        var working = new List<string>(entries);
+
+        // Pass 1: alphabetical. fpk = ascending, fpkd = descending.
+        if (isFpkd) working.Sort((a, b) => string.CompareOrdinal(b, a));
+        else        working.Sort(StringComparer.Ordinal);
+
+        // Pass 2: regroup by extension priority. Extensions not in the table
+        // fall through to a stable trailing group preserving the pass-1 order.
+        var order = isFpkd ? FpkdExtensionOrder : FpkExtensionOrder;
+        var sorted = new List<string>(working.Count);
+        foreach (var ext in order)
+        {
+            for (var i = 0; i < working.Count; i++)
+            {
+                var path = working[i];
+                if (path is null) continue;
+                var fileExt = Path.GetExtension(path);
+                if (fileExt.Length > 1 && string.Equals(fileExt[1..], ext, StringComparison.OrdinalIgnoreCase))
+                {
+                    sorted.Add(path);
+                    working[i] = null!;   // mark consumed
+                }
+            }
+        }
+        foreach (var leftover in working)
+            if (leftover is not null) sorted.Add(leftover);
+
+        return sorted;
     }
 
     private void ApplyGameDir(ModInfo mod)
