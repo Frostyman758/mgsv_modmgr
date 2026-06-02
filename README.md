@@ -30,7 +30,10 @@ The manager writes alongside its own exe — not in this repo:
 
     state.txt        game root, datfpk path, mod list (the load order)
     mods/            stored copy of every added .mgsv
-    backups/         pristine baselines so Revert works
+    root/            pristine baseline cache. First time the manager has to
+                     touch a game file it copies the untouched original here;
+                     subsequent Applies always rebuild from this snapshot.
+                     Revert restores from here.
     tmp/             work tree for unpack/repack; safe to nuke
 
 `datfpk.exe` is third-party and not bundled. Drop it somewhere and point

@@ -37,7 +37,7 @@ namespace core {
 extern State    g_state;
 extern fs::path g_exe_dir;
 extern fs::path g_state_path;
-extern fs::path g_backups_dir;
+extern fs::path g_baseline_dir;
 extern fs::path g_mods_dir;
 extern fs::path g_tmp_dir;
 

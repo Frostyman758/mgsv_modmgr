@@ -8,27 +8,53 @@ using System.Linq;
 namespace MgsvModMgr.Core;
 
 /// <summary>
-/// Top-level orchestrator: owns the persisted <see cref="State"/>, handles
-/// add/enable/remove/move/apply/revert, and keeps the two PathDictionary
-/// files next to the game exe in sync with whatever the installed mods ship.
+/// Top-level orchestrator. Owns the persisted <see cref="State"/> and the
+/// on-disk workspace that backs Apply / Revert.
+///
+/// <para>Workspace layout (sibling to the running exe):</para>
+/// <list type="bullet">
+///   <item><c>state.txt</c> — persisted settings + load order.</item>
+///   <item><c>mods/</c>     — copies of every added <c>.mgsv</c> archive.</item>
+///   <item><c>root/</c>     — pristine baseline cache. The first time the
+///       manager needs to modify a game file, it copies the file in its
+///       untouched state into here. Subsequent applies always rebuild from
+///       this baseline; the file under <c>root/</c> is never modified
+///       again. Files that did not exist pre-mod get a sentinel
+///       <c>.absent</c> marker so revert removes them rather than
+///       restoring stale data.</item>
+///   <item><c>tmp/</c>      — scratch space used by Apply for unpack/repack.</item>
+/// </list>
+///
+/// <para>Apply, for every host file an installed mod touches:</para>
+/// <list type="number">
+///   <item>Snapshot the live game file into <c>root/</c> if not already there.</item>
+///   <item>Unpack the baseline into <c>tmp/</c>.</item>
+///   <item>Overlay each enabled mod's contribution in load order.</item>
+///   <item>Repack and write the result back to the game install.</item>
+/// </list>
+///
+/// <para>Revert restores every file in <c>root/</c> back to its original
+/// path in the game install and deletes anything the mods introduced.</para>
 /// </summary>
 public sealed class ModManager
 {
-    public ModManager(string? rootDir = null)
+    public ModManager(string? workspaceDir = null)
     {
-        RootDir    = rootDir ?? Path.GetDirectoryName(Environment.ProcessPath ?? ".") ?? ".";
-        StatePath  = Path.Combine(RootDir, "state.txt");
-        BackupsDir = Path.Combine(RootDir, "backups");
-        ModsDir    = Path.Combine(RootDir, "mods");
-        TmpDir     = Path.Combine(RootDir, "tmp");
+        WorkspaceDir = workspaceDir ?? Path.GetDirectoryName(Environment.ProcessPath ?? ".") ?? ".";
+        StatePath    = Path.Combine(WorkspaceDir, "state.txt");
+        BaselineDir  = Path.Combine(WorkspaceDir, "root");
+        ModsDir      = Path.Combine(WorkspaceDir, "mods");
+        TmpDir       = Path.Combine(WorkspaceDir, "tmp");
     }
 
-    /// <summary>Directory the manager writes state/backups/tmp under (defaults to the running exe's folder).</summary>
-    public string RootDir    { get; }
-    public string StatePath  { get; }
-    public string BackupsDir { get; }
-    public string ModsDir    { get; }
-    public string TmpDir     { get; }
+    /// <summary>Directory holding the manager's runtime tree (state/mods/root/tmp).</summary>
+    public string WorkspaceDir { get; }
+    public string StatePath    { get; }
+
+    /// <summary>Pristine baseline cache. Files here are written exactly once and never touched again.</summary>
+    public string BaselineDir  { get; }
+    public string ModsDir      { get; }
+    public string TmpDir       { get; }
 
     public State State { get; } = new();
 
@@ -192,20 +218,20 @@ public sealed class ModManager
         Log($"Apply complete. Temp tree left at {TmpDir}");
     }
 
-    /// <summary>Restore every backed-up file and delete every mod-introduced file.</summary>
+    /// <summary>Restore every baseline file and delete every mod-introduced file.</summary>
     public void RevertAll()
     {
         EnsureInitialised();
-        if (!Directory.Exists(BackupsDir))
+        if (!Directory.Exists(BaselineDir))
         {
-            Log("No backups; nothing to revert.");
+            Log("No baseline cache; nothing to revert.");
             return;
         }
 
         int restored = 0, deleted = 0;
-        foreach (var file in Directory.EnumerateFiles(BackupsDir, "*", SearchOption.AllDirectories))
+        foreach (var file in Directory.EnumerateFiles(BaselineDir, "*", SearchOption.AllDirectories))
         {
-            var rel = Path.GetRelativePath(BackupsDir, file);
+            var rel = Path.GetRelativePath(BaselineDir, file);
             if (Path.GetExtension(rel) == ".absent")
             {
                 var origRel = Path.ChangeExtension(rel, null)!;
@@ -266,17 +292,17 @@ public sealed class ModManager
         list.RemoveAll(x => !seen.Add(x));
     }
 
-    private string BackupFor(string diskPath)
-        => Path.Combine(BackupsDir, Path.GetRelativePath(State.GameRoot, diskPath));
+    private string BaselineFor(string diskPath)
+        => Path.Combine(BaselineDir, Path.GetRelativePath(State.GameRoot, diskPath));
 
     /// <summary>
     /// Snapshot the disk file before any mod touches it. Files that did not
     /// exist pre-mod get a sentinel <c>.absent</c> marker so revert removes
     /// them rather than restoring stale data.
     /// </summary>
-    private void EnsureBackup(string diskPath)
+    private void EnsureBaseline(string diskPath)
     {
-        var bak    = BackupFor(diskPath);
+        var bak    = BaselineFor(diskPath);
         var marker = bak + ".absent";
         if (File.Exists(bak) || File.Exists(marker)) return;
 
@@ -355,11 +381,11 @@ public sealed class ModManager
         var src = FindFirstEnabledPayload(qarPath, out var winner);
         if (src is null || winner is null)
         {
-            Log("   no enabled mod ships this path; reverting from backup");
+            Log("   no enabled mod ships this path; reverting from baseline");
             return;
         }
 
-        EnsureBackup(diskPath);
+        EnsureBaseline(diskPath);
         Directory.CreateDirectory(Path.GetDirectoryName(diskPath)!);
         File.Copy(src, diskPath, overwrite: true);
         Log("   from mod: " + winner.Id);
@@ -376,9 +402,9 @@ public sealed class ModManager
         if (Directory.Exists(work)) Directory.Delete(work, recursive: true);
         Directory.CreateDirectory(work);
 
-        EnsureBackup(diskPath);
-        var backup            = BackupFor(diskPath);
-        var baselineExists    = File.Exists(backup);
+        EnsureBaseline(diskPath);
+        var baseline       = BaselineFor(diskPath);
+        var baselineExists = File.Exists(baseline);
         var diskExt           = Path.GetExtension(diskPath);
         var refsUnion         = new List<string>();
         var type              = "fpkd";
@@ -386,7 +412,7 @@ public sealed class ModManager
 
         if (baselineExists)
         {
-            var local = DatfpkUnpack(backup, work);
+            var local = DatfpkUnpack(baseline, work);
             var json  = local + ".json";
             if (!File.Exists(json)) throw new Exception("expected json not found: " + json);
             var text = FpkJson.Read(json);
@@ -509,7 +535,7 @@ public sealed class ModManager
             }
 
             var dst = Path.Combine(State.GameRoot, rel);
-            EnsureBackup(dst);
+            EnsureBaseline(dst);
             Directory.CreateDirectory(Path.GetDirectoryName(dst)!);
             File.Copy(src, dst, overwrite: true);
             Log("   gamedir -> " + dst);

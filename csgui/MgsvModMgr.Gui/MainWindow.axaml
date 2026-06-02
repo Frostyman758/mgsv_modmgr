@@ -33,7 +33,7 @@
                   Content="&#xE73E;"
                   Command="{Binding ApplyCommand}"/>
           <Button Classes="sidebar"
-                  ToolTip.Tip="Revert all modded files back to their pristine backups"
+                  ToolTip.Tip="Revert all modded files back to their pristine baselines"
                   Content="&#xE7A7;"
                   Command="{Binding RevertCommand}"/>
           <Button Classes="sidebar"

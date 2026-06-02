@@ -263,7 +263,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private async Task RevertAsync()
     {
-        if (!await ConfirmAsync("Revert all modded files to their backups?")) return;
+        if (!await ConfirmAsync("Revert all modded files back to their pristine baselines?")) return;
         await Task.Run(() =>
         {
             try { _manager.RevertAll(); }

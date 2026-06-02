@@ -16,7 +16,7 @@ namespace core {
 State    g_state;
 fs::path g_exe_dir;
 fs::path g_state_path;
-fs::path g_backups_dir;
+fs::path g_baseline_dir;
 fs::path g_mods_dir;
 fs::path g_tmp_dir;
 
@@ -33,7 +33,7 @@ static std::string exe_dir_string() {
 void init_paths() {
     g_exe_dir     = exe_dir_string();
     g_state_path  = g_exe_dir / "state.txt";
-    g_backups_dir = g_exe_dir / "backups";
+    g_baseline_dir = g_exe_dir / "root";
     g_mods_dir    = g_exe_dir / "mods";
     g_tmp_dir     = g_exe_dir / "tmp";
 }
@@ -474,17 +474,19 @@ static void parse_metadata(const fs::path& meta_path, ModInfo& m) {
     }
 }
 
-// ---------- backup / restore ----------
+// ---------- baseline cache / revert ----------
 
-// For files that didn't exist before being modded, we drop a .absent marker
-// beside the backup so revert can delete them rather than restore stale data.
-static fs::path backup_for(const fs::path& disk_path) {
+// First time the manager has to modify a game file, it snapshots the pristine
+// copy under <exe>/root/<rel>. The snapshot is never overwritten; every Apply
+// rebuilds from it. Files that did not exist pre-mod get a sibling .absent
+// marker so revert removes them rather than restoring stale data.
+static fs::path baseline_for(const fs::path& disk_path) {
     fs::path rel = fs::relative(disk_path, g_state.game_root);
-    return g_backups_dir / rel;
+    return g_baseline_dir / rel;
 }
 
-static void ensure_backup(const fs::path& disk_path) {
-    fs::path bak = backup_for(disk_path);
+static void ensure_baseline(const fs::path& disk_path) {
+    fs::path bak = baseline_for(disk_path);
     fs::path marker = bak.string() + ".absent";
     if (fs::exists(bak) || fs::exists(marker)) return;
     fs::create_directories(bak.parent_path());
@@ -616,9 +618,9 @@ static void rebuild_raw(const std::string& qar_path, const fs::path& disk_path) 
         if (!fs::exists(p)) continue;
         winner = &m; src = p;
     }
-    if (!winner) { log("   no enabled mod ships this path; reverting from backup"); return; }
+    if (!winner) { log("   no enabled mod ships this path; reverting from baseline"); return; }
 
-    ensure_backup(disk_path);
+    ensure_baseline(disk_path);
     fs::create_directories(disk_path.parent_path());
     fs::copy_file(src, disk_path, fs::copy_options::overwrite_existing);
     log("   from mod: " + winner->id);
@@ -636,12 +638,12 @@ static void rebuild_host(const std::string& qar_path, const fs::path& disk_path)
     fs::remove_all(work);
     fs::create_directories(work);
 
-    // Snapshot the baseline first, then ask the backup what the baseline was.
+    // Snapshot the baseline first, then ask the cache what the baseline was.
     // The disk file may exist purely because a previous (partial) apply wrote
     // it, so we must NOT use disk state to decide. The .absent marker (or its
     // absence) is the authoritative record.
-    ensure_backup(disk_path);
-    fs::path bak    = backup_for(disk_path);
+    ensure_baseline(disk_path);
+    fs::path bak    = baseline_for(disk_path);
     fs::path marker = fs::path(bak.string() + ".absent");
     bool     baseline_existed = fs::exists(bak);
 
@@ -758,7 +760,7 @@ static void apply_gamedir_for_mod(const ModInfo& m) {
         if (!fs::exists(src)) { log("   WARN: gamedir source missing for " + rel); continue; }
 
         fs::path dst = g_state.game_root / rel;
-        ensure_backup(dst);
+        ensure_baseline(dst);
         fs::create_directories(dst.parent_path());
         fs::copy_file(src, dst, fs::copy_options::overwrite_existing);
         log("   gamedir -> " + dst.string());
@@ -870,11 +872,11 @@ void apply_all() {
 
 void revert_all() {
     check_init();
-    if (!fs::exists(g_backups_dir)) { log("no backups; nothing to revert"); return; }
+    if (!fs::exists(g_baseline_dir)) { log("no baseline cache; nothing to revert"); return; }
     size_t restored = 0, deleted = 0;
-    for (auto& e : fs::recursive_directory_iterator(g_backups_dir)) {
+    for (auto& e : fs::recursive_directory_iterator(g_baseline_dir)) {
         if (!e.is_regular_file()) continue;
-        fs::path rel = fs::relative(e.path(), g_backups_dir);
+        fs::path rel = fs::relative(e.path(), g_baseline_dir);
         if (rel.extension() == ".absent") {
             fs::path orig_rel = rel; orig_rel.replace_extension("");
             fs::path disk = g_state.game_root / orig_rel;

@@ -15,7 +15,7 @@ publish_tmp/
 
 # Runtime data
 tmp/
-backups/
+root/
 mods/
 state.txt
 apply.log
