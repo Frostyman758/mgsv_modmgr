@@ -207,29 +207,49 @@ public sealed class ModManager
 
         Directory.CreateDirectory(TmpDir);
 
-        // Sweep host_*/ scratch from prior runs. mod_<id>/ extractions are
-        // kept — they're the input data, only the per-host work product is
-        // discardable. Per-host folders are also wiped inside RebuildFpkHost
-        // before use, so this is housekeeping, not a safety requirement.
-        foreach (var dir in Directory.EnumerateDirectories(TmpDir, "host_*"))
-        {
-            try { Directory.Delete(dir, recursive: true); } catch { /* best effort */ }
-        }
+        // mod_<id>/ extractions persist between Applies — they're the input
+        // data, only the per-host work product is discardable. We DO NOT wipe
+        // host_*/ scratch up-front any more, because most hosts are likely
+        // cache hits and don't need touching. Hosts that actually rebuild
+        // already wipe their own work dir before use inside RebuildFpkHost.
+
+        var cache = new ApplyCache(Path.Combine(WorkspaceDir, "apply-cache.txt"));
 
         var hosts = new SortedSet<string>(StringComparer.Ordinal);
         foreach (var mod in State.Mods)
             foreach (var qar in mod.QarPaths) hosts.Add(qar);
 
-        int fpkCount = 0, rawCount = 0;
+        int fpkCount = 0, rawCount = 0, skipped = 0;
         foreach (var qar in hosts)
         {
             var disk = Paths.ResolveQar(qar, State.GameRoot);
+
+            // Cache check: collect the contributors in load order, fingerprint
+            // them with the baseline, and skip the rebuild if disk already
+            // reflects this exact state.
+            var contributors = new List<(ModInfo, string)>();
+            foreach (var m in State.Mods)
+                if (m.Enabled && m.QarPaths.Contains(qar))
+                    contributors.Add((m, m.Source));
+
+            EnsureBaseline(disk);
+            var baseline    = BaselineFor(disk);
+            var fingerprint = ApplyCache.Compute(qar, contributors, File.Exists(baseline) ? baseline : null);
+
+            if (cache.Matches(disk, fingerprint) && File.Exists(disk))
+            {
+                skipped++;
+                continue;
+            }
+
             if (Paths.QarIsFpk(qar)) { RebuildFpkHost(qar, disk); fpkCount++; }
             else                      { RebuildRawFile(qar, disk); rawCount++; }
+
+            cache.Set(disk, fingerprint);
         }
 
         Log("");
-        Log($"fpk hosts: {fpkCount}, raw files: {rawCount}");
+        Log($"fpk hosts rebuilt: {fpkCount}, raw files copied: {rawCount}, skipped (unchanged): {skipped}");
 
         foreach (var mod in State.Mods)
         {
@@ -238,6 +258,8 @@ public sealed class ModManager
             Log($"== gamedir overlay for {mod.Id}");
             ApplyGameDir(mod);
         }
+
+        cache.Save();
 
         // Mark each mod's Applied state to reflect what's now in the install.
         // Enabled mods that contributed are "applied"; disabled mods are not.
@@ -276,7 +298,11 @@ public sealed class ModManager
                 restored++;
             }
         }
-        // Nothing from any mod is in the install any more.
+        // Nothing from any mod is in the install any more — wipe the cache
+        // so the next Apply rebuilds every host from scratch.
+        var cachePath = Path.Combine(WorkspaceDir, "apply-cache.txt");
+        if (File.Exists(cachePath)) File.Delete(cachePath);
+
         foreach (var m in State.Mods) m.Applied = false;
         SaveState();
 
