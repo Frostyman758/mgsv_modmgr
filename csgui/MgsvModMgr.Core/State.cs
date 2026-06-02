@@ -37,6 +37,7 @@ public static class StateIo
                 case "version": cur.Version = v; break;
                 case "author":  cur.Author = v; break;
                 case "enabled": cur.Enabled = v == "1" || v == "true"; break;
+                case "applied": cur.Applied = v == "1" || v == "true"; break;
                 case "source":  cur.Source = v; break;
                 case "qar":     cur.QarPaths.Add(v); break;
                 case "qarhash": {
@@ -76,6 +77,7 @@ public static class StateIo
             f.WriteLine($"version={m.Version}");
             f.WriteLine($"author={m.Author}");
             f.WriteLine($"enabled={(m.Enabled ? 1 : 0)}");
+            f.WriteLine($"applied={(m.Applied ? 1 : 0)}");
             f.WriteLine($"source={m.Source}");
             foreach (var q in m.QarPaths) f.WriteLine($"qar={q}");
             foreach (var kv in m.QarHashes) f.WriteLine($"qarhash={kv.Key}|{kv.Value}");

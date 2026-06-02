@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -30,6 +31,15 @@ public sealed class MainViewModel : INotifyPropertyChanged
         _window  = window;
         _manager = new ModManager { Log = AppendLog };
         _manager.LoadState();
+
+        // Drain queued log lines onto the UI thread on a fixed cadence rather
+        // than per-line. Big Applies (Infinite Heaven, etc.) emit thousands of
+        // lines; updating the bound LogText string per line would be O(N^2)
+        // and saturate the dispatcher queue, softlocking the window.
+        _logTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(80),
+                                        DispatcherPriority.Background,
+                                        (_, _) => FlushLogQueue());
+        _logTimer.Start();
 
         AddCommand           = new RelayCommand(AddModAsync);
         RemoveCommand        = new RelayCommand(RemoveSelectedAsync);
@@ -210,9 +220,13 @@ public sealed class MainViewModel : INotifyPropertyChanged
         var path = files[0].TryGetLocalPath();
         if (path is null) return;
 
+        // Heavy I/O (zip extract + metadata.xml parse + dictionary update).
+        // Big mods like Infinite Heaven can chew on this for tens of seconds;
+        // push it off the UI thread so the window stays responsive.
+        AppendLog($"Adding mod from {path} ...");
         try
         {
-            _manager.AddMod(path);
+            await Task.Run(() => _manager.AddMod(path));
             SyncRows();
             MarkDirty();
         }
@@ -230,7 +244,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         try
         {
-            _manager.RemoveMod(id);
+            await Task.Run(() => _manager.RemoveMod(id));
             SyncRows();
             MarkDirty();
         }
@@ -258,17 +272,19 @@ public sealed class MainViewModel : INotifyPropertyChanged
             try { _manager.ApplyAll(); }
             catch (Exception ex) { AppendLog("ERROR: " + ex.Message); }
         });
+        SyncRows();          // refresh PENDING chips
         IsDirty = false;
     }
 
     private async Task RevertAsync()
     {
-        if (!await ConfirmAsync("Revert all modded files back to their pristine baselines?")) return;
+        if (!await ConfirmAsync("Restore the original game files? Every mod change in the install will be undone.")) return;
         await Task.Run(() =>
         {
             try { _manager.RevertAll(); }
             catch (Exception ex) { AppendLog("ERROR: " + ex.Message); }
         });
+        SyncRows();
         IsDirty = false;
     }
 
@@ -345,17 +361,44 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     // ─── Logging ───────────────────────────────────────────────────────────
+    //
+    // Producer side (any thread): AppendLog enqueues a line. No marshaling.
+    // Consumer side (UI thread):  the dispatcher timer below drains the queue
+    // in batches and updates the bound LogText property once per tick. The
+    // visible buffer is capped at ~256 KB; once exceeded, the oldest lines
+    // are dropped so the TextBox never has to reflow a multi-MB string.
 
-    private readonly StringBuilder _logBuffer = new();
+    private const int MaxLogChars = 256_000;
+    private readonly StringBuilder            _logBuffer = new();
+    private readonly ConcurrentQueue<string>  _logQueue  = new();
+    private readonly DispatcherTimer          _logTimer;
 
-    private void AppendLog(string line)
+    private void AppendLog(string line) => _logQueue.Enqueue(line);
+
+    private void FlushLogQueue()
     {
-        Dispatcher.UIThread.Post(() =>
+        if (_logQueue.IsEmpty) return;
+
+        var openLog = !LogExpanded;
+        while (_logQueue.TryDequeue(out var line))
         {
-            _logBuffer.AppendLine(line);
-            LogText = _logBuffer.ToString();
-            if (!LogExpanded) LogExpanded = true;
-        });
+            _logBuffer.Append(line);
+            _logBuffer.Append('\n');
+        }
+
+        if (_logBuffer.Length > MaxLogChars)
+        {
+            // Trim the oldest content, then snap to the next newline so the
+            // remaining buffer always starts on a whole line.
+            _logBuffer.Remove(0, _logBuffer.Length - MaxLogChars);
+            for (var i = 0; i < 400 && i < _logBuffer.Length; i++)
+            {
+                if (_logBuffer[i] == '\n') { _logBuffer.Remove(0, i + 1); break; }
+            }
+        }
+
+        LogText = _logBuffer.ToString();
+        if (openLog) LogExpanded = true;
     }
 
     // ─── Dialog helpers ────────────────────────────────────────────────────

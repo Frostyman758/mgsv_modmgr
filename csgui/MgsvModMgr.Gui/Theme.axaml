@@ -43,16 +43,21 @@
         <Setter Property="Background" Value="Transparent" />
     </Style>
 
-    <!-- Pulsing accent foreground while the manager has un-Applied changes.
-         Used on the sidebar Apply button via `Classes.dirty="{Binding IsDirty}"`. -->
+    <!-- Pulsing amber background while the manager has un-Applied changes.
+         The icon itself stays white so it reads cleanly against the pulse.
+         Matches the PENDING APPLY chip palette so users learn one rule:
+         amber = "needs Apply". Bound via `Classes.dirty="{Binding IsDirty}"`. -->
     <Style Selector="Button.sidebar.dirty">
+        <Setter Property="Foreground" Value="{DynamicResource Text}" />
+    </Style>
+    <Style Selector="Button.sidebar.dirty /template/ ContentPresenter">
         <Style.Animations>
-            <Animation Duration="0:0:1.2" IterationCount="INFINITE" PlaybackDirection="Alternate">
+            <Animation Duration="0:0:1.0" IterationCount="INFINITE" PlaybackDirection="Alternate">
                 <KeyFrame Cue="0%">
-                    <Setter Property="Foreground" Value="#7C7C84" />
+                    <Setter Property="Background" Value="#2B221A" />
                 </KeyFrame>
                 <KeyFrame Cue="100%">
-                    <Setter Property="Foreground" Value="#E4716C" />
+                    <Setter Property="Background" Value="#8E6520" />
                 </KeyFrame>
             </Animation>
         </Style.Animations>
@@ -233,6 +238,30 @@
     <!-- Thumb stays white. -->
     <Style Selector="ToggleSwitch:checked /template/ Border#SwitchKnobOn">
         <Setter Property="Background" Value="White" />
+    </Style>
+
+    <!-- PENDING chip: rendered on a row whose state hasn't been Applied yet. -->
+    <Style Selector="Border.chip-pending">
+        <Setter Property="Background"      Value="#2B221A" />
+        <Setter Property="BorderBrush"     Value="#5A431F" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius"    Value="10" />
+        <Setter Property="Padding"         Value="8,2" />
+    </Style>
+    <Style Selector="Border.chip-pending TextBlock">
+        <Setter Property="Foreground" Value="#E8B85A" />
+        <Setter Property="FontSize"   Value="10" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+
+    <!-- Muted (grey) toggle for pending rows: same shape, no accent fill. -->
+    <Style Selector="ToggleSwitch.pending:checked /template/ Border#SwitchKnobBounds">
+        <Setter Property="Background"  Value="#5A5A62" />
+        <Setter Property="BorderBrush" Value="#5A5A62" />
+    </Style>
+    <Style Selector="ToggleSwitch.pending:checked:pointerover /template/ Border#SwitchKnobBounds">
+        <Setter Property="Background"  Value="#6E6E78" />
+        <Setter Property="BorderBrush" Value="#6E6E78" />
     </Style>
 
     <!-- Context menu styling -->

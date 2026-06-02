@@ -247,7 +247,7 @@ static void worker_revert() {
 static void do_apply()  { if (g_busy) return; std::thread(worker_apply).detach(); }
 static void do_revert(HWND owner) {
     if (g_busy) return;
-    if (MessageBoxA(owner, "Revert all modded files to their pristine baselines?", "confirm",
+    if (MessageBoxA(owner, "Restore the original game files? Every mod change will be undone.", "confirm",
                     MB_YESNO | MB_ICONQUESTION) != IDYES) return;
     std::thread(worker_revert).detach();
 }

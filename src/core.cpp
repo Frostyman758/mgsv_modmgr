@@ -618,7 +618,7 @@ static void rebuild_raw(const std::string& qar_path, const fs::path& disk_path) 
         if (!fs::exists(p)) continue;
         winner = &m; src = p;
     }
-    if (!winner) { log("   no enabled mod ships this path; reverting from baseline"); return; }
+    if (!winner) { log("   no enabled mod ships this path; restoring original"); return; }
 
     ensure_baseline(disk_path);
     fs::create_directories(disk_path.parent_path());
@@ -872,7 +872,7 @@ void apply_all() {
 
 void revert_all() {
     check_init();
-    if (!fs::exists(g_baseline_dir)) { log("no baseline cache; nothing to revert"); return; }
+    if (!fs::exists(g_baseline_dir)) { log("no original-file cache; nothing to revert"); return; }
     size_t restored = 0, deleted = 0;
     for (auto& e : fs::recursive_directory_iterator(g_baseline_dir)) {
         if (!e.is_regular_file()) continue;

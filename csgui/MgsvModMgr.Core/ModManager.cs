@@ -126,7 +126,9 @@ public sealed class ModManager
 
     public void EnableMod(string id, bool enabled)
     {
-        FindMod(id).Enabled = enabled;
+        var m = FindMod(id);
+        m.Enabled = enabled;
+        m.Applied = false;   // game install no longer matches this mod's state
         SaveState();
     }
 
@@ -134,6 +136,16 @@ public sealed class ModManager
     {
         var mod = FindMod(id);
         if (File.Exists(mod.Source)) File.Delete(mod.Source);
+
+        // Clean up the extracted tree so a future re-add starts from the
+        // archive rather than a stale extraction.
+        var unpacked = ModUnpackDir(id);
+        if (Directory.Exists(unpacked))
+        {
+            try { Directory.Delete(unpacked, recursive: true); }
+            catch (Exception ex) { Log($"WARN: could not delete {unpacked}: {ex.Message}"); }
+        }
+
         State.Mods.Remove(mod);
         SaveState();
     }
@@ -148,6 +160,10 @@ public sealed class ModManager
         var target = index + delta;
         if (target < 0 || target >= State.Mods.Count) return;
         State.Mods.Move(index, target);
+
+        // Reordering changes which mod wins overlapping files, so every mod's
+        // merged contribution is potentially stale until the next Apply.
+        foreach (var m in State.Mods) m.Applied = false;
         SaveState();
     }
 
@@ -191,6 +207,15 @@ public sealed class ModManager
 
         Directory.CreateDirectory(TmpDir);
 
+        // Sweep host_*/ scratch from prior runs. mod_<id>/ extractions are
+        // kept — they're the input data, only the per-host work product is
+        // discardable. Per-host folders are also wiped inside RebuildFpkHost
+        // before use, so this is housekeeping, not a safety requirement.
+        foreach (var dir in Directory.EnumerateDirectories(TmpDir, "host_*"))
+        {
+            try { Directory.Delete(dir, recursive: true); } catch { /* best effort */ }
+        }
+
         var hosts = new SortedSet<string>(StringComparer.Ordinal);
         foreach (var mod in State.Mods)
             foreach (var qar in mod.QarPaths) hosts.Add(qar);
@@ -214,17 +239,22 @@ public sealed class ModManager
             ApplyGameDir(mod);
         }
 
+        // Mark each mod's Applied state to reflect what's now in the install.
+        // Enabled mods that contributed are "applied"; disabled mods are not.
+        foreach (var m in State.Mods) m.Applied = m.Enabled;
+        SaveState();
+
         Log("");
         Log($"Apply complete. Temp tree left at {TmpDir}");
     }
 
-    /// <summary>Restore every baseline file and delete every mod-introduced file.</summary>
+    /// <summary>Restore every original game file and delete every mod-introduced file.</summary>
     public void RevertAll()
     {
         EnsureInitialised();
         if (!Directory.Exists(BaselineDir))
         {
-            Log("No baseline cache; nothing to revert.");
+            Log("No original-file cache; nothing to revert.");
             return;
         }
 
@@ -246,6 +276,10 @@ public sealed class ModManager
                 restored++;
             }
         }
+        // Nothing from any mod is in the install any more.
+        foreach (var m in State.Mods) m.Applied = false;
+        SaveState();
+
         Log($"Reverted {restored} file(s), removed {deleted} mod-added file(s).");
     }
 
@@ -381,7 +415,7 @@ public sealed class ModManager
         var src = FindFirstEnabledPayload(qarPath, out var winner);
         if (src is null || winner is null)
         {
-            Log("   no enabled mod ships this path; reverting from baseline");
+            Log("   no enabled mod ships this path; restoring original");
             return;
         }
 
