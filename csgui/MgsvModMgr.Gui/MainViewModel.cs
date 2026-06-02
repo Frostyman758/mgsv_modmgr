@@ -31,16 +31,24 @@ public sealed class MainViewModel : INotifyPropertyChanged
         _manager = new ModManager { Log = AppendLog };
         _manager.LoadState();
 
-        AddCommand          = new RelayCommand(AddModAsync);
-        RemoveCommand       = new RelayCommand(RemoveSelectedAsync);
-        MoveUpCommand       = new RelayCommand(() => Move(-1));
-        MoveDownCommand     = new RelayCommand(() => Move(+1));
-        ApplyCommand        = new RelayCommand(ApplyAsync);
-        RevertCommand       = new RelayCommand(RevertAsync);
-        SettingsCommand     = new RelayCommand(ChooseSettingsAsync);
-        AboutCommand        = new RelayCommand(ShowAbout);
-        ToggleLogCommand    = new RelayCommand(() => LogExpanded = !LogExpanded);
-        ExportDictCommand   = new RelayCommand(ExportDictionariesAsync);
+        AddCommand           = new RelayCommand(AddModAsync);
+        RemoveCommand        = new RelayCommand(RemoveSelectedAsync);
+        MoveUpCommand        = new RelayCommand(() => Move(-1));
+        MoveDownCommand      = new RelayCommand(() => Move(+1));
+        ApplyCommand         = new RelayCommand(ApplyAsync);
+        RevertCommand        = new RelayCommand(RevertAsync);
+        AboutCommand         = new RelayCommand(ShowAbout);
+        ToggleLogCommand     = new RelayCommand(() => LogExpanded = !LogExpanded);
+        ExportDictCommand    = new RelayCommand(ExportDictionariesAsync);
+
+        // Page navigation.
+        ShowModsCommand     = new RelayCommand(() => CurrentPage = Page.Mods);
+        ShowSettingsCommand = new RelayCommand(() => { LoadSettingsFields(); CurrentPage = Page.Settings; });
+
+        // Settings page.
+        BrowseGameRootCommand = new RelayCommand(BrowseGameRootAsync);
+        BrowseDatFpkCommand   = new RelayCommand(BrowseDatFpkAsync);
+        SaveSettingsCommand   = new RelayCommand(SaveSettingsAsync);
 
         RemoveRowCommand = new RelayCommand<ModRow>(async row =>
         {
@@ -78,6 +86,42 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private bool _logExpanded;
     public  bool  LogExpanded { get => _logExpanded; set => Set(ref _logExpanded, value); }
 
+    /// <summary>
+    /// True when the user has made changes (add / remove / toggle / move)
+    /// that have not yet been written to the game install via Apply. Bound
+    /// to the sidebar Apply button's <c>dirty</c> class to drive a pulse.
+    /// </summary>
+    private bool _isDirty;
+    public  bool  IsDirty { get => _isDirty; private set => Set(ref _isDirty, value); }
+
+    private void MarkDirty() => IsDirty = true;
+
+    /// <summary>Which content page the main area is showing.</summary>
+    private Page _currentPage = Page.Mods;
+    public  Page  CurrentPage
+    {
+        get => _currentPage;
+        set
+        {
+            if (_currentPage == value) return;
+            _currentPage = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsModsPage));
+            OnPropertyChanged(nameof(IsSettingsPage));
+        }
+    }
+
+    public bool IsModsPage     => CurrentPage == Page.Mods;
+    public bool IsSettingsPage => CurrentPage == Page.Settings;
+
+    // Settings form fields. Bound two-way; the running manager state isn't
+    // touched until Save fires.
+    private string _gameRootField = "";
+    public  string  GameRootField { get => _gameRootField; set => Set(ref _gameRootField, value); }
+
+    private string _datFpkField = "";
+    public  string  DatFpkField   { get => _datFpkField;   set => Set(ref _datFpkField,   value); }
+
     public string GameRoot => _manager.State.GameRoot;
     public string DatFpk   => _manager.State.DatFpk;
 
@@ -90,16 +134,24 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     // ─── Commands ──────────────────────────────────────────────────────────
 
-    public ICommand AddCommand          { get; }
-    public ICommand RemoveCommand       { get; }
-    public ICommand MoveUpCommand       { get; }
-    public ICommand MoveDownCommand     { get; }
-    public ICommand ApplyCommand        { get; }
-    public ICommand RevertCommand       { get; }
-    public ICommand SettingsCommand     { get; }
-    public ICommand AboutCommand        { get; }
-    public ICommand ToggleLogCommand    { get; }
-    public ICommand ExportDictCommand   { get; }
+    public ICommand AddCommand           { get; }
+    public ICommand RemoveCommand        { get; }
+    public ICommand MoveUpCommand        { get; }
+    public ICommand MoveDownCommand      { get; }
+    public ICommand ApplyCommand         { get; }
+    public ICommand RevertCommand        { get; }
+    public ICommand AboutCommand         { get; }
+    public ICommand ToggleLogCommand     { get; }
+    public ICommand ExportDictCommand    { get; }
+
+    /// <summary>Page-navigation commands bound to the sidebar.</summary>
+    public ICommand ShowModsCommand     { get; }
+    public ICommand ShowSettingsCommand { get; }
+
+    /// <summary>Settings-page commands.</summary>
+    public ICommand BrowseGameRootCommand { get; }
+    public ICommand BrowseDatFpkCommand   { get; }
+    public ICommand SaveSettingsCommand   { get; }
 
     /// <summary>Row-targeted variants for the right-click context menu.</summary>
     public ICommand RemoveRowCommand { get; }
@@ -113,7 +165,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
         if (string.IsNullOrEmpty(_manager.State.GameRoot) ||
             string.IsNullOrEmpty(_manager.State.DatFpk))
         {
-            AppendLog("Not initialised. Click the gear icon to choose the game root and datfpk.exe.");
+            AppendLog("Not initialised. Set the game root and datfpk path on the Settings page.");
+            LoadSettingsFields();
+            CurrentPage = Page.Settings;
         }
         return Task.CompletedTask;
     }
@@ -127,7 +181,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             Mods.Add(new ModRow(mod, enabled =>
             {
-                try { _manager.EnableMod(mod.Id, enabled); }
+                try
+                {
+                    _manager.EnableMod(mod.Id, enabled);
+                    MarkDirty();
+                }
                 catch (Exception ex) { AppendLog("ERROR: " + ex.Message); }
             }));
         }
@@ -156,6 +214,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             _manager.AddMod(path);
             SyncRows();
+            MarkDirty();
         }
         catch (Exception ex) { await ShowError("Add failed", ex.Message); }
     }
@@ -173,6 +232,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             _manager.RemoveMod(id);
             SyncRows();
+            MarkDirty();
         }
         catch (Exception ex) { await ShowError("Remove failed", ex.Message); }
     }
@@ -186,15 +246,20 @@ public sealed class MainViewModel : INotifyPropertyChanged
             _manager.MoveMod(id, delta);
             SyncRows();
             SelectedMod = Mods.FirstOrDefault(r => r.Id == id);
+            MarkDirty();
         }
         catch (Exception ex) { AppendLog("ERROR: " + ex.Message); }
     }
 
-    private Task ApplyAsync() => Task.Run(() =>
+    private async Task ApplyAsync()
     {
-        try { _manager.ApplyAll(); }
-        catch (Exception ex) { AppendLog("ERROR: " + ex.Message); }
-    });
+        await Task.Run(() =>
+        {
+            try { _manager.ApplyAll(); }
+            catch (Exception ex) { AppendLog("ERROR: " + ex.Message); }
+        });
+        IsDirty = false;
+    }
 
     private async Task RevertAsync()
     {
@@ -204,18 +269,29 @@ public sealed class MainViewModel : INotifyPropertyChanged
             try { _manager.RevertAll(); }
             catch (Exception ex) { AppendLog("ERROR: " + ex.Message); }
         });
+        IsDirty = false;
     }
 
-    private async Task ChooseSettingsAsync()
+    // ─── Settings page ─────────────────────────────────────────────────────
+
+    private void LoadSettingsFields()
+    {
+        GameRootField = _manager.State.GameRoot;
+        DatFpkField   = _manager.State.DatFpk;
+    }
+
+    private async Task BrowseGameRootAsync()
     {
         var folder = await _window.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
         {
             Title = "Select MGSV:TPP game root",
         });
-        if (folder.Count == 0) return;
-        var gameRoot = folder[0].TryGetLocalPath();
-        if (gameRoot is null) return;
+        var path = folder.Count > 0 ? folder[0].TryGetLocalPath() : null;
+        if (path is not null) GameRootField = path;
+    }
 
+    private async Task BrowseDatFpkAsync()
+    {
         var files = await _window.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
             Title          = "Select datfpk.exe",
@@ -225,24 +301,31 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 new FilePickerFileType("Executables") { Patterns = new[] { "*.exe" } },
             },
         });
-        if (files.Count == 0) return;
-        var datfpk = files[0].TryGetLocalPath();
-        if (datfpk is null) return;
+        var path = files.Count > 0 ? files[0].TryGetLocalPath() : null;
+        if (path is not null) DatFpkField = path;
+    }
 
+    private async Task SaveSettingsAsync()
+    {
+        if (string.IsNullOrWhiteSpace(GameRootField) || string.IsNullOrWhiteSpace(DatFpkField))
+        {
+            await ShowError("Save failed", "Both Game root and datfpk paths are required.");
+            return;
+        }
         try
         {
-            _manager.Init(gameRoot, datfpk);
+            _manager.Init(GameRootField.Trim(), DatFpkField.Trim());
             OnPropertyChanged(nameof(GameRoot));
             OnPropertyChanged(nameof(DatFpk));
+            CurrentPage = Page.Mods;
         }
-        catch (Exception ex) { await ShowError("Init failed", ex.Message); }
+        catch (Exception ex) { await ShowError("Save failed", ex.Message); }
     }
 
     private Task ShowAbout()
     {
         AppendLog("mgsv_modmgr -- Avalonia front-end.");
         AppendLog("PathDictionary.txt and ExplicitPathDictionary.txt are auto-maintained next to the game exe.");
-        AppendLog("Press F12 in the main window to open the Avalonia diagnostics inspector.");
         return Task.CompletedTask;
     }
 

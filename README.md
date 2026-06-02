@@ -1,6 +1,6 @@
 # mgsv_modmgr
 
-SnakeBite-style mod manager for MGSV:TPP. Handles load order, rebuilds the
+Mod manager for MGSV:TPP. Handles load order, rebuilds the
 affected `.fpk(d)` archives through `datfpk.exe`, overlays loose `GameDir/`
 files, and keeps `PathDictionary.txt` / `ExplicitPathDictionary.txt` in sync
 next to the game exe.

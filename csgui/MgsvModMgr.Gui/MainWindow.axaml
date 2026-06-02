@@ -18,33 +18,42 @@
             BorderBrush="{DynamicResource Border}" BorderThickness="0,0,1,0">
       <DockPanel LastChildFill="False">
 
-        <!-- Top group. Segoe Fluent Icons glyphs:
-             E7B8 = AllApps (mods), E73E = CheckMark (apply),
-             E7A7 = Undo (revert), E756 = CommandPrompt (log) -->
+        <!-- Segoe Fluent Icons glyphs used below:
+             E7B8 = AllApps,     E73E = CheckMark, E7A7 = Undo,
+             E756 = CmdPrompt,   E8A5 = Document,  E713 = Settings,
+             E946 = Info -->
         <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,16,0,0"
                     HorizontalAlignment="Center">
-          <Button Classes="sidebar active" ToolTip.Tip="Mods"
-                  Content="&#xE7B8;"/>
-          <Button Classes="sidebar"        ToolTip.Tip="Apply"
+          <Button Classes="sidebar" Classes.active="{Binding IsModsPage}"
+                  ToolTip.Tip="Installed mods"
+                  Content="&#xE7B8;"
+                  Command="{Binding ShowModsCommand}"/>
+          <Button Classes="sidebar" Classes.dirty="{Binding IsDirty}"
+                  ToolTip.Tip="Apply pending changes to the game install"
                   Content="&#xE73E;"
                   Command="{Binding ApplyCommand}"/>
-          <Button Classes="sidebar"        ToolTip.Tip="Revert"
+          <Button Classes="sidebar"
+                  ToolTip.Tip="Revert all modded files back to their pristine backups"
                   Content="&#xE7A7;"
                   Command="{Binding RevertCommand}"/>
-          <Button Classes="sidebar"        ToolTip.Tip="Activity log"
+          <Button Classes="sidebar"
+                  ToolTip.Tip="Show or hide the activity log"
                   Content="&#xE756;"
                   Command="{Binding ToggleLogCommand}"/>
-          <Button Classes="sidebar"        ToolTip.Tip="Export PathDictionary to game root"
-                  Content="&#xEDE1;"
+          <Button Classes="sidebar"
+                  ToolTip.Tip="Rebuild PathDictionary.txt and ExplicitPathDictionary.txt against every installed mod"
+                  Content="&#xE8A5;"
                   Command="{Binding ExportDictCommand}"/>
         </StackPanel>
 
         <StackPanel DockPanel.Dock="Bottom" Spacing="6" Margin="0,0,0,16"
                     HorizontalAlignment="Center">
-          <Button Classes="sidebar" ToolTip.Tip="Settings"
+          <Button Classes="sidebar" Classes.active="{Binding IsSettingsPage}"
+                  ToolTip.Tip="Game root, datfpk path"
                   Content="&#xE713;"
-                  Command="{Binding SettingsCommand}"/>
-          <Button Classes="sidebar" ToolTip.Tip="About"
+                  Command="{Binding ShowSettingsCommand}"/>
+          <Button Classes="sidebar"
+                  ToolTip.Tip="About this manager"
                   Content="&#xE946;"
                   Command="{Binding AboutCommand}"/>
         </StackPanel>
@@ -54,30 +63,49 @@
     <!-- ===================== MAIN ===================== -->
     <Grid Grid.Column="1" RowDefinitions="auto,*,auto,auto">
 
-      <!-- header -->
-      <Border Grid.Row="0" Padding="24,18,24,14" Background="{DynamicResource Bg}">
+      <!-- ─── Mods page header ─── -->
+      <Border Grid.Row="0" Padding="24,18,24,14" Background="{DynamicResource Bg}"
+              IsVisible="{Binding IsModsPage}">
         <Grid ColumnDefinitions="*,auto">
           <StackPanel Grid.Column="0" Spacing="2">
             <TextBlock Text="Installed mods" FontSize="22" FontWeight="SemiBold"/>
             <TextBlock Text="{Binding HeaderSubtitle}" Foreground="{DynamicResource TextDim}" FontSize="12"/>
           </StackPanel>
           <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-            <Button Classes="ghost"   Content="↑ Up"    Command="{Binding MoveUpCommand}"/>
-            <Button Classes="ghost"   Content="↓ Down"  Command="{Binding MoveDownCommand}"/>
-            <Button Classes="danger"  Content="Remove"  Command="{Binding RemoveCommand}"/>
-            <Button Classes="primary" Content="+ Add mod" Command="{Binding AddCommand}"/>
+            <Button Classes="ghost icon"   Content="&#xE70E;"
+                    ToolTip.Tip="Move selected mod up in load order"
+                    Command="{Binding MoveUpCommand}"/>
+            <Button Classes="ghost icon"   Content="&#xE70D;"
+                    ToolTip.Tip="Move selected mod down in load order"
+                    Command="{Binding MoveDownCommand}"/>
+            <Button Classes="danger icon"  Content="&#xE74D;"
+                    ToolTip.Tip="Remove selected mod (run Apply afterwards to rebuild without it)"
+                    Command="{Binding RemoveCommand}"/>
+            <Button Classes="primary icon" Content="&#xE710;"
+                    ToolTip.Tip="Add a .mgsv mod archive"
+                    Command="{Binding AddCommand}"/>
           </StackPanel>
         </Grid>
       </Border>
 
-      <!-- list -->
+      <!-- ─── Settings page header ─── -->
+      <Border Grid.Row="0" Padding="24,18,24,14" Background="{DynamicResource Bg}"
+              IsVisible="{Binding IsSettingsPage}">
+        <StackPanel Spacing="2">
+          <TextBlock Text="Settings" FontSize="22" FontWeight="SemiBold"/>
+          <TextBlock Text="Tell the manager where MGSV:TPP and datfpk.exe live."
+                     Foreground="{DynamicResource TextDim}" FontSize="12"/>
+        </StackPanel>
+      </Border>
+
+      <!-- ─── Mods page content (list) ─── -->
       <Border Grid.Row="1" Margin="24,4,24,8"
               Background="{DynamicResource Panel}"
               BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="10"
-              ClipToBounds="True">
+              ClipToBounds="True"
+              IsVisible="{Binding IsModsPage}">
         <Grid RowDefinitions="auto,*">
 
-          <!-- list header strip -->
           <Border Grid.Row="0" Background="{DynamicResource PanelAlt}"
                   BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1">
             <Grid ColumnDefinitions="60,2*,80,1.2*,80,80" Margin="14,10">
@@ -115,7 +143,6 @@
                       </ContextMenu>
                     </Border.ContextMenu>
                     <Grid ColumnDefinitions="60,2*,80,1.2*,80,80" VerticalAlignment="Center">
-                      <!-- hidden parameter carriers (row + delta) for the move menu items -->
                       <Panel x:Name="MoveUpParam"   IsVisible="False">
                         <Panel.Tag>
                           <cmd:MoveArg Delta="-1" Row="{Binding}"/>
@@ -143,6 +170,59 @@
             </ListBox>
           </ScrollViewer>
         </Grid>
+      </Border>
+
+      <!-- ─── Settings page content ─── -->
+      <Border Grid.Row="1" Margin="24,4,24,8"
+              Background="{DynamicResource Panel}"
+              BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="10"
+              IsVisible="{Binding IsSettingsPage}">
+        <ScrollViewer>
+          <StackPanel Spacing="24" Margin="28,22,28,22" MaxWidth="720" HorizontalAlignment="Stretch">
+
+            <!-- Game root -->
+            <StackPanel Spacing="6">
+              <TextBlock Text="GAME ROOT" Foreground="{DynamicResource TextDim}"
+                         FontSize="11" FontWeight="SemiBold"/>
+              <TextBlock Text="The folder that contains mgsvtpp.exe."
+                         Foreground="{DynamicResource TextDim}" FontSize="12"/>
+              <Grid ColumnDefinitions="*,auto" Margin="0,4,0,0">
+                <TextBox Grid.Column="0" Classes="path"
+                         Watermark="C:\Program Files (x86)\Steam\steamapps\common\MGS_TPP"
+                         Text="{Binding GameRootField, Mode=TwoWay}"/>
+                <Button Grid.Column="1" Classes="ghost" Content="Browse..."
+                        Margin="8,0,0,0" Padding="14,8"
+                        Command="{Binding BrowseGameRootCommand}"/>
+              </Grid>
+            </StackPanel>
+
+            <!-- datfpk -->
+            <StackPanel Spacing="6">
+              <TextBlock Text="DATFPK.EXE" Foreground="{DynamicResource TextDim}"
+                         FontSize="11" FontWeight="SemiBold"/>
+              <TextBlock Text="Path to the datfpk.exe packer/unpacker. Required by Apply."
+                         Foreground="{DynamicResource TextDim}" FontSize="12"/>
+              <Grid ColumnDefinitions="*,auto" Margin="0,4,0,0">
+                <TextBox Grid.Column="0" Classes="path"
+                         Watermark="C:\tools\datfpk.exe"
+                         Text="{Binding DatFpkField, Mode=TwoWay}"/>
+                <Button Grid.Column="1" Classes="ghost" Content="Browse..."
+                        Margin="8,0,0,0" Padding="14,8"
+                        Command="{Binding BrowseDatFpkCommand}"/>
+              </Grid>
+            </StackPanel>
+
+            <!-- Save -->
+            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" Margin="0,8,0,0">
+              <Button Classes="ghost"   Content="Back to mods"
+                      Command="{Binding ShowModsCommand}"
+                      IsEnabled="{Binding IsModsPage, FallbackValue=True}"/>
+              <Button Classes="primary" Content="Save"
+                      MinWidth="96"
+                      Command="{Binding SaveSettingsCommand}"/>
+            </StackPanel>
+          </StackPanel>
+        </ScrollViewer>
       </Border>
 
       <!-- log panel (toggled from sidebar) -->
