@@ -1,0 +1,26 @@
+# Build artefacts
+bin/
+obj/
+publish_tmp/
+*.user
+*.suo
+.vs/
+
+# C++ intermediates
+*.obj
+*.pdb
+*.ilk
+*.exp
+*.lib
+
+# Runtime data
+tmp/
+backups/
+mods/
+state.txt
+apply.log
+modmgr_crash.log
+
+# Generated dictionaries (these live in the game folder, not here)
+PathDictionary.txt
+ExplicitPathDictionary.txt

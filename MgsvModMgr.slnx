@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/csgui/">
+    <Project Path="csgui/MgsvModMgr.Core/MgsvModMgr.Core.csproj" />
+    <Project Path="csgui/MgsvModMgr.Gui/MgsvModMgr.Gui.csproj" />
+  </Folder>
+</Solution>

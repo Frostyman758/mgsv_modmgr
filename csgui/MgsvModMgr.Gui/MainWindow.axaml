@@ -1,0 +1,194 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:MgsvModMgr.Gui"
+        xmlns:cmd="using:MgsvModMgr.Gui.Commands"
+        x:Class="MgsvModMgr.Gui.MainWindow"
+        x:Name="Root"
+        x:DataType="vm:MainViewModel"
+        Title="MGSV Mod Manager"
+        Icon="avares://modmgr_gui/Assets/app.ico"
+        Width="1180" Height="780"
+        MinWidth="900" MinHeight="560"
+        Background="{DynamicResource Bg}">
+
+  <Grid ColumnDefinitions="64,*">
+
+    <!-- ===================== SIDEBAR ===================== -->
+    <Border Grid.Column="0" Background="{DynamicResource Panel}"
+            BorderBrush="{DynamicResource Border}" BorderThickness="0,0,1,0">
+      <DockPanel LastChildFill="False">
+
+        <!-- Top group. Segoe Fluent Icons glyphs:
+             E7B8 = AllApps (mods), E73E = CheckMark (apply),
+             E7A7 = Undo (revert), E756 = CommandPrompt (log) -->
+        <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,16,0,0"
+                    HorizontalAlignment="Center">
+          <Button Classes="sidebar active" ToolTip.Tip="Mods"
+                  Content="&#xE7B8;"/>
+          <Button Classes="sidebar"        ToolTip.Tip="Apply"
+                  Content="&#xE73E;"
+                  Command="{Binding ApplyCommand}"/>
+          <Button Classes="sidebar"        ToolTip.Tip="Revert"
+                  Content="&#xE7A7;"
+                  Command="{Binding RevertCommand}"/>
+          <Button Classes="sidebar"        ToolTip.Tip="Activity log"
+                  Content="&#xE756;"
+                  Command="{Binding ToggleLogCommand}"/>
+          <Button Classes="sidebar"        ToolTip.Tip="Export PathDictionary to game root"
+                  Content="&#xEDE1;"
+                  Command="{Binding ExportDictCommand}"/>
+        </StackPanel>
+
+        <StackPanel DockPanel.Dock="Bottom" Spacing="6" Margin="0,0,0,16"
+                    HorizontalAlignment="Center">
+          <Button Classes="sidebar" ToolTip.Tip="Settings"
+                  Content="&#xE713;"
+                  Command="{Binding SettingsCommand}"/>
+          <Button Classes="sidebar" ToolTip.Tip="About"
+                  Content="&#xE946;"
+                  Command="{Binding AboutCommand}"/>
+        </StackPanel>
+      </DockPanel>
+    </Border>
+
+    <!-- ===================== MAIN ===================== -->
+    <Grid Grid.Column="1" RowDefinitions="auto,*,auto,auto">
+
+      <!-- header -->
+      <Border Grid.Row="0" Padding="24,18,24,14" Background="{DynamicResource Bg}">
+        <Grid ColumnDefinitions="*,auto">
+          <StackPanel Grid.Column="0" Spacing="2">
+            <TextBlock Text="Installed mods" FontSize="22" FontWeight="SemiBold"/>
+            <TextBlock Text="{Binding HeaderSubtitle}" Foreground="{DynamicResource TextDim}" FontSize="12"/>
+          </StackPanel>
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <Button Classes="ghost"   Content="↑ Up"    Command="{Binding MoveUpCommand}"/>
+            <Button Classes="ghost"   Content="↓ Down"  Command="{Binding MoveDownCommand}"/>
+            <Button Classes="danger"  Content="Remove"  Command="{Binding RemoveCommand}"/>
+            <Button Classes="primary" Content="+ Add mod" Command="{Binding AddCommand}"/>
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <!-- list -->
+      <Border Grid.Row="1" Margin="24,4,24,8"
+              Background="{DynamicResource Panel}"
+              BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="10"
+              ClipToBounds="True">
+        <Grid RowDefinitions="auto,*">
+
+          <!-- list header strip -->
+          <Border Grid.Row="0" Background="{DynamicResource PanelAlt}"
+                  BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1">
+            <Grid ColumnDefinitions="60,2*,80,1.2*,80,80" Margin="14,10">
+              <TextBlock Grid.Column="0" Text="ENABLED" Foreground="{DynamicResource TextDim}" FontSize="11" FontWeight="SemiBold"/>
+              <TextBlock Grid.Column="1" Text="MOD"     Foreground="{DynamicResource TextDim}" FontSize="11" FontWeight="SemiBold"/>
+              <TextBlock Grid.Column="2" Text="VERSION" Foreground="{DynamicResource TextDim}" FontSize="11" FontWeight="SemiBold"/>
+              <TextBlock Grid.Column="3" Text="AUTHOR"  Foreground="{DynamicResource TextDim}" FontSize="11" FontWeight="SemiBold"/>
+              <TextBlock Grid.Column="4" Text="QAR"     Foreground="{DynamicResource TextDim}" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+              <TextBlock Grid.Column="5" Text="GAMEDIR" Foreground="{DynamicResource TextDim}" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+            </Grid>
+          </Border>
+
+          <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
+            <ListBox ItemsSource="{Binding Mods}"
+                     SelectedItem="{Binding SelectedMod, Mode=TwoWay}">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:ModRow">
+                  <Border Classes="row">
+                    <Border.ContextMenu>
+                      <ContextMenu x:CompileBindings="False">
+                        <MenuItem Header="Toggle enabled"
+                                  Command="{Binding #Root.DataContext.ToggleRowCommand}"
+                                  CommandParameter="{Binding}"/>
+                        <Separator/>
+                        <MenuItem Header="Move up"
+                                  Command="{Binding #Root.DataContext.MoveRowCommand}"
+                                  CommandParameter="{Binding Tag, ElementName=MoveUpParam}"/>
+                        <MenuItem Header="Move down"
+                                  Command="{Binding #Root.DataContext.MoveRowCommand}"
+                                  CommandParameter="{Binding Tag, ElementName=MoveDownParam}"/>
+                        <Separator/>
+                        <MenuItem Header="Remove..."
+                                  Command="{Binding #Root.DataContext.RemoveRowCommand}"
+                                  CommandParameter="{Binding}"/>
+                      </ContextMenu>
+                    </Border.ContextMenu>
+                    <Grid ColumnDefinitions="60,2*,80,1.2*,80,80" VerticalAlignment="Center">
+                      <!-- hidden parameter carriers (row + delta) for the move menu items -->
+                      <Panel x:Name="MoveUpParam"   IsVisible="False">
+                        <Panel.Tag>
+                          <cmd:MoveArg Delta="-1" Row="{Binding}"/>
+                        </Panel.Tag>
+                      </Panel>
+                      <Panel x:Name="MoveDownParam" IsVisible="False">
+                        <Panel.Tag>
+                          <cmd:MoveArg Delta="1" Row="{Binding}"/>
+                        </Panel.Tag>
+                      </Panel>
+                      <ToggleSwitch Grid.Column="0" IsChecked="{Binding Enabled, Mode=TwoWay}"
+                                    HorizontalAlignment="Left"/>
+                      <StackPanel Grid.Column="1" Spacing="2">
+                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14"/>
+                        <TextBlock Text="{Binding Id}"   Foreground="{DynamicResource TextDim}" FontSize="11"/>
+                      </StackPanel>
+                      <TextBlock Grid.Column="2" Text="{Binding Version}" VerticalAlignment="Center"/>
+                      <TextBlock Grid.Column="3" Text="{Binding Author}"  VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                      <TextBlock Grid.Column="4" Text="{Binding QarCount}"     HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{DynamicResource TextDim}"/>
+                      <TextBlock Grid.Column="5" Text="{Binding GameDirCount}" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{DynamicResource TextDim}"/>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </ScrollViewer>
+        </Grid>
+      </Border>
+
+      <!-- log panel (toggled from sidebar) -->
+      <Grid Grid.Row="2" Margin="24,0,24,8"
+            IsVisible="{Binding LogExpanded}">
+        <Border Background="{DynamicResource Panel}"
+                BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                CornerRadius="10" Padding="0">
+          <DockPanel LastChildFill="True">
+            <Border DockPanel.Dock="Top"
+                    BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1"
+                    Padding="14,10">
+              <Grid ColumnDefinitions="*,auto">
+                <TextBlock Grid.Column="0" Text="ACTIVITY LOG"
+                           Foreground="{DynamicResource TextDim}"
+                           FontSize="11" FontWeight="SemiBold"
+                           VerticalAlignment="Center"/>
+                <Button Grid.Column="1" Classes="ghost" Content="Hide"
+                        Command="{Binding ToggleLogCommand}" Padding="10,4"/>
+              </Grid>
+            </Border>
+            <TextBox Classes="log"
+                     Height="200" Margin="0"
+                     BorderThickness="0" CornerRadius="0"
+                     IsReadOnly="True"
+                     AcceptsReturn="True"
+                     TextWrapping="NoWrap"
+                     Text="{Binding LogText}"
+                     Name="LogBox"/>
+          </DockPanel>
+        </Border>
+      </Grid>
+
+      <!-- status footer -->
+      <Border Grid.Row="3" Background="{DynamicResource Panel}"
+              BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0"
+              Padding="24,8">
+        <StackPanel Orientation="Horizontal" Spacing="20">
+          <TextBlock Foreground="{DynamicResource TextDim}" FontSize="11">
+            <Run Text="Game root:"/><Run Text=" "/><Run Text="{Binding GameRoot}" Foreground="{DynamicResource Text}"/>
+          </TextBlock>
+          <TextBlock Foreground="{DynamicResource TextDim}" FontSize="11">
+            <Run Text="datfpk:"/><Run Text=" "/><Run Text="{Binding DatFpk}" Foreground="{DynamicResource Text}"/>
+          </TextBlock>
+        </StackPanel>
+      </Border>
+    </Grid>
+  </Grid>
+</Window>

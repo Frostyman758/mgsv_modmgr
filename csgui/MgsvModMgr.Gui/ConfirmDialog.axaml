@@ -1,0 +1,45 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MgsvModMgr.Gui.ConfirmDialog"
+        Title="Confirm"
+        Icon="avares://modmgr_gui/Assets/app.ico"
+        Width="460" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False" ShowInTaskbar="False"
+        Background="{DynamicResource Bg}">
+    <Border Padding="24,22,24,20">
+        <Grid RowDefinitions="auto,*,auto" RowSpacing="18">
+
+            <!-- header row: icon + title -->
+            <Grid Grid.Row="0" ColumnDefinitions="auto,*" ColumnSpacing="14">
+                <Border Grid.Column="0" Width="36" Height="36"
+                        CornerRadius="8" Background="#2A1517"
+                        BorderBrush="#5A1414" BorderThickness="1">
+                    <TextBlock Name="IconText" Text="&#xE7BA;"
+                               FontFamily="Segoe Fluent Icons,Segoe MDL2 Assets,Segoe UI Symbol"
+                               FontSize="18"
+                               Foreground="{DynamicResource Accent}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Grid.Column="1" Name="TitleText"
+                           Text="Confirm" FontSize="17" FontWeight="SemiBold"
+                           VerticalAlignment="Center"/>
+            </Grid>
+
+            <!-- body -->
+            <TextBlock Grid.Row="1" Name="BodyText"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource Text}"
+                       LineHeight="20"/>
+
+            <!-- actions -->
+            <StackPanel Grid.Row="2" Orientation="Horizontal"
+                        HorizontalAlignment="Right" Spacing="8">
+                <Button Classes="ghost"   Content="Cancel"  Click="OnCancel" Name="CancelBtn"
+                        MinWidth="84"/>
+                <Button Classes="primary" Content="Confirm" Click="OnOk"     Name="OkBtn"
+                        MinWidth="92"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

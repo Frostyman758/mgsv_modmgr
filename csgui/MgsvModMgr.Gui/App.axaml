@@ -1,0 +1,45 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="MgsvModMgr.Gui.App"
+             RequestedThemeVariant="Dark">
+
+    <Application.Styles>
+        <FluentTheme />
+        <StyleInclude Source="avares://modmgr_gui/Theme.axaml" />
+    </Application.Styles>
+
+    <Application.Resources>
+        <ResourceDictionary>
+            <!-- Palette: MGSV / Phantom Pain — near-black neutrals with blood-red accent. -->
+            <Color  x:Key="BgColor">#0A0A0B</Color>
+            <Color  x:Key="PanelColor">#131316</Color>
+            <Color  x:Key="PanelAltColor">#1A1A1E</Color>
+            <Color  x:Key="BorderColor">#26262B</Color>
+            <Color  x:Key="TextColor">#E8E8EA</Color>
+            <Color  x:Key="TextDimColor">#7C7C84</Color>
+            <Color  x:Key="AccentColor">#B62A2A</Color>
+            <Color  x:Key="AccentDimColor">#5A1414</Color>
+
+            <SolidColorBrush x:Key="Bg"        Color="{StaticResource BgColor}" />
+            <SolidColorBrush x:Key="Panel"     Color="{StaticResource PanelColor}" />
+            <SolidColorBrush x:Key="PanelAlt"  Color="{StaticResource PanelAltColor}" />
+            <SolidColorBrush x:Key="Border"    Color="{StaticResource BorderColor}" />
+            <SolidColorBrush x:Key="Text"      Color="{StaticResource TextColor}" />
+            <SolidColorBrush x:Key="TextDim"   Color="{StaticResource TextDimColor}" />
+            <SolidColorBrush x:Key="Accent"    Color="{StaticResource AccentColor}" />
+            <SolidColorBrush x:Key="AccentDim" Color="{StaticResource AccentDimColor}" />
+
+            <!-- Override Fluent's accent so any control that falls back to the
+                 system accent (selection highlight, toggle on-state, default
+                 button pressed/hover, focus rings) renders in our red rather
+                 than the default Windows violet. -->
+            <Color x:Key="SystemAccentColor">#B62A2A</Color>
+            <Color x:Key="SystemAccentColorLight1">#C8413F</Color>
+            <Color x:Key="SystemAccentColorLight2">#D75551</Color>
+            <Color x:Key="SystemAccentColorLight3">#E4716C</Color>
+            <Color x:Key="SystemAccentColorDark1">#971D1D</Color>
+            <Color x:Key="SystemAccentColorDark2">#751313</Color>
+            <Color x:Key="SystemAccentColorDark3">#5A0F0F</Color>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

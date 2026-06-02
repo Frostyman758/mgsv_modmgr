@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="MgsvModMgr.Core/MgsvModMgr.Core.csproj" />
+  <Project Path="MgsvModMgr.Gui/MgsvModMgr.Gui.csproj" />
+</Solution>
