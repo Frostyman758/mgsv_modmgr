@@ -81,12 +81,17 @@ public sealed class ModManager
     public void LoadState() => StateIo.Load(State, StatePath);
     public void SaveState() => StateIo.Save(State, StatePath);
 
-    /// <summary>Set the MGSV install root + datfpk path, then persist.</summary>
+    /// <summary>
+    /// Set the MGSV install root + datfpk path, persist, and seed the two
+    /// dictionary files into the game root from the baselines shipped next
+    /// to the modmgr exe if they're missing.
+    /// </summary>
     public void Init(string gameRoot, string datfpk)
     {
         State.GameRoot = Path.GetFullPath(gameRoot);
         State.DatFpk   = Path.GetFullPath(datfpk);
         SaveState();
+        DictionaryWriter.EnsureBaselinesAt(State.GameRoot, WorkspaceDir, Log);
         Log($"Initialised. game_root={State.GameRoot}  datfpk={State.DatFpk}");
     }
 
@@ -131,7 +136,7 @@ public sealed class ModManager
         State.Mods.Add(mod);
         SaveState();
 
-        var dictAdded = DictionaryWriter.UpdateFromMod(mod, State.GameRoot);
+        var dictAdded = DictionaryWriter.UpdateFromMod(mod, State.GameRoot, WorkspaceDir, Log);
         Log($"Added: {mod.Id}  ({mod.Name} v{mod.Version})");
         Log($"  qar entries:     {mod.QarPaths.Count}");
         Log($"  fpk hosts:       {mod.FpkEntries.Count}");
@@ -205,7 +210,7 @@ public sealed class ModManager
                 foreach (var kv in tmp.QarHashes)
                     if (!string.IsNullOrEmpty(kv.Value)) mod.QarHashes.TryAdd(kv.Key, kv.Value);
             }
-            total += DictionaryWriter.UpdateFromMod(mod, State.GameRoot);
+            total += DictionaryWriter.UpdateFromMod(mod, State.GameRoot, WorkspaceDir, Log);
         }
         SaveState();
         return total;

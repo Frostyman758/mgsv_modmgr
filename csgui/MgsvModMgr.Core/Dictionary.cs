@@ -12,6 +12,45 @@ public static class DictionaryWriter
     public static string ExplicitDictFile(string gameRoot)
         => Path.Combine(gameRoot, "ExplicitPathDictionary.txt");
 
+    /// <summary>
+    /// Ensure the two dictionary files exist next to the game exe. If a
+    /// target is missing or zero-byte, copy the baseline file shipped
+    /// alongside the modmgr exe (workspaceDir). Existing non-empty files
+    /// are left alone so the user's prior customisations are not clobbered.
+    /// </summary>
+    public static void EnsureBaselinesAt(string gameRoot, string workspaceDir, Action<string>? log = null)
+    {
+        if (string.IsNullOrEmpty(gameRoot) || !Directory.Exists(gameRoot)) return;
+        SeedOne(gameRoot, workspaceDir, "PathDictionary.txt",        log);
+        SeedOne(gameRoot, workspaceDir, "ExplicitPathDictionary.txt", log);
+    }
+
+    private static void SeedOne(string gameRoot, string workspaceDir, string fileName, Action<string>? log)
+    {
+        var target = Path.Combine(gameRoot, fileName);
+        if (File.Exists(target) && new FileInfo(target).Length > 0) return;
+
+        var source = Path.Combine(workspaceDir, fileName);
+        if (!File.Exists(source))
+        {
+            log?.Invoke(
+                $"WARNING: baseline {fileName} not found beside modmgr ({source}). " +
+                "Apply will still run but the game will be missing vanilla path codes; " +
+                "drop the FoxKit copy into the modmgr folder and re-Init.");
+            return;
+        }
+
+        try
+        {
+            File.Copy(source, target, overwrite: false);
+            log?.Invoke($"Seeded {fileName} -> {target} ({new FileInfo(target).Length / 1024} KB).");
+        }
+        catch (Exception ex)
+        {
+            log?.Invoke($"WARNING: could not seed {fileName} to {gameRoot}: {ex.Message}");
+        }
+    }
+
     public static string DictBase(string p)
     {
         if (string.IsNullOrEmpty(p)) return p;
@@ -23,9 +62,14 @@ public static class DictionaryWriter
         return p;
     }
 
-    public static int UpdateFromMod(ModInfo m, string gameRoot)
+    public static int UpdateFromMod(ModInfo m, string gameRoot, string? workspaceDir = null, Action<string>? log = null)
     {
         if (string.IsNullOrEmpty(gameRoot) || !Directory.Exists(gameRoot)) return 0;
+
+        // Self-heal: if the dicts went missing between Applies, re-seed them
+        // from the baselines beside the modmgr exe before we touch either file.
+        if (!string.IsNullOrEmpty(workspaceDir))
+            EnsureBaselinesAt(gameRoot, workspaceDir, log);
 
         var pd = PathDictFile(gameRoot);
         var ed = ExplicitDictFile(gameRoot);
