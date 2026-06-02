@@ -156,7 +156,10 @@
         <Setter Property="TextElement.Foreground" Value="#FF6B7A" />
     </Style>
 
-    <!-- "Mod row" border -->
+    <!-- "Mod row" border. Selection is driven through the parent
+         ListBoxItem's :selected pseudoclass (see further down), so the
+         visual stays in sync with SelectedItem binding instead of needing
+         a separate Classes.selected hookup. -->
     <Style Selector="Border.row">
         <Setter Property="Background"      Value="{DynamicResource Panel}" />
         <Setter Property="BorderBrush"     Value="{DynamicResource Border}" />
@@ -165,9 +168,6 @@
     </Style>
     <Style Selector="Border.row:pointerover">
         <Setter Property="Background" Value="{DynamicResource PanelAlt}" />
-    </Style>
-    <Style Selector="Border.row.selected">
-        <Setter Property="Background" Value="#231C3D" />
     </Style>
 
     <!-- ListBox transparent so we draw our own row Border -->
@@ -180,10 +180,22 @@
         <Setter Property="Padding"         Value="0" />
         <Setter Property="Background"      Value="Transparent" />
     </Style>
-    <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+    <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter">
         <Setter Property="Background" Value="Transparent" />
     </Style>
-    <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter">
+    <!-- Selected ListBoxItem repaints the row Border with the accent-tinted
+         grey blend. Hovering a selected row brightens it slightly. -->
+    <Style Selector="ListBoxItem:selected Border.row">
+        <Setter Property="Background"      Value="#3D2226" />
+        <Setter Property="BorderBrush"     Value="#5A2A2E" />
+    </Style>
+    <Style Selector="ListBoxItem:selected:pointerover Border.row">
+        <Setter Property="Background"      Value="#4A2A2E" />
+        <Setter Property="BorderBrush"     Value="#5A2A2E" />
+    </Style>
+    <!-- Clear Fluent's default selection paint on the ContentPresenter itself
+         so it doesn't fight our Border. -->
+    <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
         <Setter Property="Background" Value="Transparent" />
     </Style>
 

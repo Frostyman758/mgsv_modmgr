@@ -581,8 +581,12 @@ public sealed class ModManager
         }
         if (!Directory.Exists(extractedRoot)) Directory.CreateDirectory(extractedRoot);
 
-        foreach (var mod in State.Mods)
+        // Overlay in reverse list order so the TOP mod is the last to write,
+        // and therefore the one whose files survive any conflict. Priority
+        // rule throughout the manager: higher in the list = higher priority.
+        for (var i = State.Mods.Count - 1; i >= 0; i--)
         {
+            var mod = State.Mods[i];
             if (!mod.Enabled || !mod.QarPaths.Contains(qarPath)) continue;
             var payload = ModPayloadFor(mod, qarPath);
             if (!File.Exists(payload))

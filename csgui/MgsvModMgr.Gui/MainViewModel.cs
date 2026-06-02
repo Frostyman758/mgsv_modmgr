@@ -235,34 +235,34 @@ public sealed class MainViewModel : INotifyPropertyChanged
             .ToList();
         if (paths.Count == 0) return;
 
-        // Heavy I/O (zip extract + metadata.xml parse + dictionary update),
-        // pushed off the UI thread. Adds run sequentially because state.txt
-        // and the two PathDictionary files are append-only single-writer.
+        // Heavy I/O (zip extract + metadata.xml parse + dictionary update)
+        // for each archive. state.txt and the two dictionary files are
+        // append-only single-writer, so we install one mod at a time. The
+        // loop body runs on the UI thread and awaits each archive's worker;
+        // SyncRows then runs between archives, so the user sees each row
+        // pop into the list as soon as it's installed instead of having
+        // them all appear in one batch at the end.
         AppendLog(paths.Count == 1
             ? $"Adding mod from {System.IO.Path.GetFileName(paths[0])} ..."
             : $"Adding {paths.Count} mods ...");
 
         var failures = new List<(string Name, string Error)>();
-        await Task.Run(() =>
+        foreach (var path in paths)
         {
-            foreach (var path in paths)
+            if (paths.Count > 1)
+                AppendLog($"  adding {System.IO.Path.GetFileName(path)}");
+            try
             {
-                try
-                {
-                    if (paths.Count > 1)
-                        AppendLog($"  adding {System.IO.Path.GetFileName(path)}");
-                    _manager.AddMod(path);
-                }
-                catch (Exception ex)
-                {
-                    failures.Add((System.IO.Path.GetFileName(path), ex.Message));
-                    AppendLog($"  ERROR adding {System.IO.Path.GetFileName(path)}: {ex.Message}");
-                }
+                await Task.Run(() => _manager.AddMod(path));
+                SyncRows();
+                MarkDirty();
             }
-        });
-
-        SyncRows();
-        if (paths.Count > failures.Count) MarkDirty();
+            catch (Exception ex)
+            {
+                failures.Add((System.IO.Path.GetFileName(path), ex.Message));
+                AppendLog($"  ERROR adding {System.IO.Path.GetFileName(path)}: {ex.Message}");
+            }
+        }
 
         if (failures.Count > 0)
         {

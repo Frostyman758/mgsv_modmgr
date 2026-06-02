@@ -31,10 +31,12 @@
           <Button Classes="sidebar" Classes.dirty="{Binding IsDirty}"
                   ToolTip.Tip="Apply pending changes to the game install"
                   Content="&#xE73E;"
+                  IsEnabled="{Binding !IsApplying}"
                   Command="{Binding ApplyCommand}"/>
           <Button Classes="sidebar"
                   ToolTip.Tip="Restore the original game files; undo every mod change in the install"
                   Content="&#xE7A7;"
+                  IsEnabled="{Binding !IsApplying}"
                   Command="{Binding RevertCommand}"/>
           <Button Classes="sidebar" Classes.active="{Binding IsLogPage}"
                   ToolTip.Tip="Activity log from the last Apply"
@@ -43,6 +45,7 @@
           <Button Classes="sidebar"
                   ToolTip.Tip="Rebuild PathDictionary.txt and ExplicitPathDictionary.txt against every installed mod"
                   Content="&#xE8A5;"
+                  IsEnabled="{Binding !IsApplying}"
                   Command="{Binding ExportDictCommand}"/>
         </StackPanel>
 
@@ -74,15 +77,19 @@
           <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
             <Button Classes="ghost icon"   Content="&#xE70E;"
                     ToolTip.Tip="Move selected mod up in load order"
+                    IsEnabled="{Binding !IsApplying}"
                     Command="{Binding MoveUpCommand}"/>
             <Button Classes="ghost icon"   Content="&#xE70D;"
                     ToolTip.Tip="Move selected mod down in load order"
+                    IsEnabled="{Binding !IsApplying}"
                     Command="{Binding MoveDownCommand}"/>
             <Button Classes="danger icon"  Content="&#xE74D;"
                     ToolTip.Tip="Remove selected mod (run Apply afterwards to rebuild without it)"
+                    IsEnabled="{Binding !IsApplying}"
                     Command="{Binding RemoveCommand}"/>
             <Button Classes="primary icon" Content="&#xE710;"
                     ToolTip.Tip="Add a .mgsv mod archive"
+                    IsEnabled="{Binding !IsApplying}"
                     Command="{Binding AddCommand}"/>
           </StackPanel>
         </Grid>
@@ -157,7 +164,8 @@
                       <ToggleSwitch Grid.Column="0"
                                     Classes.pending="{Binding IsPending}"
                                     IsChecked="{Binding Enabled, Mode=TwoWay}"
-                                    HorizontalAlignment="Left"/>
+                                    HorizontalAlignment="Left"
+                                    IsEnabled="{Binding !((vm:MainViewModel)DataContext).IsApplying, RelativeSource={RelativeSource AncestorType=Window}}"/>
                       <StackPanel Grid.Column="1" Spacing="2" Margin="0,0,8,0">
                         <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14"
                                    TextTrimming="CharacterEllipsis"/>
