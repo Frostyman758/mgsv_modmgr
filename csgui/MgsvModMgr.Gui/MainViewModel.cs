@@ -95,6 +95,25 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private ModRow? _selectedMod;
     public  ModRow? SelectedMod { get => _selectedMod; set => Set(ref _selectedMod, value); }
 
+    // Bound by the toolbar search pill. Filter wiring (applying this
+    // against the visible Mods collection) is a follow-up — interacts
+    // with drag-drop index translation so deserves its own pass.
+    private string _searchText = "";
+    public  string  SearchText { get => _searchText; set => Set(ref _searchText, value); }
+
+    /// <summary>
+    /// Persisted UI prefs: column headers the user has hidden via the
+    /// header context menu. Read at startup to apply, written on toggle.
+    /// </summary>
+    public IReadOnlyCollection<string> HiddenColumns => _manager.State.HiddenColumns;
+    public bool IsColumnHidden(string header) => _manager.State.HiddenColumns.Contains(header);
+    public void SetColumnHidden(string header, bool hidden)
+    {
+        var set = _manager.State.HiddenColumns;
+        var changed = hidden ? set.Add(header) : set.Remove(header);
+        if (changed) _manager.SaveState();
+    }
+
     private string _logText = "";
     public  string  LogText  { get => _logText; private set => Set(ref _logText, value); }
 
@@ -105,7 +124,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
     /// to the sidebar Apply button's <c>dirty</c> class to drive a pulse.
     /// </summary>
     private bool _isDirty;
-    public  bool  IsDirty { get => _isDirty; private set => Set(ref _isDirty, value); }
+    public  bool  IsDirty
+    {
+        get => _isDirty;
+        private set { if (Set(ref _isDirty, value)) OnPropertyChanged(nameof(DirtyMix)); }
+    }
 
     private void MarkDirty() => IsDirty = true;
 
@@ -127,10 +150,49 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     // ── Apply progress (drives the bottom progress bar) ──────────────────
     private bool _isApplying;
-    public  bool  IsApplying    { get => _isApplying;    private set => Set(ref _isApplying, value); }
+    public  bool  IsApplying
+    {
+        get => _isApplying;
+        private set { if (Set(ref _isApplying, value)) { OnPropertyChanged(nameof(DirtyMix)); OnPropertyChanged(nameof(IsFooterShown)); } }
+    }
 
     private double _applyProgress;
-    public  double ApplyProgress { get => _applyProgress; private set => Set(ref _applyProgress, value); }
+    public  double ApplyProgress
+    {
+        get => _applyProgress;
+        private set { if (Set(ref _applyProgress, value)) OnPropertyChanged(nameof(DirtyMix)); }
+    }
+
+    /// <summary>
+    /// 1.0 == fully amber (pending), 0.0 == fully red (applied). During Apply,
+    /// tracks (1 - ApplyProgress) so the colour bleed across the UI marches
+    /// with the install bar. Idle: just mirrors IsDirty as a bool. Used as
+    /// the binding source for every control whose tint we want synced.
+    /// </summary>
+    public double DirtyMix
+    {
+        get
+        {
+            if (IsApplying) return Math.Max(0.0, 1.0 - ApplyProgress);
+            return IsDirty ? 1.0 : 0.0;
+        }
+    }
+
+    // ── Footer (game root / datfpk strip) visibility ─────────────────────
+    private bool _userHidFooter;
+    /// <summary>
+    /// True while the footer should be on screen. The user can click the
+    /// footer to hide it; an in-flight Apply force-shows it regardless of
+    /// their preference.
+    /// </summary>
+    public bool IsFooterShown => IsApplying || !_userHidFooter;
+
+    public void HideFooter()
+    {
+        if (_userHidFooter) return;
+        _userHidFooter = true;
+        OnPropertyChanged(nameof(IsFooterShown));
+    }
 
     public bool IsModsPage     => CurrentPage == Page.Mods;
     public bool IsSettingsPage => CurrentPage == Page.Settings;
@@ -495,11 +557,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    private void Set<T>(ref T field, T value, [CallerMemberName] string? name = null)
+    private bool Set<T>(ref T field, T value, [CallerMemberName] string? name = null)
     {
-        if (EqualityComparer<T>.Default.Equals(field, value)) return;
+        if (EqualityComparer<T>.Default.Equals(field, value)) return false;
         field = value;
         OnPropertyChanged(name);
+        return true;
     }
 
     private void OnPropertyChanged([CallerMemberName] string? name = null)

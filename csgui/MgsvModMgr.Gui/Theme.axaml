@@ -42,49 +42,82 @@
     <Style Selector="Button.sidebar.active /template/ ContentPresenter">
         <Setter Property="Background" Value="Transparent" />
     </Style>
+    <!-- During Apply the non-Apply sidebar buttons get IsEnabled=false.
+         Fluent's default disabled paints a filled grey box behind the
+         glyph — visually noisy. Suppress the box entirely; the dim
+         glyph alone is enough to communicate "input blocked." -->
+    <Style Selector="Button.sidebar:disabled">
+        <Setter Property="Opacity" Value="0.45" />
+    </Style>
+    <Style Selector="Button.sidebar:disabled /template/ ContentPresenter">
+        <Setter Property="Background" Value="Transparent" />
+    </Style>
 
-    <!-- Pulsing amber background while the manager has un-Applied changes.
-         The icon itself stays white so it reads cleanly against the pulse.
-         Matches the PENDING APPLY chip palette so users learn one rule:
-         amber = "needs Apply". Bound via `Classes.dirty="{Binding IsDirty}"`. -->
+    <!-- Sidebar "Apply" pip when there are un-Applied changes.
+         Background colour tracks the live DirtyBrush (so it crossfades
+         red⇄amber in sync with everything else), and on top of that
+         the *opacity* breathes 0.55 ⇄ 1.0 to give the "needs attention"
+         pulse the user expects. Colour-live + opacity-pulse keeps both
+         affordances without one fighting the other. -->
     <Style Selector="Button.sidebar.dirty">
-        <Setter Property="Foreground" Value="{DynamicResource Text}" />
+        <Setter Property="Foreground" Value="White" />
     </Style>
     <Style Selector="Button.sidebar.dirty /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DirtyBrush}" />
         <Style.Animations>
-            <Animation Duration="0:0:1.0" IterationCount="INFINITE" PlaybackDirection="Alternate">
-                <KeyFrame Cue="0%">
-                    <Setter Property="Background" Value="#2B221A" />
-                </KeyFrame>
-                <KeyFrame Cue="100%">
-                    <Setter Property="Background" Value="#8E6520" />
-                </KeyFrame>
+            <Animation Duration="0:0:1.1" IterationCount="INFINITE" PlaybackDirection="Alternate">
+                <KeyFrame Cue="0%">   <Setter Property="Opacity" Value="0.55" /></KeyFrame>
+                <KeyFrame Cue="100%"> <Setter Property="Opacity" Value="1.0" /></KeyFrame>
             </Animation>
         </Style.Animations>
     </Style>
 
-    <!-- Primary (filled red) -->
+    <!-- Primary (filled). Background is the shared live DirtyBrush; the
+         brush instance itself mutates colour as DirtyMix changes, so no
+         per-control transition or animation is needed — every consumer
+         repaints in the same frame, in lockstep with the install bar. -->
     <Style Selector="Button.primary">
-        <Setter Property="Background"      Value="{DynamicResource Accent}" />
+        <Setter Property="Background"      Value="{DynamicResource DirtyBrush}" />
         <Setter Property="Foreground"      Value="White" />
-        <Setter Property="BorderBrush"     Value="{DynamicResource Accent}" />
+        <Setter Property="BorderBrush"     Value="{DynamicResource DirtyBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Padding"         Value="14,8" />
         <Setter Property="CornerRadius"    Value="8" />
         <Setter Property="FontWeight"      Value="SemiBold" />
     </Style>
     <Style Selector="Button.primary /template/ ContentPresenter">
-        <Setter Property="Background"  Value="{DynamicResource Accent}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+        <Setter Property="Background"  Value="{DynamicResource DirtyBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DirtyBrush}" />
     </Style>
     <Style Selector="Button.primary:pointerover /template/ ContentPresenter">
-        <Setter Property="Background"  Value="#C8413F" />
-        <Setter Property="BorderBrush" Value="#C8413F" />
+        <!-- Slight lift on hover — still anchored to DirtyBrush for the
+             base colour, with a translucent white overlay to brighten. -->
+        <Setter Property="Background"  Value="{DynamicResource DirtyBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DirtyBrush}" />
         <Setter Property="TextElement.Foreground" Value="White" />
+        <Setter Property="Opacity" Value="0.9" />
     </Style>
     <Style Selector="Button.primary:pressed /template/ ContentPresenter">
-        <Setter Property="Background"  Value="#8E1F1F" />
-        <Setter Property="BorderBrush" Value="#8E1F1F" />
+        <Setter Property="Background"  Value="{DynamicResource DirtyBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DirtyBrush}" />
+        <Setter Property="TextElement.Foreground" Value="White" />
+        <Setter Property="Opacity" Value="0.75" />
+    </Style>
+    <!-- Disabled during Apply: keep the live DirtyBrush colour so the
+         hue continues to shift as install progresses; just dim the
+         whole control so the "you can't click me" signal still reads.
+         Opacity matched to ToggleSwitch:disabled (0.7) so the Add
+         button reads at the same *brightness* as the row toggles — same
+         hue + same brightness = visually synced during the hue ramp. -->
+    <Style Selector="Button.primary:disabled">
+        <Setter Property="Background"  Value="{DynamicResource DirtyBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DirtyBrush}" />
+        <Setter Property="Foreground"  Value="White" />
+        <Setter Property="Opacity"     Value="0.7" />
+    </Style>
+    <Style Selector="Button.primary:disabled /template/ ContentPresenter">
+        <Setter Property="Background"  Value="{DynamicResource DirtyBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DirtyBrush}" />
         <Setter Property="TextElement.Foreground" Value="White" />
     </Style>
     <Style Selector="Button.primary:disabled /template/ ContentPresenter">
@@ -132,28 +165,42 @@
         <Setter Property="VerticalContentAlignment"   Value="Center" />
     </Style>
 
-    <!-- Danger (outlined red text) -->
+    <!-- Danger (outlined). Outline + glyph track DirtyBrush so trash
+         turns red/amber in lockstep with everything else. -->
     <Style Selector="Button.danger">
         <Setter Property="Background"      Value="Transparent" />
-        <Setter Property="Foreground"      Value="#FF6B7A" />
-        <Setter Property="BorderBrush"     Value="#3F2A30" />
+        <Setter Property="Foreground"      Value="{DynamicResource DirtyBrush}" />
+        <Setter Property="BorderBrush"     Value="{DynamicResource DirtyBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Padding"         Value="12,7" />
         <Setter Property="CornerRadius"    Value="8" />
     </Style>
     <Style Selector="Button.danger /template/ ContentPresenter">
         <Setter Property="Background"  Value="Transparent" />
-        <Setter Property="BorderBrush" Value="#3F2A30" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DirtyBrush}" />
     </Style>
     <Style Selector="Button.danger:pointerover /template/ ContentPresenter">
-        <Setter Property="Background"  Value="#2E1518" />
-        <Setter Property="BorderBrush" Value="#5A1F26" />
-        <Setter Property="TextElement.Foreground" Value="#FF8A95" />
+        <Setter Property="Background"  Value="#1E1518" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DirtyBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DirtyBrush}" />
     </Style>
     <Style Selector="Button.danger:pressed /template/ ContentPresenter">
-        <Setter Property="Background"  Value="#1F0E10" />
-        <Setter Property="BorderBrush" Value="#5A1F26" />
-        <Setter Property="TextElement.Foreground" Value="#FF6B7A" />
+        <Setter Property="Background"  Value="#140D0F" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DirtyBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DirtyBrush}" />
+    </Style>
+    <!-- Disabled during Apply: stay on DirtyBrush, just dim. Same 0.7
+         opacity as Button.primary:disabled + ToggleSwitch:disabled so
+         the whole disabled palette reads at one consistent brightness. -->
+    <Style Selector="Button.danger:disabled">
+        <Setter Property="BorderBrush" Value="{DynamicResource DirtyBrush}" />
+        <Setter Property="Foreground"  Value="{DynamicResource DirtyBrush}" />
+        <Setter Property="Opacity"     Value="0.7" />
+    </Style>
+    <Style Selector="Button.danger:disabled /template/ ContentPresenter">
+        <Setter Property="Background"  Value="Transparent" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DirtyBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DirtyBrush}" />
     </Style>
 
     <!-- "Mod row" border. Selection is driven through the parent
@@ -215,6 +262,37 @@
         <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
     </Style>
 
+    <!-- Search pill: trash-button-style danger palette in resting
+         state (DirtyBrush border + glyph), with a deeper red hover
+         tint matching Button.danger:pointerover. When .expanded is
+         set by code-behind on click, the icon backplate fills with
+         DirtyBrush and the glyph flips to white. -->
+    <Style Selector="Border#SearchPill:pointerover">
+        <Setter Property="Background" Value="#1E1518" />
+    </Style>
+    <Style Selector="Border#SearchPill.expanded Border#SearchIconBg">
+        <Setter Property="Background" Value="{DynamicResource DirtyBrush}" />
+    </Style>
+    <Style Selector="Border#SearchPill.expanded TextBlock#SearchIconGlyph">
+        <Setter Property="Foreground" Value="White" />
+    </Style>
+
+    <!-- Search pill TextBox: keep its inner border element fully
+         transparent across all states (default / pointerover / focus)
+         so only the outer pill Border's focus highlight shows. -->
+    <Style Selector="TextBox.search-pill /template/ Border#PART_BorderElement">
+        <Setter Property="Background"      Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="TextBox.search-pill:focus /template/ Border#PART_BorderElement">
+        <Setter Property="Background"      Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="TextBox.search-pill:pointerover /template/ Border#PART_BorderElement">
+        <Setter Property="Background"      Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+
     <!-- Read-only multiline log -->
     <Style Selector="TextBox.log">
         <Setter Property="Background"      Value="{DynamicResource Panel}" />
@@ -234,18 +312,46 @@
         <Setter Property="Padding"    Value="0" />
         <Setter Property="MinWidth"   Value="0" />
     </Style>
-    <!-- Track fill (the colored pill behind the thumb) when checked. -->
+    <!-- Track fill: live DirtyBrush — same instance the install bar uses,
+         so toggles shift colour live as Apply progresses. A 0.6s
+         BrushTransition runs on the Background/BorderBrush *property*
+         (not the brush colour), so toggling a row on/off smoothly
+         crossfades grey⇄amber/red. The brush's internal Color mutation
+         does NOT retrigger the transition — only swapping the brush
+         reference does — so live install-bar sync stays instant. -->
+    <Style Selector="ToggleSwitch /template/ Border#SwitchKnobBounds">
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Background"  Duration="0:0:0.6"/>
+                <BrushTransition Property="BorderBrush" Duration="0:0:0.6"/>
+            </Transitions>
+        </Setter>
+    </Style>
     <Style Selector="ToggleSwitch:checked /template/ Border#SwitchKnobBounds">
-        <Setter Property="Background"  Value="{DynamicResource Accent}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+        <Setter Property="Background"  Value="{DynamicResource DirtyBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DirtyBrush}" />
     </Style>
     <Style Selector="ToggleSwitch:checked:pointerover /template/ Border#SwitchKnobBounds">
-        <Setter Property="Background"  Value="#D34646" />
-        <Setter Property="BorderBrush" Value="#D34646" />
+        <Setter Property="Background"  Value="{DynamicResource DirtyBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DirtyBrush}" />
+        <Setter Property="Opacity"     Value="0.85" />
     </Style>
     <Style Selector="ToggleSwitch:checked:pressed /template/ Border#SwitchKnobBounds">
-        <Setter Property="Background"  Value="#8E1F1F" />
-        <Setter Property="BorderBrush" Value="#8E1F1F" />
+        <Setter Property="Background"  Value="{DynamicResource DirtyBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DirtyBrush}" />
+        <Setter Property="Opacity"     Value="0.7" />
+    </Style>
+    <!-- During Apply, IsEnabled=false on the row toggle. Default Fluent
+         disabled paints a faded grey track even when checked — which
+         reads as "this mod is now disabled," wrong. Hold the checked
+         track at DirtyBrush, just dim the whole control to signal
+         "you can't toggle me right now." -->
+    <Style Selector="ToggleSwitch:checked:disabled /template/ Border#SwitchKnobBounds">
+        <Setter Property="Background"  Value="{DynamicResource DirtyBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DirtyBrush}" />
+    </Style>
+    <Style Selector="ToggleSwitch:disabled">
+        <Setter Property="Opacity" Value="0.7" />
     </Style>
     <!-- Thumb stays white. -->
     <Style Selector="ToggleSwitch:checked /template/ Border#SwitchKnobOn">
@@ -266,21 +372,31 @@
         <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
 
-    <!-- Muted (grey) toggle for pending rows: same shape, no accent fill. -->
-    <Style Selector="ToggleSwitch.pending:checked /template/ Border#SwitchKnobBounds">
-        <Setter Property="Background"  Value="#5A5A62" />
-        <Setter Property="BorderBrush" Value="#5A5A62" />
-    </Style>
-    <Style Selector="ToggleSwitch.pending:checked:pointerover /template/ Border#SwitchKnobBounds">
-        <Setter Property="Background"  Value="#6E6E78" />
-        <Setter Property="BorderBrush" Value="#6E6E78" />
-    </Style>
+    <!-- (The old ToggleSwitch.pending grey override is intentionally gone:
+         a pending-but-enabled mod should display the live DirtyBrush
+         colour, same as everything else. Grey is reserved exclusively
+         for "this mod is disabled" — i.e. unchecked toggle.) -->
 
     <!-- Context menu styling -->
     <Style Selector="MenuItem">
         <Setter Property="FontFamily" Value="Segoe UI" />
         <Setter Property="FontSize"   Value="12" />
         <Setter Property="Padding"    Value="12,6" />
+    </Style>
+    <!-- Danger MenuItem: matches the toolbar trash button's palette.
+         Text + glyph in the live DirtyBrush; on hover, a deeper red
+         tinted background panel — same treatment Button.danger uses. -->
+    <Style Selector="MenuItem.danger">
+        <Setter Property="Foreground" Value="{DynamicResource DirtyBrush}" />
+    </Style>
+    <Style Selector="MenuItem.danger /template/ ContentPresenter#PART_HeaderPresenter">
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DirtyBrush}" />
+    </Style>
+    <Style Selector="MenuItem.danger:pointerover /template/ Border#PART_LayoutRoot">
+        <Setter Property="Background" Value="#2E1518" />
+    </Style>
+    <Style Selector="MenuItem.danger:pointerover /template/ ContentPresenter#PART_HeaderPresenter">
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DirtyBrush}" />
     </Style>
     <Style Selector="ContextMenu">
         <Setter Property="Background"      Value="{DynamicResource Panel}" />
@@ -289,5 +405,147 @@
         <Setter Property="CornerRadius"    Value="8" />
         <Setter Property="Padding"         Value="4" />
     </Style>
+    <!-- MenuFlyout (the programmatic column-toggle popup) shares the
+         same dark-panel chrome as the row ContextMenu so both right-
+         click affordances feel like the same UI element. -->
+    <Style Selector="MenuFlyoutPresenter">
+        <Setter Property="Background"      Value="{DynamicResource Panel}" />
+        <Setter Property="BorderBrush"     Value="{DynamicResource Border}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius"    Value="8" />
+        <Setter Property="Padding"         Value="4" />
+    </Style>
+
+    <!-- ───────────────────────────────────────────────────────────────────
+         DATAGRID styling: match the rest of the dark palette. The default
+         Fluent template comes through okay for layout but the colour scheme
+         needs overrides for column headers, rows, selection, and the
+         resize splitter so it looks consistent with the rest of the UI.
+         ─────────────────────────────────────────────────────────────────── -->
+
+    <Style Selector="DataGrid">
+        <Setter Property="Background"              Value="{DynamicResource Panel}" />
+        <Setter Property="Foreground"              Value="{DynamicResource Text}" />
+        <Setter Property="BorderThickness"         Value="0" />
+        <Setter Property="GridLinesVisibility"     Value="None" />
+        <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource Border}" />
+        <Setter Property="VerticalGridLinesBrush"   Value="{DynamicResource Border}" />
+    </Style>
+
+    <Style Selector="DataGridColumnHeader">
+        <Setter Property="Background"      Value="{DynamicResource PanelAlt}" />
+        <Setter Property="Foreground"      Value="{DynamicResource TextDim}" />
+        <Setter Property="FontWeight"      Value="SemiBold" />
+        <Setter Property="FontSize"        Value="11" />
+        <!-- Tight horizontal padding so "ENABLED" / "GAMEDIR" / "AUTHOR"
+             actually fit in their column widths instead of getting
+             ellipsised. -->
+        <Setter Property="Padding"         Value="8,10" />
+        <!-- No underline between header strip and body. -->
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="MinHeight"       Value="40" />
+    </Style>
+    <Style Selector="DataGridColumnHeader:pointerover">
+        <Setter Property="Background" Value="#1F1F23" />
+    </Style>
+    <!-- Hide the vertical separator line column headers paint between
+         themselves — same "no hard rules" treatment as the body cells. -->
+    <Style Selector="DataGridColumnHeader /template/ Rectangle#VerticalSeparator">
+        <Setter Property="IsVisible" Value="False" />
+    </Style>
+
+    <Style Selector="DataGridRow">
+        <Setter Property="Background" Value="{DynamicResource Panel}" />
+    </Style>
+    <Style Selector="DataGridRow /template/ Rectangle#BackgroundRectangle">
+        <Setter Property="Fill" Value="{DynamicResource Panel}" />
+    </Style>
+    <Style Selector="DataGridRow:pointerover /template/ Rectangle#BackgroundRectangle">
+        <Setter Property="Fill" Value="{DynamicResource PanelAlt}" />
+    </Style>
+    <!-- Selection: neutral elevated grey, not red-tinted. The accent
+         palette is owned by DirtyBrush (which lives across many controls
+         at once) — keeping selection chromatically neutral means it never
+         clashes with whichever colour DirtyBrush is currently showing. -->
+    <Style Selector="DataGridRow:selected /template/ Rectangle#BackgroundRectangle">
+        <Setter Property="Fill" Value="#26262C" />
+    </Style>
+    <Style Selector="DataGridRow:selected:pointerover /template/ Rectangle#BackgroundRectangle">
+        <Setter Property="Fill" Value="#2E2E34" />
+    </Style>
+
+
+    <!-- No horizontal or vertical rules between cells. The row hover/selection
+         tint is sufficient to delimit rows; no need for an explicit line. -->
+    <Style Selector="DataGridCell">
+        <Setter Property="BorderBrush"     Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding"         Value="6,0" />
+        <Setter Property="MinHeight"       Value="56" />
+    </Style>
+    <Style Selector="DataGridCell:focus">
+        <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+
+    <!-- Nuke the white focus rectangle DataGrid draws around the current
+         cell. Belt-and-braces: hide it, transparent stroke, zero thickness,
+         applied unconditionally rather than just on :focus so no state
+         transition can reveal it. -->
+    <Style Selector="DataGridCell /template/ Rectangle#FocusVisual">
+        <Setter Property="IsVisible"       Value="False" />
+        <Setter Property="Stroke"          Value="Transparent" />
+        <Setter Property="StrokeThickness" Value="0" />
+        <Setter Property="Fill"            Value="Transparent" />
+        <Setter Property="Opacity"         Value="0" />
+    </Style>
+    <!-- And the inner right-grid-line that DataGrid paints between cells. -->
+    <Style Selector="DataGridCell /template/ Rectangle#PART_RightGridLine">
+        <Setter Property="IsVisible" Value="False" />
+    </Style>
+
+    <!-- The resize grip between column headers. -->
+    <Style Selector="Thumb.ColumnResizer">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Cursor"     Value="SizeWestEast" />
+    </Style>
+
+    <!-- TAG chip: small free-form label. Distinct enough from the
+         existing pending/disabled chips that user tags read as user-
+         authored content. -->
+    <Style Selector="Border.chip-tag">
+        <Setter Property="Background"      Value="#23232A" />
+        <Setter Property="BorderBrush"     Value="#3A3A45" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius"    Value="10" />
+        <Setter Property="Padding"         Value="8,2" />
+    </Style>
+    <Style Selector="Border.chip-tag TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource Text}" />
+        <Setter Property="FontSize"   Value="10" />
+    </Style>
+
+    <!-- DISABLED chip: muted neutral grey for rows whose mod toggle is off. -->
+    <Style Selector="Border.chip-disabled">
+        <Setter Property="Background"      Value="#1F1F23" />
+        <Setter Property="BorderBrush"     Value="#3A3A42" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius"    Value="10" />
+        <Setter Property="Padding"         Value="8,2" />
+    </Style>
+    <Style Selector="Border.chip-disabled TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource TextDim}" />
+        <Setter Property="FontSize"   Value="10" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+
+    <!-- NOTE on dirty-state colour sync:
+         The whole "red ↔ amber" crossfade is now driven by the shared live
+         DirtyBrush resource, which MainWindow rewrites in real time on
+         every MainViewModel.DirtyMix change (see HookDirtyBrush). Anything
+         that should track install state binds via {DynamicResource DirtyBrush}
+         — see Button.primary, Button.danger, ToggleSwitch:checked, the
+         sidebar Apply pip, and the bottom progress bar. No per-control
+         Classes.dirty overrides needed any more; the brush itself moves.
+    -->
 
 </Styles>

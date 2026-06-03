@@ -20,4 +20,8 @@ public sealed class ModInfo
     public Dictionary<string, string>         QarHashes      { get; } = new();   // vpath -> decimal uint64
     public Dictionary<string, List<string>>   FpkEntries     { get; } = new();   // host -> inner vpaths
     public List<string>                       GameDirEntries { get; } = new();   // rel paths under GameDir/
+
+    /// <summary>User-defined tags (free-form short labels). Persisted as one
+    /// <c>tag=</c> line per entry under the mod's [mod] block in state.txt.</summary>
+    public List<string>                       Tags           { get; } = new();
 }

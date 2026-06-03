@@ -7,13 +7,20 @@ public sealed class State
     public string GameRoot { get; set; } = "";
     public string DatFpk   { get; set; } = "";
     public ObservableCollection<ModInfo> Mods { get; } = new();
+
+    /// <summary>
+    /// UI preference: column headers (TAGS / VERSION / AUTHOR / QAR /
+    /// GAMEDIR) the user has hidden via the header context menu.
+    /// Persisted in state.txt as one `hidecol=NAME` line per entry.
+    /// </summary>
+    public HashSet<string> HiddenColumns { get; } = new();
 }
 
 public static class StateIo
 {
     public static void Load(State s, string statePath)
     {
-        s.GameRoot = ""; s.DatFpk = ""; s.Mods.Clear();
+        s.GameRoot = ""; s.DatFpk = ""; s.Mods.Clear(); s.HiddenColumns.Clear();
         if (!File.Exists(statePath)) return;
 
         ModInfo? cur = null;
@@ -24,6 +31,7 @@ public static class StateIo
 
             if (line.StartsWith("game_root=")) { s.GameRoot = line[10..]; cur = null; continue; }
             if (line.StartsWith("datfpk="))    { s.DatFpk   = line[7..];  cur = null; continue; }
+            if (line.StartsWith("hidecol="))   { var n = line[8..]; if (n.Length > 0) s.HiddenColumns.Add(n); cur = null; continue; }
             if (line == "[mod]")               { cur = new ModInfo(); s.Mods.Add(cur); continue; }
             if (cur is null) continue;
 
@@ -46,6 +54,7 @@ public static class StateIo
                     break;
                 }
                 case "gamedir": cur.GameDirEntries.Add(v); break;
+                case "tag":     if (v.Length > 0) cur.Tags.Add(v); break;
                 case "fpk": {
                     int bar = v.IndexOf('|');
                     if (bar > 0)
@@ -68,6 +77,7 @@ public static class StateIo
         f.WriteLine("# mgsv_modmgr state. Edit load order by reordering [mod] blocks.");
         f.WriteLine($"game_root={s.GameRoot}");
         f.WriteLine($"datfpk={s.DatFpk}");
+        foreach (var c in s.HiddenColumns) f.WriteLine($"hidecol={c}");
         foreach (var m in s.Mods)
         {
             f.WriteLine();
@@ -82,6 +92,7 @@ public static class StateIo
             foreach (var q in m.QarPaths) f.WriteLine($"qar={q}");
             foreach (var kv in m.QarHashes) f.WriteLine($"qarhash={kv.Key}|{kv.Value}");
             foreach (var g in m.GameDirEntries) f.WriteLine($"gamedir={g}");
+            foreach (var t in m.Tags)           f.WriteLine($"tag={t}");
             foreach (var kv in m.FpkEntries)
                 foreach (var i in kv.Value) f.WriteLine($"fpk={kv.Key}|{i}");
         }

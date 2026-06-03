@@ -24,8 +24,9 @@ public sealed class ModRow : INotifyPropertyChanged
     public string Name         => string.IsNullOrEmpty(_mod.Name) ? _mod.Id : _mod.Name;
     public string Version      => _mod.Version;
     public string Author       => _mod.Author;
-    public int    QarCount     => _mod.QarPaths.Count;
-    public int    GameDirCount => _mod.GameDirEntries.Count;
+    public int           QarCount     => _mod.QarPaths.Count;
+    public int           GameDirCount => _mod.GameDirEntries.Count;
+    public List<string>  Tags         => _mod.Tags;
 
     /// <summary>
     /// True when this row's state is not yet reflected in the live game

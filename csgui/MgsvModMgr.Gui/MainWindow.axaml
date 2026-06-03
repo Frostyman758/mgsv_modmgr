@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:MgsvModMgr.Gui"
         xmlns:cmd="using:MgsvModMgr.Gui.Commands"
+        xmlns:conv="using:MgsvModMgr.Gui.Converters"
         x:Class="MgsvModMgr.Gui.MainWindow"
         x:Name="Root"
         x:DataType="vm:MainViewModel"
@@ -11,11 +12,12 @@
         MinWidth="980" MinHeight="600"
         Background="{DynamicResource Bg}">
 
-  <Grid ColumnDefinitions="64,*">
+  <Grid ColumnDefinitions="64,*" Classes.dirty="{Binding IsDirty}">
 
     <!-- ===================== SIDEBAR ===================== -->
     <Border Grid.Column="0" Background="{DynamicResource Panel}"
-            BorderBrush="{DynamicResource Border}" BorderThickness="0,0,1,0">
+            BorderBrush="{DynamicResource Border}" BorderThickness="0,0,1,0"
+            BoxShadow="4 0 14 0 #00000060">
       <DockPanel LastChildFill="False">
 
         <!-- Segoe Fluent Icons glyphs used below:
@@ -67,14 +69,24 @@
     <Grid Grid.Column="1" RowDefinitions="auto,*,auto,auto">
 
       <!-- ─── Mods page header ─── -->
-      <Border Grid.Row="0" Padding="24,18,24,14" Background="{DynamicResource Bg}"
+      <!-- Right-click anywhere in the blank space of this header (i.e.
+           outside the title text and the toolbar buttons) → pops the
+           column-visibility menu. Wired in code-behind. -->
+      <Border x:Name="ModsHeader" Grid.Row="0" Padding="24,18,24,14"
+              Background="{DynamicResource Bg}"
               IsVisible="{Binding IsModsPage}">
         <Grid ColumnDefinitions="*,auto">
           <StackPanel Grid.Column="0" Spacing="2">
             <TextBlock Text="Installed mods" FontSize="22" FontWeight="SemiBold"/>
             <TextBlock Text="{Binding HeaderSubtitle}" Foreground="{DynamicResource TextDim}" FontSize="12"/>
           </StackPanel>
-          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+          <!-- Negative right margin shifts the toolbar 4px past the
+               page's right padding so the Add button's right edge
+               lands on the same X as the ENABLED-column toggle's
+               right edge. Tuned to lay between the user's blue
+               alignment guides. Use F12 (DevTools) to live-adjust. -->
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8"
+                      VerticalAlignment="Center" Margin="0,0,-4,0">
             <Button Classes="ghost icon"   Content="&#xE70E;"
                     ToolTip.Tip="Move selected mod up in load order"
                     IsEnabled="{Binding !IsApplying}"
@@ -83,6 +95,77 @@
                     ToolTip.Tip="Move selected mod down in load order"
                     IsEnabled="{Binding !IsApplying}"
                     Command="{Binding MoveDownCommand}"/>
+            <!-- Search pill: 40×40 button matching the trash button's
+                 danger palette (DirtyBrush border + glyph, transparent
+                 bg). Click → expands leftward via a Width transition
+                 into a full search bar; LostFocus with empty text →
+                 collapses back. The `.expanded` class toggles via
+                 code-behind, driving the icon backplate red and the
+                 glyph to white. -->
+            <Border x:Name="SearchPill"
+                    Background="Transparent"
+                    BorderBrush="{DynamicResource DirtyBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Width="40" Height="40"
+                    Cursor="Hand"
+                    ClipToBounds="True"
+                    PointerPressed="SearchPill_PointerPressed">
+              <Border.Transitions>
+                <Transitions>
+                  <DoubleTransition Property="Width" Duration="0:0:0.22"
+                                    Easing="QuadraticEaseOut"/>
+                </Transitions>
+              </Border.Transitions>
+              <Grid ColumnDefinitions="40,*">
+                <!-- Magnifier glyph + a backplate Border whose
+                     Background flips red ↔ transparent when the pill
+                     expands/collapses, signalling the active state.
+                     The BrushTransition makes that flip smooth. -->
+                <Border Grid.Column="0" x:Name="SearchIconBg"
+                        Background="Transparent">
+                  <Border.Transitions>
+                    <Transitions>
+                      <BrushTransition Property="Background" Duration="0:0:0.22"/>
+                    </Transitions>
+                  </Border.Transitions>
+                  <TextBlock x:Name="SearchIconGlyph"
+                             Text="&#xE721;"
+                             FontFamily="Segoe Fluent Icons,Segoe MDL2 Assets,Segoe UI Symbol"
+                             FontSize="16"
+                             Foreground="{DynamicResource DirtyBrush}"
+                             HorizontalAlignment="Center"
+                             VerticalAlignment="Center"/>
+                </Border>
+                <!-- Search textbox. Watermark text + caret white;
+                     control's own border/background neutralised across
+                     all states so only the outer pill's focus ring
+                     shows through. Watermark brush overridden via
+                     local resources (Avalonia Fluent paints it from
+                     TextControlPlaceholderForeground*). -->
+                <TextBox Grid.Column="1" x:Name="SearchBox"
+                         Classes="search-pill"
+                         IsVisible="False"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         VerticalContentAlignment="Center"
+                         Padding="0,0,12,0"
+                         FontSize="13"
+                         Watermark="Search list"
+                         Foreground="White"
+                         CaretBrush="White"
+                         Text="{Binding SearchText, Mode=TwoWay}"
+                         TextChanged="SearchBox_TextChanged"
+                         LostFocus="SearchBox_LostFocus"
+                         KeyDown="SearchBox_KeyDown">
+                  <TextBox.Resources>
+                    <SolidColorBrush x:Key="TextControlPlaceholderForeground"            Color="White" Opacity="0.65"/>
+                    <SolidColorBrush x:Key="TextControlPlaceholderForegroundPointerOver" Color="White" Opacity="0.75"/>
+                    <SolidColorBrush x:Key="TextControlPlaceholderForegroundFocused"     Color="White" Opacity="0.55"/>
+                  </TextBox.Resources>
+                </TextBox>
+              </Grid>
+            </Border>
             <Button Classes="danger icon"  Content="&#xE74D;"
                     ToolTip.Tip="Remove selected mod (run Apply afterwards to rebuild without it)"
                     IsEnabled="{Binding !IsApplying}"
@@ -105,105 +188,163 @@
         </StackPanel>
       </Border>
 
-      <!-- ─── Mods page content (list) ─── -->
-      <Border Grid.Row="1" Margin="24,4,24,8"
+      <!-- ─── Mods page content (DataGrid) ─── -->
+      <Border Grid.Row="1" Margin="0,4,0,0"
               Background="{DynamicResource Panel}"
-              BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="10"
+              BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0"
               ClipToBounds="True"
               IsVisible="{Binding IsModsPage}">
-        <Grid RowDefinitions="auto,*">
+        <DataGrid x:Name="ModListGrid"
+                  ItemsSource="{Binding Mods}"
+                  SelectedItem="{Binding SelectedMod, Mode=TwoWay}"
+                  AutoGenerateColumns="False"
+                  CanUserReorderColumns="False"
+                  CanUserResizeColumns="True"
+                  CanUserSortColumns="False"
+                  GridLinesVisibility="None"
+                  HeadersVisibility="Column"
+                  SelectionMode="Single"
+                  IsReadOnly="True"
+                  Background="{DynamicResource Panel}"
+                  BorderThickness="0"
+                  RowBackground="{DynamicResource Panel}"
+                  RowHeight="60">
 
-          <Border Grid.Row="0" Background="{DynamicResource PanelAlt}"
-                  BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1">
-            <Grid ColumnDefinitions="60,2*,130,80,1.2*,80,80" Margin="14,10">
-              <TextBlock Grid.Column="0" Text="ENABLED" Foreground="{DynamicResource TextDim}" FontSize="11" FontWeight="SemiBold"/>
-              <TextBlock Grid.Column="1" Text="MOD"     Foreground="{DynamicResource TextDim}" FontSize="11" FontWeight="SemiBold"/>
-              <!-- Col 2 is the status / PENDING APPLY column. Header intentionally blank. -->
-              <TextBlock Grid.Column="3" Text="VERSION" Foreground="{DynamicResource TextDim}" FontSize="11" FontWeight="SemiBold"/>
-              <TextBlock Grid.Column="4" Text="AUTHOR"  Foreground="{DynamicResource TextDim}" FontSize="11" FontWeight="SemiBold"/>
-              <TextBlock Grid.Column="5" Text="QAR"     Foreground="{DynamicResource TextDim}" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Right"/>
-              <TextBlock Grid.Column="6" Text="GAMEDIR" Foreground="{DynamicResource TextDim}" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Right"/>
-            </Grid>
-          </Border>
+          <DataGrid.Columns>
 
-          <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled"
-                        x:Name="ModListScroll">
-            <ListBox ItemsSource="{Binding Mods}"
-                     SelectedItem="{Binding SelectedMod, Mode=TwoWay}">
-              <ListBox.ItemTemplate>
+            <!-- NAME: mod name + id stacked. Bumped to 3* + larger MinWidth
+                 so longer mod names don't ellipsis as aggressively. Marked
+                 essential (cannot be hidden via the header context menu). -->
+            <DataGridTemplateColumn Header="NAME" Width="3*" MinWidth="260">
+              <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ModRow">
-                  <Border Classes="row"
-                          DragDrop.AllowDrop="True"
-                          PointerPressed="Row_PointerPressed"
-                          PointerMoved="Row_PointerMoved"
-                          PointerReleased="Row_PointerReleased">
-                    <Border.ContextMenu>
-                      <ContextMenu x:CompileBindings="False">
-                        <MenuItem Header="Toggle enabled"
-                                  Command="{Binding #Root.DataContext.ToggleRowCommand}"
-                                  CommandParameter="{Binding}"/>
-                        <Separator/>
-                        <MenuItem Header="Move up"
-                                  Command="{Binding #Root.DataContext.MoveRowCommand}"
-                                  CommandParameter="{Binding Tag, ElementName=MoveUpParam}"/>
-                        <MenuItem Header="Move down"
-                                  Command="{Binding #Root.DataContext.MoveRowCommand}"
-                                  CommandParameter="{Binding Tag, ElementName=MoveDownParam}"/>
-                        <Separator/>
-                        <MenuItem Header="Remove..."
-                                  Command="{Binding #Root.DataContext.RemoveRowCommand}"
-                                  CommandParameter="{Binding}"/>
-                      </ContextMenu>
-                    </Border.ContextMenu>
-                    <Grid ColumnDefinitions="60,2*,130,80,1.2*,80,80" VerticalAlignment="Center">
-                      <Panel x:Name="MoveUpParam"   IsVisible="False">
-                        <Panel.Tag>
-                          <cmd:MoveArg Delta="-1" Row="{Binding}"/>
-                        </Panel.Tag>
-                      </Panel>
-                      <Panel x:Name="MoveDownParam" IsVisible="False">
-                        <Panel.Tag>
-                          <cmd:MoveArg Delta="1" Row="{Binding}"/>
-                        </Panel.Tag>
-                      </Panel>
-                      <ToggleSwitch Grid.Column="0"
-                                    Classes.pending="{Binding IsPending}"
-                                    IsChecked="{Binding Enabled, Mode=TwoWay}"
-                                    HorizontalAlignment="Left"
-                                    IsEnabled="{Binding !((vm:MainViewModel)DataContext).IsApplying, RelativeSource={RelativeSource AncestorType=Window}}"/>
-                      <StackPanel Grid.Column="1" Spacing="2" Margin="0,0,8,0">
-                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14"
-                                   TextTrimming="CharacterEllipsis"/>
-                        <TextBlock Text="{Binding Id}" Foreground="{DynamicResource TextDim}" FontSize="11"
-                                   TextTrimming="CharacterEllipsis"/>
-                      </StackPanel>
-                      <!-- Status chip sits in its own row-centered column so it
-                           lines up with Version/Author rather than floating above
-                           them. Fixed column width keeps alignment stable whether
-                           or not a given row is pending. -->
-                      <Border Grid.Column="2" Classes="chip-pending"
-                              HorizontalAlignment="Left" VerticalAlignment="Center"
-                              IsVisible="{Binding IsPending}">
-                        <TextBlock Text="PENDING APPLY"/>
-                      </Border>
-                      <TextBlock Grid.Column="3" Text="{Binding Version}" VerticalAlignment="Center"
-                                 TextTrimming="CharacterEllipsis" Margin="0,0,8,0"/>
-                      <TextBlock Grid.Column="4" Text="{Binding Author}"  VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                      <TextBlock Grid.Column="5" Text="{Binding QarCount}"     HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{DynamicResource TextDim}"/>
-                      <TextBlock Grid.Column="6" Text="{Binding GameDirCount}" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{DynamicResource TextDim}"/>
-                    </Grid>
-                  </Border>
+                  <StackPanel Spacing="2" VerticalAlignment="Center" Margin="12,0">
+                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14"
+                               TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Text="{Binding Id}" Foreground="{DynamicResource TextDim}" FontSize="11"
+                               TextTrimming="CharacterEllipsis"/>
+                  </StackPanel>
                 </DataTemplate>
-              </ListBox.ItemTemplate>
-            </ListBox>
-          </ScrollViewer>
-        </Grid>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <!-- TAGS: user-defined free-form labels, rendered as small chips.
+                 Persisted per mod in state.txt. Editing UI comes in a later
+                 pass; for now this just surfaces what the data already has. -->
+            <DataGridTemplateColumn Header="TAGS" Width="170" MinWidth="120">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate x:DataType="vm:ModRow">
+                  <ItemsControl ItemsSource="{Binding Tags}"
+                                VerticalAlignment="Center" Margin="6,0">
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" ItemSpacing="4" LineSpacing="4"/>
+                      </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <Border Classes="chip-tag">
+                          <TextBlock Text="{Binding}"/>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <DataGridTextColumn Header="VERSION" Binding="{Binding Version}" Width="90"  MinWidth="60"/>
+            <DataGridTextColumn Header="AUTHOR"  Binding="{Binding Author}"  Width="*"   MinWidth="100"/>
+
+            <!-- QAR / GAMEDIR right-aligned -->
+            <DataGridTemplateColumn Header="QAR" Width="80" MinWidth="60">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate x:DataType="vm:ModRow">
+                  <TextBlock Text="{Binding QarCount}" Foreground="{DynamicResource TextDim}"
+                             HorizontalAlignment="Right" VerticalAlignment="Center"
+                             Margin="0,0,12,0"/>
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTemplateColumn Header="GAMEDIR" Width="90" MinWidth="60">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate x:DataType="vm:ModRow">
+                  <TextBlock Text="{Binding GameDirCount}" Foreground="{DynamicResource TextDim}"
+                             HorizontalAlignment="Right" VerticalAlignment="Center"
+                             Margin="0,0,12,0"/>
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <!-- ENABLED column placed LAST so the toggle column lives on
+                 the right edge of the table, directly under the Add-mod
+                 button in the toolbar above. Toggle pill is locked to
+                 Width=40 to match the Add button's footprint exactly,
+                 and the right margin is set so the toggle's right edge
+                 lands on the same X as the Add button's right edge
+                 (accounting for the DataGrid scrollbar gutter, which
+                 eats space on the column's right). -->
+            <DataGridTemplateColumn Header="ENABLED" Width="100" CanUserResize="False">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate x:DataType="vm:ModRow">
+                  <ToggleSwitch Classes.pending="{Binding IsPending}"
+                                IsChecked="{Binding Enabled, Mode=TwoWay}"
+                                Width="40"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Margin="0,0,15,0"
+                                IsEnabled="{Binding !((vm:MainViewModel)DataContext).IsApplying, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+          </DataGrid.Columns>
+
+          <DataGrid.ContextMenu>
+            <ContextMenu x:CompileBindings="False">
+              <MenuItem Header="Toggle enabled"
+                        Command="{Binding ToggleRowCommand}"
+                        CommandParameter="{Binding SelectedMod}"/>
+              <Separator/>
+              <!-- Move up / down: matching glyphs to the toolbar's ghost
+                   icon buttons so the context menu reads as the same
+                   action as the toolbar entries. -->
+              <MenuItem Header="Move up" Command="{Binding MoveUpCommand}">
+                <MenuItem.Icon>
+                  <TextBlock Text="&#xE70E;"
+                             FontFamily="Segoe Fluent Icons,Segoe MDL2 Assets,Segoe UI Symbol"
+                             FontSize="13"/>
+                </MenuItem.Icon>
+              </MenuItem>
+              <MenuItem Header="Move down" Command="{Binding MoveDownCommand}">
+                <MenuItem.Icon>
+                  <TextBlock Text="&#xE70D;"
+                             FontFamily="Segoe Fluent Icons,Segoe MDL2 Assets,Segoe UI Symbol"
+                             FontSize="13"/>
+                </MenuItem.Icon>
+              </MenuItem>
+              <Separator/>
+              <!-- Remove: danger-classed so text + trash glyph paint
+                   with the live DirtyBrush, matching the toolbar's
+                   trash button colour & hover treatment. -->
+              <MenuItem Header="Remove..." Classes="danger"
+                        Command="{Binding RemoveCommand}">
+                <MenuItem.Icon>
+                  <TextBlock Text="&#xE74D;"
+                             FontFamily="Segoe Fluent Icons,Segoe MDL2 Assets,Segoe UI Symbol"
+                             FontSize="13"
+                             Foreground="{DynamicResource DirtyBrush}"/>
+                </MenuItem.Icon>
+              </MenuItem>
+            </ContextMenu>
+          </DataGrid.ContextMenu>
+        </DataGrid>
       </Border>
 
       <!-- ─── Settings page content ─── -->
-      <Border Grid.Row="1" Margin="24,4,24,8"
+      <Border Grid.Row="1" Margin="0,4,0,0"
               Background="{DynamicResource Panel}"
-              BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="10"
+              BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0"
               IsVisible="{Binding IsSettingsPage}">
         <ScrollViewer>
           <StackPanel Spacing="24" Margin="28,22,28,22" MaxWidth="720" HorizontalAlignment="Stretch">
@@ -270,9 +411,9 @@
       </Border>
 
       <!-- ─── Log page content (Row 1, page-routed) ─── -->
-      <Border Grid.Row="1" Margin="24,4,24,8"
+      <Border Grid.Row="1" Margin="0,4,0,0"
               Background="{DynamicResource Panel}"
-              BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="10"
+              BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0"
               IsVisible="{Binding IsLogPage}">
         <DockPanel LastChildFill="True">
           <Border DockPanel.Dock="Top" Background="{DynamicResource PanelAlt}"
@@ -300,22 +441,31 @@
 
       <!-- Row 2 unused (the old log expander lived here). -->
 
-      <!-- status footer with thin Apply-progress bar pinned above it -->
-      <DockPanel Grid.Row="3" LastChildFill="True">
-        <!-- Progress: 2px tall, accent red, spans the status footer's width.
-             Visible only while an Apply is in flight. -->
+      <!-- status footer with thin Apply-progress bar pinned above it.
+           Click anywhere on the strip to hide it; auto-shows again
+           when the next Apply starts. -->
+      <DockPanel Grid.Row="3" LastChildFill="True"
+                 IsVisible="{Binding IsFooterShown}">
+        <!-- Progress bar: 2px tall. Its fill IS the live DirtyBrush —
+             same brush instance the toggles, Add button, sidebar Apply
+             pip and trash button paint with. As ApplyProgress moves,
+             code-behind rewrites DirtyBrush.Color and every consumer
+             repaints in the same frame, perfectly in sync. -->
         <ProgressBar DockPanel.Dock="Top"
                      Height="2" Minimum="0" Maximum="1"
                      Value="{Binding ApplyProgress}"
                      IsVisible="{Binding IsApplying}"
-                     Foreground="{DynamicResource Accent}"
+                     Foreground="{DynamicResource DirtyBrush}"
                      Background="Transparent"
                      BorderThickness="0"
                      CornerRadius="0"
                      ShowProgressText="False"/>
         <Border Background="{DynamicResource Panel}"
                 BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0"
-                Padding="24,8">
+                Padding="24,8"
+                Cursor="Hand"
+                PointerPressed="Footer_PointerPressed"
+                ToolTip.Tip="Click to hide. Reappears automatically while an Apply is running.">
           <StackPanel Orientation="Horizontal" Spacing="20">
             <TextBlock Foreground="{DynamicResource TextDim}" FontSize="11">
               <Run Text="Game root:"/><Run Text=" "/><Run Text="{Binding GameRoot}" Foreground="{DynamicResource Text}"/>
@@ -327,5 +477,41 @@
         </Border>
       </DockPanel>
     </Grid>
+
+    <!-- Drag overlay: a transparent canvas pinned above the main content
+         that hosts the "lifted" row ghost and the insertion indicator
+         line. IsHitTestVisible=False so it never blocks pointer input;
+         positions are written in code-behind from PointerMoved while a
+         drag is in flight. Spans both columns so the ghost can travel
+         freely across the sidebar boundary, and is the LAST root child
+         so it z-orders above the DataGrid / sidebar. -->
+    <Canvas x:Name="DragOverlay"
+            Grid.Column="0" Grid.ColumnSpan="2"
+            IsHitTestVisible="False">
+      <!-- Lifted row ghost: floats with the cursor while dragging.
+           Tinted with the live DirtyBrush so it matches the rest of
+           the install-state palette. -->
+      <Border x:Name="DragGhost"
+              IsVisible="False"
+              Background="{DynamicResource PanelAlt}"
+              BorderBrush="{DynamicResource DirtyBrush}"
+              BorderThickness="1"
+              CornerRadius="6"
+              Padding="14,8"
+              Opacity="0.95"
+              BoxShadow="0 8 22 0 #00000080">
+        <TextBlock x:Name="DragGhostText"
+                   Foreground="{DynamicResource Text}"
+                   FontWeight="SemiBold" FontSize="13"/>
+      </Border>
+      <!-- Insertion indicator: a thin horizontal bar that snaps to the
+           gap between two rows, showing exactly where the dragged item
+           will land on release. -->
+      <Border x:Name="DragInsertLine"
+              IsVisible="False"
+              Height="3"
+              Background="{DynamicResource DirtyBrush}"
+              CornerRadius="2"/>
+    </Canvas>
   </Grid>
 </Window>

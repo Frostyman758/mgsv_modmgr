@@ -16,9 +16,10 @@
     <PackageReference Include="Avalonia.Desktop"       Version="11.3.7" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.7" />
     <PackageReference Include="Avalonia.Fonts.Inter"   Version="11.3.7" />
-    <!-- DevTools (F12 inspector) only in Debug; not shipped in published builds. -->
-    <PackageReference Include="Avalonia.Diagnostics"   Version="11.3.7"
-                      Condition="'$(Configuration)' == 'Debug'" />
+    <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.3.7" />
+    <!-- DevTools (F12 inspector). Shipped in all builds so the user can
+         live-tweak Margins/Padding/brushes in the property grid. -->
+    <PackageReference Include="Avalonia.Diagnostics"   Version="11.3.7" />
   </ItemGroup>
 
   <ItemGroup>
