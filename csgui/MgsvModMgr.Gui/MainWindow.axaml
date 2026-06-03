@@ -131,7 +131,7 @@
                   </Border.Transitions>
                   <TextBlock x:Name="SearchIconGlyph"
                              Text="&#xEF9A;"
-                             FontFamily="{StaticResource IconFont}"
+                             FontFamily="{DynamicResource IconFont}"
                              FontSize="16"
                              Foreground="{DynamicResource DirtyBrush}"
                              HorizontalAlignment="Center"
@@ -312,14 +312,14 @@
               <MenuItem Header="Move up" Command="{Binding MoveUpCommand}">
                 <MenuItem.Icon>
                   <TextBlock Text="&#xE48B;"
-                             FontFamily="{StaticResource IconFont}"
+                             FontFamily="{DynamicResource IconFont}"
                              FontSize="13"/>
                 </MenuItem.Icon>
               </MenuItem>
               <MenuItem Header="Move down" Command="{Binding MoveDownCommand}">
                 <MenuItem.Icon>
                   <TextBlock Text="&#xE483;"
-                             FontFamily="{StaticResource IconFont}"
+                             FontFamily="{DynamicResource IconFont}"
                              FontSize="13"/>
                 </MenuItem.Icon>
               </MenuItem>
@@ -331,7 +331,7 @@
                         Command="{Binding RemoveCommand}">
                 <MenuItem.Icon>
                   <TextBlock Text="&#xE666;"
-                             FontFamily="{StaticResource IconFont}"
+                             FontFamily="{DynamicResource IconFont}"
                              FontSize="13"
                              Foreground="{DynamicResource DirtyBrush}"/>
                 </MenuItem.Icon>
