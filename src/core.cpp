@@ -209,12 +209,16 @@ fs::path resolve_qar_path(std::string qar, const fs::path& game_root) {
     for (size_t i = 1; i + 1 < parts.size(); ++i) out.push_back(parts[i]);
 
     const std::string& last = parts.back();
-    bool platform = ends_with(last, ".fpk")
-                 || ends_with(last, ".fpkd")
-                 || ends_with(last, ".pftxs")
-                 || ends_with(last, ".ftex")
-                 || ends_with(last, ".ftexs");
-    if (platform) out.push_back("#windx11");
+    // Per-extension platform subdir routing. #windx11/ for archives + DX11
+    // textures, #Win/ for the audio engine's Wwise banks. Anything else
+    // lives flat in its parent directory.
+    if (ends_with(last, ".fpk") || ends_with(last, ".fpkd") ||
+        ends_with(last, ".pftxs") ||
+        ends_with(last, ".ftex") || ends_with(last, ".ftexs"))
+        out.push_back("#windx11");
+    else if (ends_with(last, ".sbp") || ends_with(last, ".bnk") ||
+             ends_with(last, ".wem"))
+        out.push_back("#Win");
     out.push_back(last);
 
     fs::path p = game_root;

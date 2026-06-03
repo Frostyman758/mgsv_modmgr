@@ -25,18 +25,8 @@ public static class Paths
         for (int i = 1; i + 1 < parts.Length; ++i) outp.Add(parts[i]);
 
         var last = parts[^1];
-        // Platform-routed files live under a per-platform subdir on disk.
-        // For Windows that's #windx11/. Confirmed via procmon: the game's
-        // CreateFile calls for loose .ftex headers and the matching .ftexs
-        // mip streams target <chunk>/release/<rest>/#windx11/<file>, not the
-        // flat path. Same for .fpk / .fpkd / .pftxs archives. .ftexs covers
-        // every multi-dot variant (.1.ftexs, .2.ftexs, ...) via EndsWith.
-        bool platform = last.EndsWith(".fpk")
-                     || last.EndsWith(".fpkd")
-                     || last.EndsWith(".pftxs")
-                     || last.EndsWith(".ftex")
-                     || last.EndsWith(".ftexs");
-        if (platform) outp.Add("#windx11");
+        var platformDir = PlatformDirFor(last);
+        if (platformDir is not null) outp.Add(platformDir);
         outp.Add(last);
 
         return Path.Combine(new[] { gameRoot }.Concat(outp).ToArray());
@@ -44,4 +34,30 @@ public static class Paths
 
     public static bool QarIsFpk(string qar)
         => qar.EndsWith(".fpk") || qar.EndsWith(".fpkd");
+
+    /// <summary>
+    /// Returns the per-platform subfolder name a file of this kind belongs
+    /// in (e.g. <c>#windx11</c> for textures and packed archives, <c>#Win</c>
+    /// for the audio engine's .sbp banks), or <c>null</c> if the file lives
+    /// flat in its parent directory. Confirmed via procmon CreateFile output
+    /// against the running mgsvtpp.exe.
+    /// </summary>
+    private static string? PlatformDirFor(string filename)
+    {
+        // #windx11/ : packed archives + textures (DirectX 11 mip streams).
+        if (filename.EndsWith(".fpk")    ||
+            filename.EndsWith(".fpkd")   ||
+            filename.EndsWith(".pftxs")  ||
+            filename.EndsWith(".ftex")   ||
+            filename.EndsWith(".ftexs"))   // matches .1.ftexs, .2.ftexs, etc.
+            return "#windx11";
+
+        // #Win/ : the Wwise audio engine's runtime sound banks.
+        if (filename.EndsWith(".sbp")    ||
+            filename.EndsWith(".bnk")    ||
+            filename.EndsWith(".wem"))
+            return "#Win";
+
+        return null;
+    }
 }
