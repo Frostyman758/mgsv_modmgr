@@ -63,6 +63,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         BrowseGameRootCommand = new RelayCommand(BrowseGameRootAsync);
         BrowseDatFpkCommand   = new RelayCommand(BrowseDatFpkAsync);
         SaveSettingsCommand   = new RelayCommand(SaveSettingsAsync);
+        ResetApplyStateCommand = new RelayCommand(ResetApplyStateAsync);
 
         RemoveRowCommand = new RelayCommand<ModRow>(async row =>
         {
@@ -173,6 +174,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public ICommand BrowseGameRootCommand { get; }
     public ICommand BrowseDatFpkCommand   { get; }
     public ICommand SaveSettingsCommand   { get; }
+    public ICommand ResetApplyStateCommand { get; }
 
     /// <summary>Row-targeted variants for the right-click context menu.</summary>
     public ICommand RemoveRowCommand { get; }
@@ -308,6 +310,20 @@ public sealed class MainViewModel : INotifyPropertyChanged
         catch (Exception ex) { AppendLog("ERROR: " + ex.Message); }
     }
 
+    /// <summary>Called by the drag-reorder handler in the code-behind.</summary>
+    public void MoveRowToIndex(string id, int newIndex)
+    {
+        if (IsApplying) return;
+        try
+        {
+            _manager.MoveModToIndex(id, newIndex);
+            SyncRows();
+            SelectedMod = Mods.FirstOrDefault(r => r.Id == id);
+            MarkDirty();
+        }
+        catch (Exception ex) { AppendLog("ERROR: " + ex.Message); }
+    }
+
     private async Task ApplyAsync()
     {
         if (IsApplying) return;
@@ -373,6 +389,20 @@ public sealed class MainViewModel : INotifyPropertyChanged
         });
         var path = files.Count > 0 ? files[0].TryGetLocalPath() : null;
         if (path is not null) DatFpkField = path;
+    }
+
+    private async Task ResetApplyStateAsync()
+    {
+        var ok = await ConfirmAsync(
+            "Clear the Apply cache and tmp\\host_* scratch directories?\n\n" +
+            "The next Apply will rebuild every host from scratch. This does NOT " +
+            "touch your game install or the registered mod list.");
+        if (!ok) return;
+        try
+        {
+            await Task.Run(() => _manager.ResetApplyState());
+        }
+        catch (Exception ex) { await ShowError("Reset failed", ex.Message); }
     }
 
     private async Task SaveSettingsAsync()

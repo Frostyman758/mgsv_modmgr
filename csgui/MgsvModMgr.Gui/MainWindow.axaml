@@ -131,7 +131,11 @@
                      SelectedItem="{Binding SelectedMod, Mode=TwoWay}">
               <ListBox.ItemTemplate>
                 <DataTemplate x:DataType="vm:ModRow">
-                  <Border Classes="row">
+                  <Border Classes="row"
+                          DragDrop.AllowDrop="True"
+                          PointerPressed="Row_PointerPressed"
+                          PointerMoved="Row_PointerMoved"
+                          PointerReleased="Row_PointerReleased">
                     <Border.ContextMenu>
                       <ContextMenu x:CompileBindings="False">
                         <MenuItem Header="Toggle enabled"
@@ -243,6 +247,23 @@
               <Button Classes="primary" Content="Save"  Width="100"
                       Command="{Binding SaveSettingsCommand}"/>
             </StackPanel>
+
+            <!-- ─── Maintenance ─────────────────────────────────────────── -->
+            <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0"
+                    Margin="0,24,0,0" Padding="0,20,0,0">
+              <StackPanel Spacing="6">
+                <TextBlock Text="MAINTENANCE" Foreground="{DynamicResource TextDim}"
+                           FontSize="11" FontWeight="SemiBold"/>
+                <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextDim}" FontSize="12">
+                  Clear the Apply cache and per-host scratch directories. The next Apply
+                  will rebuild every host from scratch. Does not touch your game install
+                  or the mod list.
+                </TextBlock>
+                <Button Classes="ghost" Content="Reset Apply state"
+                        HorizontalAlignment="Left" Margin="0,6,0,0"
+                        Command="{Binding ResetApplyStateCommand}"/>
+              </StackPanel>
+            </Border>
           </StackPanel>
         </ScrollViewer>
       </Border>

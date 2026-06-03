@@ -172,19 +172,29 @@ public sealed class ModManager
 
     public void MoveMod(string id, int delta)
     {
-        var index = -1;
-        for (var i = 0; i < State.Mods.Count; i++)
-            if (State.Mods[i].Id == id) { index = i; break; }
-        if (index < 0) throw new InvalidOperationException("No such mod id: " + id);
+        var index = IndexOfMod(id);
+        MoveModToIndex(id, index + delta);
+    }
 
-        var target = index + delta;
-        if (target < 0 || target >= State.Mods.Count) return;
-        State.Mods.Move(index, target);
+    /// <summary>Move <paramref name="id"/> to <paramref name="newIndex"/> (clamped). No-op if it's already there.</summary>
+    public void MoveModToIndex(string id, int newIndex)
+    {
+        var from = IndexOfMod(id);
+        var to   = Math.Clamp(newIndex, 0, State.Mods.Count - 1);
+        if (from == to) return;
+        State.Mods.Move(from, to);
 
         // Reordering changes which mod wins overlapping files, so every mod's
         // merged contribution is potentially stale until the next Apply.
         foreach (var m in State.Mods) m.Applied = false;
         SaveState();
+    }
+
+    private int IndexOfMod(string id)
+    {
+        for (var i = 0; i < State.Mods.Count; i++)
+            if (State.Mods[i].Id == id) return i;
+        throw new InvalidOperationException("No such mod id: " + id);
     }
 
     /// <summary>
@@ -361,6 +371,39 @@ public sealed class ModManager
 
         Log("");
         Log($"Apply complete. Temp tree left at {TmpDir}");
+    }
+
+    /// <summary>
+    /// Wipe the Apply-cache and per-host scratch dirs so the next Apply
+    /// rebuilds every host from scratch. Doesn't touch the game install
+    /// (use Revert for that), the workspace state (use Remove for that),
+    /// or the dictionary files (use the dictionary export action).
+    /// Returns the number of artifacts cleared.
+    /// </summary>
+    public (int cacheEntriesCleared, int hostDirsCleared) ResetApplyState()
+    {
+        EnsureInitialised();
+
+        var cachePath = Path.Combine(WorkspaceDir, "apply-cache.txt");
+        var cacheClears = 0;
+        if (File.Exists(cachePath))
+        {
+            try { cacheClears = File.ReadAllLines(cachePath).Count(l => l.Contains('=') && !l.StartsWith('#')); }
+            catch { /* best effort */ }
+            File.Delete(cachePath);
+        }
+
+        var dirClears = 0;
+        if (Directory.Exists(TmpDir))
+        {
+            foreach (var dir in Directory.EnumerateDirectories(TmpDir, "host_*"))
+            {
+                try { Directory.Delete(dir, recursive: true); dirClears++; } catch { /* best effort */ }
+            }
+        }
+
+        Log($"Reset Apply state: cleared {cacheClears} cache entr(ies) and {dirClears} host scratch dir(s).");
+        return (cacheClears, dirClears);
     }
 
     /// <summary>Restore every original game file and delete every mod-introduced file.</summary>
