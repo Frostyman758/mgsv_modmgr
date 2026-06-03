@@ -59,6 +59,9 @@ public sealed class ApplyCache
     public void Invalidate(string diskPath) => _entries.TryRemove(diskPath, out _);
     public void Clear() => _entries.Clear();
 
+    /// <summary>Snapshot of disk paths the cache has ever recorded.</summary>
+    public IReadOnlyList<string> KnownDiskPaths => _entries.Keys.ToList();
+
     /// <summary>
     /// Build a fingerprint from the inputs that determine a host's content.
     /// Same inputs in the same order → same fingerprint, so the cached output

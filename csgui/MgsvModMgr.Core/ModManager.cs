@@ -301,6 +301,57 @@ public sealed class ModManager
             ApplyGameDir(mod);
         }
 
+        // Orphan cleanup: paths the cache says we wrote to in a previous Apply
+        // but that no currently-enabled mod ships any more. Restore from
+        // baseline when one exists, delete the on-disk file otherwise (the
+        // .absent marker means the file was mod-introduced and shouldn't
+        // outlive its mod). Removes the orphan from the cache so future
+        // Applies don't re-check it.
+        var currentDisk = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var qar in hosts) currentDisk.Add(Paths.ResolveQar(qar, State.GameRoot));
+
+        int restored = 0, removed = 0;
+        foreach (var orphan in cache.KnownDiskPaths)
+        {
+            if (currentDisk.Contains(orphan)) continue;
+            var baseline = BaselineFor(orphan);
+            var marker   = baseline + ".absent";
+            try
+            {
+                if (File.Exists(baseline))
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(orphan)!);
+                    File.Copy(baseline, orphan, overwrite: true);
+                    restored++;
+                }
+                else if (File.Exists(marker))
+                {
+                    if (File.Exists(orphan)) { File.Delete(orphan); removed++; }
+                }
+            }
+            catch (Exception ex) { Log($"  WARN cleaning orphan {orphan}: {ex.Message}"); }
+            cache.Invalidate(orphan);
+        }
+        if (restored + removed > 0)
+            Log($"Orphan cleanup: restored {restored} vanilla file(s), removed {removed} mod-introduced file(s).");
+
+        // Sweep tmp/host_* dirs that aren't backing a current host.
+        var currentHostDirs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var qar in hosts)
+        {
+            var disk = Paths.ResolveQar(qar, State.GameRoot);
+            currentHostDirs.Add("host_" + SafeHostKey(qar, Path.GetFileName(disk)));
+        }
+        if (Directory.Exists(TmpDir))
+        {
+            foreach (var dir in Directory.EnumerateDirectories(TmpDir, "host_*"))
+            {
+                if (currentHostDirs.Contains(Path.GetFileName(dir))) continue;
+                try { Directory.Delete(dir, recursive: true); }
+                catch { /* best effort */ }
+            }
+        }
+
         cache.Save();
 
         // Mark each mod's Applied state to reflect what's now in the install.

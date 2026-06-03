@@ -25,7 +25,17 @@ public static class Paths
         for (int i = 1; i + 1 < parts.Length; ++i) outp.Add(parts[i]);
 
         var last = parts[^1];
-        bool platform = last.EndsWith(".fpk") || last.EndsWith(".fpkd") || last.EndsWith(".pftxs");
+        // Platform-routed files live under a per-platform subdir on disk.
+        // For Windows that's #windx11/. Confirmed via procmon: the game's
+        // CreateFile calls for loose .ftex headers and the matching .ftexs
+        // mip streams target <chunk>/release/<rest>/#windx11/<file>, not the
+        // flat path. Same for .fpk / .fpkd / .pftxs archives. .ftexs covers
+        // every multi-dot variant (.1.ftexs, .2.ftexs, ...) via EndsWith.
+        bool platform = last.EndsWith(".fpk")
+                     || last.EndsWith(".fpkd")
+                     || last.EndsWith(".pftxs")
+                     || last.EndsWith(".ftex")
+                     || last.EndsWith(".ftexs");
         if (platform) outp.Add("#windx11");
         outp.Add(last);
 

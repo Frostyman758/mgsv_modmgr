@@ -209,7 +209,11 @@ fs::path resolve_qar_path(std::string qar, const fs::path& game_root) {
     for (size_t i = 1; i + 1 < parts.size(); ++i) out.push_back(parts[i]);
 
     const std::string& last = parts.back();
-    bool platform = ends_with(last, ".fpk") || ends_with(last, ".fpkd") || ends_with(last, ".pftxs");
+    bool platform = ends_with(last, ".fpk")
+                 || ends_with(last, ".fpkd")
+                 || ends_with(last, ".pftxs")
+                 || ends_with(last, ".ftex")
+                 || ends_with(last, ".ftexs");
     if (platform) out.push_back("#windx11");
     out.push_back(last);
 
