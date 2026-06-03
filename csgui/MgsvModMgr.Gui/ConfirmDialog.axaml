@@ -15,8 +15,8 @@
                 <Border Grid.Column="0" Width="36" Height="36"
                         CornerRadius="8" Background="#2A1517"
                         BorderBrush="#5A1414" BorderThickness="1">
-                    <TextBlock Name="IconText" Text="&#xE7BA;"
-                               FontFamily="Segoe Fluent Icons,Segoe MDL2 Assets,Segoe UI Symbol"
+                    <TextBlock Name="IconText" Text="&#xF516;"
+                               FontFamily="{StaticResource IconFont}"
                                FontSize="18"
                                Foreground="{DynamicResource Accent}"
                                HorizontalAlignment="Center" VerticalAlignment="Center"/>

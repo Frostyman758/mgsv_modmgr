@@ -20,33 +20,33 @@
             BoxShadow="4 0 14 0 #00000060">
       <DockPanel LastChildFill="False">
 
-        <!-- Segoe Fluent Icons glyphs used below:
-             E7B8 = AllApps,     E73E = CheckMark, E7A7 = Undo,
-             E756 = CmdPrompt,   E8A5 = Document,  E713 = Settings,
-             E946 = Info -->
+        <!-- Fluent UI System Icons glyphs (bundled font, MIT). Codepoints:
+             F574 = WindowApps,   E45B = Checkmark,    E1A2 = ArrowUndo,
+             F582 = WindowConsole,E7B0 = DocumentText, EFD2 = Settings,
+             EA5B = Info -->
         <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,16,0,0"
                     HorizontalAlignment="Center">
           <Button Classes="sidebar" Classes.active="{Binding IsModsPage}"
                   ToolTip.Tip="Installed mods"
-                  Content="&#xE7B8;"
+                  Content="&#xF574;"
                   Command="{Binding ShowModsCommand}"/>
           <Button Classes="sidebar" Classes.dirty="{Binding IsDirty}"
                   ToolTip.Tip="Apply pending changes to the game install"
-                  Content="&#xE73E;"
+                  Content="&#xE45B;"
                   IsEnabled="{Binding !IsApplying}"
                   Command="{Binding ApplyCommand}"/>
           <Button Classes="sidebar"
                   ToolTip.Tip="Restore the original game files; undo every mod change in the install"
-                  Content="&#xE7A7;"
+                  Content="&#xE1A2;"
                   IsEnabled="{Binding !IsApplying}"
                   Command="{Binding RevertCommand}"/>
           <Button Classes="sidebar" Classes.active="{Binding IsLogPage}"
                   ToolTip.Tip="Activity log from the last Apply"
-                  Content="&#xE756;"
+                  Content="&#xF582;"
                   Command="{Binding ToggleLogCommand}"/>
           <Button Classes="sidebar"
                   ToolTip.Tip="Rebuild PathDictionary.txt and ExplicitPathDictionary.txt against every installed mod"
-                  Content="&#xE8A5;"
+                  Content="&#xE7B0;"
                   IsEnabled="{Binding !IsApplying}"
                   Command="{Binding ExportDictCommand}"/>
         </StackPanel>
@@ -55,11 +55,11 @@
                     HorizontalAlignment="Center">
           <Button Classes="sidebar" Classes.active="{Binding IsSettingsPage}"
                   ToolTip.Tip="Game root, datfpk path"
-                  Content="&#xE713;"
+                  Content="&#xEFD2;"
                   Command="{Binding ShowSettingsCommand}"/>
           <Button Classes="sidebar"
                   ToolTip.Tip="About this manager"
-                  Content="&#xE946;"
+                  Content="&#xEA5B;"
                   Command="{Binding AboutCommand}"/>
         </StackPanel>
       </DockPanel>
@@ -87,11 +87,11 @@
                alignment guides. Use F12 (DevTools) to live-adjust. -->
           <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8"
                       VerticalAlignment="Center" Margin="0,0,-4,0">
-            <Button Classes="ghost icon"   Content="&#xE70E;"
+            <Button Classes="ghost icon"   Content="&#xE48B;"
                     ToolTip.Tip="Move selected mod up in load order"
                     IsEnabled="{Binding !IsApplying}"
                     Command="{Binding MoveUpCommand}"/>
-            <Button Classes="ghost icon"   Content="&#xE70D;"
+            <Button Classes="ghost icon"   Content="&#xE483;"
                     ToolTip.Tip="Move selected mod down in load order"
                     IsEnabled="{Binding !IsApplying}"
                     Command="{Binding MoveDownCommand}"/>
@@ -130,8 +130,8 @@
                     </Transitions>
                   </Border.Transitions>
                   <TextBlock x:Name="SearchIconGlyph"
-                             Text="&#xE721;"
-                             FontFamily="Segoe Fluent Icons,Segoe MDL2 Assets,Segoe UI Symbol"
+                             Text="&#xEF9A;"
+                             FontFamily="{StaticResource IconFont}"
                              FontSize="16"
                              Foreground="{DynamicResource DirtyBrush}"
                              HorizontalAlignment="Center"
@@ -166,11 +166,11 @@
                 </TextBox>
               </Grid>
             </Border>
-            <Button Classes="danger icon"  Content="&#xE74D;"
+            <Button Classes="danger icon"  Content="&#xE666;"
                     ToolTip.Tip="Remove selected mod (run Apply afterwards to rebuild without it)"
                     IsEnabled="{Binding !IsApplying}"
                     Command="{Binding RemoveCommand}"/>
-            <Button Classes="primary icon" Content="&#xE710;"
+            <Button Classes="primary icon" Content="&#xE00C;"
                     ToolTip.Tip="Add a .mgsv mod archive"
                     IsEnabled="{Binding !IsApplying}"
                     Command="{Binding AddCommand}"/>
@@ -311,15 +311,15 @@
                    action as the toolbar entries. -->
               <MenuItem Header="Move up" Command="{Binding MoveUpCommand}">
                 <MenuItem.Icon>
-                  <TextBlock Text="&#xE70E;"
-                             FontFamily="Segoe Fluent Icons,Segoe MDL2 Assets,Segoe UI Symbol"
+                  <TextBlock Text="&#xE48B;"
+                             FontFamily="{StaticResource IconFont}"
                              FontSize="13"/>
                 </MenuItem.Icon>
               </MenuItem>
               <MenuItem Header="Move down" Command="{Binding MoveDownCommand}">
                 <MenuItem.Icon>
-                  <TextBlock Text="&#xE70D;"
-                             FontFamily="Segoe Fluent Icons,Segoe MDL2 Assets,Segoe UI Symbol"
+                  <TextBlock Text="&#xE483;"
+                             FontFamily="{StaticResource IconFont}"
                              FontSize="13"/>
                 </MenuItem.Icon>
               </MenuItem>
@@ -330,8 +330,8 @@
               <MenuItem Header="Remove..." Classes="danger"
                         Command="{Binding RemoveCommand}">
                 <MenuItem.Icon>
-                  <TextBlock Text="&#xE74D;"
-                             FontFamily="Segoe Fluent Icons,Segoe MDL2 Assets,Segoe UI Symbol"
+                  <TextBlock Text="&#xE666;"
+                             FontFamily="{StaticResource IconFont}"
                              FontSize="13"
                              Foreground="{DynamicResource DirtyBrush}"/>
                 </MenuItem.Icon>

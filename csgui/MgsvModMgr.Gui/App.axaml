@@ -66,6 +66,15 @@
             <Color x:Key="SystemAccentColorDark1">#971D1D</Color>
             <Color x:Key="SystemAccentColorDark2">#751313</Color>
             <Color x:Key="SystemAccentColorDark3">#5A0F0F</Color>
+
+            <!-- Icon font: bundled Fluent UI System Icons (MIT). Shipped
+                 inside the binary so toolbar / sidebar / context-menu
+                 glyphs render identically on Windows, Linux, and macOS.
+                 All codepoints in the codebase target this font's
+                 Unicode range — *not* Segoe Fluent Icons (different
+                 codepoints), which is why there's no system-font
+                 fallback chain here. -->
+            <FontFamily x:Key="IconFont">avares://modmgr_gui/Assets/Fonts/FluentSystemIcons-Resizable.ttf#FluentSystemIcons-Resizable</FontFamily>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

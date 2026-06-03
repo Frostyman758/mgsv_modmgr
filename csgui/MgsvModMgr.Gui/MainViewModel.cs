@@ -440,13 +440,16 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private async Task BrowseDatFpkAsync()
     {
+        // Cross-platform: Windows ships datfpk.exe, Linux/macOS ship a
+        // bare `datfpk` binary. Allow either via the picker.
         var files = await _window.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
-            Title          = "Select datfpk.exe",
+            Title          = "Select datfpk binary",
             AllowMultiple  = false,
             FileTypeFilter = new[]
             {
-                new FilePickerFileType("Executables") { Patterns = new[] { "*.exe" } },
+                new FilePickerFileType("datfpk")     { Patterns = new[] { "datfpk", "datfpk.exe" } },
+                new FilePickerFileType("Executables"){ Patterns = new[] { "*.exe", "*" } },
             },
         });
         var path = files.Count > 0 ? files[0].TryGetLocalPath() : null;

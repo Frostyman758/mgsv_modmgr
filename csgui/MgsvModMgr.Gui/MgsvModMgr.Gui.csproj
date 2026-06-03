@@ -28,15 +28,22 @@
 
   <ItemGroup>
     <AvaloniaResource Include="Assets\app.ico" />
+    <!-- Bundled cross-platform icon font (Microsoft Fluent UI System
+         Icons, MIT). Lets the toolbar / sidebar / context-menu glyphs
+         render identically on Windows, Linux, and macOS without
+         depending on a system-installed Segoe Fluent Icons font. -->
+    <AvaloniaResource Include="Assets\Fonts\FluentSystemIcons-Resizable.ttf" />
   </ItemGroup>
 
   <!-- One-file standalone publish settings.
        SelfContained + IncludeAllContentForSelfExtract = no .NET runtime needed
        on the target machine; native deps (libSkiaSharp etc.) get unpacked to a
-       temp folder on first launch. -->
+       temp folder on first launch. RuntimeIdentifier is supplied by the
+       publish.bat / publish.sh / publish-mac.sh script (defaults to win-x64
+       for direct `dotnet publish` invocations). -->
   <PropertyGroup Condition="'$(PublishSingleFile)' == 'true'">
     <SelfContained>true</SelfContained>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
