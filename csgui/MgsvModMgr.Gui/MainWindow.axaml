@@ -126,7 +126,8 @@
             </Grid>
           </Border>
 
-          <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
+          <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled"
+                        x:Name="ModListScroll">
             <ListBox ItemsSource="{Binding Mods}"
                      SelectedItem="{Binding SelectedMod, Mode=TwoWay}">
               <ListBox.ItemTemplate>
