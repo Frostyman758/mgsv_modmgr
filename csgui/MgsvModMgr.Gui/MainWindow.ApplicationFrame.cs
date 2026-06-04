@@ -5,19 +5,60 @@ using Avalonia.Interactivity;
 
 namespace MgsvModMgr.Gui;
 
-// MainWindow — custom Application Frame (title bar + min/max/close
-// buttons + drag/double-tap behaviour + maximise-glyph swap).
-// SystemDecorations are extended via ExtendClientAreaToDecorationsHint
-// so the OS still handles edge resize, snap-to-edge, and Win-arrow
-// gestures; we just draw over the whole client area.
+// MainWindow — custom Application Frame.
+//
+// Two-mode chrome:
+// - WINDOWS: ExtendClientAreaToDecorationsHint=true + ChromeHints=NoChrome.
+//   We paint over the entire client area while the OS keeps providing
+//   edge resize, snap-to-edge, and Win-arrow gestures. (XAML defaults.)
+// - LINUX/MACOS: many WMs (notably KWin) ignore the ExtendClientArea
+//   hint and draw their own title bar regardless, producing a
+//   double-title-bar effect. The constructor flips to
+//   SystemDecorations=None on those platforms and reveals the manual
+//   resize-grip overlay (defined in XAML, hidden by default) so we
+//   carry our own edge-drag affordance.
 public partial class MainWindow
 {
+    /// <summary>
+    /// Apply platform-specific window chrome at construction time.
+    /// XAML attributes assume the Windows case; this overrides them
+    /// when we detect a non-Windows OS.
+    /// </summary>
+    private void ApplyPlatformChrome()
+    {
+        if (OperatingSystem.IsWindows()) return;
+
+        // Linux + macOS: strip native chrome entirely and rely on our
+        // overlay grips for edge-resize. KWin/Mutter/etc. honour
+        // SystemDecorations=None cleanly and don't draw a fallback
+        // title bar over us. BeginResizeDrag works fine on these
+        // platforms via _NET_WM_MOVERESIZE (X11) / xdg_toplevel.resize
+        // (Wayland) / NSWindow drag (macOS).
+        SystemDecorations                  = Avalonia.Controls.SystemDecorations.None;
+        ExtendClientAreaToDecorationsHint  = false;
+        ExtendClientAreaChromeHints        = Avalonia.Platform.ExtendClientAreaChromeHints.Default;
+        ExtendClientAreaTitleBarHeightHint = 0;
+        if (ResizeGripsOverlay is not null) ResizeGripsOverlay.IsVisible = true;
+    }
+
+    /// <summary>
+    /// Single shared resize-grip handler. Each grip Border carries
+    /// its <see cref="WindowEdge"/> name in <c>Tag</c>, parsed here
+    /// and fed to <see cref="Window.BeginResizeDrag"/>. No-op while
+    /// the window is maximised.
+    /// </summary>
+    private void ResizeGrip_PointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (WindowState == WindowState.Maximized) return;
+        if (sender is not Control c) return;
+        if (c.Tag is not string s) return;
+        if (!Enum.TryParse<WindowEdge>(s, ignoreCase: true, out var edge)) return;
+        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+        BeginResizeDrag(edge, e);
+    }
+
     // ────────────────────────────────────────────────────────────────
-    // Custom title bar handlers. ExtendClientAreaToDecorationsHint
-    // hands us the full client area while the OS keeps providing
-    // edge resize + snap-to-edge + Win-arrow gestures, so we don't
-    // need our own resize-grip handlers any more — only the move /
-    // minimise / maximise-restore / close behaviour.
+    // Custom title bar handlers — move / minimise / maximise / close.
     // ────────────────────────────────────────────────────────────────
 
     /// <summary>

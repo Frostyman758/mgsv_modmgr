@@ -29,6 +29,11 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        // Per-platform chrome: Windows keeps the XAML's ExtendClientArea
+        // hint; Linux / macOS flip to SystemDecorations=None and reveal
+        // the manual resize-grip overlay so KWin / Mutter don't double
+        // up with their own title bar.
+        ApplyPlatformChrome();
         // DevTools always on so the user can press F12 in the shipped
         // build, drill into any visual, and live-edit Margin / Padding /
         // brushes in the property grid. Avalonia.Diagnostics is already

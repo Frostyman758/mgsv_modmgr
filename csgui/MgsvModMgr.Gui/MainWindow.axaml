@@ -18,13 +18,16 @@
         Background="{DynamicResource Bg}">
 
   <!-- Custom window chrome.
-       ExtendClientAreaToDecorationsHint+NoChrome lets us paint over
-       the whole client area (including where the OS title bar would
-       be) while still letting the OS handle window resize, snap, and
-       Win-arrow gestures. That's the difference between this version
-       and the previous SystemDecorations="None" attempt — `None`
-       kicked the resize logic off too, which broke corner-drag.
-       Row 0 is our title bar; Row 1 is the original layout. -->
+       On Windows we lean on the OS via ExtendClientAreaToDecorationsHint
+       (set in XAML attributes above) — works cleanly, snap/Win-arrow
+       gestures keep working.
+       On Linux/macOS the XAML hint is ignored by some WMs (KWin
+       notoriously draws its title bar regardless), so the constructor
+       flips to SystemDecorations="None" and reveals the manual resize
+       grip overlay below. Both branches end up using the same custom
+       title bar at Row 0 of the inner Grid. -->
+  <Grid> <!-- z-order container for main content + grips overlay -->
+
   <Grid RowDefinitions="36,*">
     <Border Grid.Row="0"
             Background="{DynamicResource Bg}"
@@ -1247,5 +1250,41 @@
               CornerRadius="2"/>
     </Canvas>
   </Grid>
+  </Grid> <!-- end RowDefinitions=36,* (title bar + content) -->
+
+  <!-- Resize grip overlay. Hidden by default; the constructor reveals
+       it on non-Windows platforms where we run SystemDecorations=None
+       (since the OS edge-resize hit-zones go away with the chrome).
+       Centre cell has no Background so pointer events pass straight
+       through to the main content underneath. -->
+  <Grid x:Name="ResizeGripsOverlay" IsVisible="False">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="8"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="8"/>
+    </Grid.RowDefinitions>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="8"/>
+      <ColumnDefinition Width="*"/>
+      <ColumnDefinition Width="8"/>
+    </Grid.ColumnDefinitions>
+    <Border Grid.Row="0" Grid.Column="0" Background="Transparent"
+            Cursor="TopLeftCorner"     Tag="NorthWest" PointerPressed="ResizeGrip_PointerPressed"/>
+    <Border Grid.Row="0" Grid.Column="2" Background="Transparent"
+            Cursor="TopRightCorner"    Tag="NorthEast" PointerPressed="ResizeGrip_PointerPressed"/>
+    <Border Grid.Row="2" Grid.Column="0" Background="Transparent"
+            Cursor="BottomLeftCorner"  Tag="SouthWest" PointerPressed="ResizeGrip_PointerPressed"/>
+    <Border Grid.Row="2" Grid.Column="2" Background="Transparent"
+            Cursor="BottomRightCorner" Tag="SouthEast" PointerPressed="ResizeGrip_PointerPressed"/>
+    <Border Grid.Row="0" Grid.Column="1" Background="Transparent"
+            Cursor="TopSide"    Tag="North" PointerPressed="ResizeGrip_PointerPressed"/>
+    <Border Grid.Row="2" Grid.Column="1" Background="Transparent"
+            Cursor="BottomSide" Tag="South" PointerPressed="ResizeGrip_PointerPressed"/>
+    <Border Grid.Row="1" Grid.Column="0" Background="Transparent"
+            Cursor="LeftSide"   Tag="West"  PointerPressed="ResizeGrip_PointerPressed"/>
+    <Border Grid.Row="1" Grid.Column="2" Background="Transparent"
+            Cursor="RightSide"  Tag="East"  PointerPressed="ResizeGrip_PointerPressed"/>
   </Grid>
+
+  </Grid> <!-- end z-order container -->
 </Window>
