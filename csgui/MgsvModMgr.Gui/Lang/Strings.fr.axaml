@@ -1,0 +1,63 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=netstandard">
+  <!--
+    French (français) — proof-of-concept locale.
+    Only a partial translation is provided so the language-switch UX
+    can be exercised end-to-end. Missing keys fall back to the key
+    itself (L.S contract) so untranslated surfaces stay visible while
+    a translator fills in the gaps.
+
+    To complete: open Strings.en.axaml side-by-side and translate each
+    <sys:String x:Key="Str.*"> value. The key set is identical across
+    every locale file.
+  -->
+
+  <sys:String x:Key="Str.Meta.LanguageName">Français</sys:String>
+
+  <!-- App chrome -->
+  <sys:String x:Key="Str.App.Title">MGSV Mod Manager</sys:String>
+  <sys:String x:Key="Str.App.WinMinimise">Réduire</sys:String>
+  <sys:String x:Key="Str.App.WinMaxRestore">Agrandir / Restaurer</sys:String>
+  <sys:String x:Key="Str.App.WinClose">Fermer</sys:String>
+
+  <!-- Sidebar tooltips -->
+  <sys:String x:Key="Str.Sidebar.Mods">Mods installés</sys:String>
+  <sys:String x:Key="Str.Sidebar.Apply">Appliquer les modifications en attente</sys:String>
+  <sys:String x:Key="Str.Sidebar.Revert">Restaurer les fichiers originaux du jeu</sys:String>
+  <sys:String x:Key="Str.Sidebar.Log">Journal d'activité</sys:String>
+  <sys:String x:Key="Str.Sidebar.ExportDict">Reconstruire les dictionnaires de chemins</sys:String>
+  <sys:String x:Key="Str.Sidebar.Nexus">Parcourir Nexus Mods</sys:String>
+  <sys:String x:Key="Str.Sidebar.Settings">Paramètres</sys:String>
+  <sys:String x:Key="Str.Sidebar.About">À propos</sys:String>
+
+  <!-- Installed mods page -->
+  <sys:String x:Key="Str.Mods.Title">Mods installés</sys:String>
+  <sys:String x:Key="Str.Mods.SearchWatermark">Rechercher dans la liste</sys:String>
+
+  <!-- Settings page -->
+  <sys:String x:Key="Str.Settings.Title">Paramètres</sys:String>
+  <sys:String x:Key="Str.Settings.Subtitle">Indiquez où se trouvent MGSV:TPP et datfpk.exe.</sys:String>
+  <sys:String x:Key="Str.Settings.GameRoot">DOSSIER DU JEU</sys:String>
+  <sys:String x:Key="Str.Settings.Browse">Parcourir…</sys:String>
+  <sys:String x:Key="Str.Settings.DatFpk">DATFPK</sys:String>
+  <sys:String x:Key="Str.Settings.Theme">THÈME</sys:String>
+  <sys:String x:Key="Str.Settings.ThemeLight">Clair</sys:String>
+  <sys:String x:Key="Str.Settings.ThemeDark">Sombre</sys:String>
+  <sys:String x:Key="Str.Settings.ThemeAuto">Auto</sys:String>
+  <sys:String x:Key="Str.Settings.ThemeAutoTip">Suivre le thème du système d'exploitation.</sys:String>
+  <sys:String x:Key="Str.Settings.Language">LANGUE</sys:String>
+  <sys:String x:Key="Str.Settings.LanguageHelp">Change toutes les étiquettes et infobulles de l'application. S'applique immédiatement.</sys:String>
+  <sys:String x:Key="Str.Settings.Back">Retour</sys:String>
+  <sys:String x:Key="Str.Settings.Save">Enregistrer</sys:String>
+
+  <!-- Footer -->
+  <sys:String x:Key="Str.Footer.GameRoot">Dossier du jeu:</sys:String>
+  <sys:String x:Key="Str.Footer.DatFpk">datfpk:</sys:String>
+
+  <!-- Confirm dialog -->
+  <sys:String x:Key="Str.Confirm.Title">Confirmer</sys:String>
+  <sys:String x:Key="Str.Confirm.Cancel">Annuler</sys:String>
+  <sys:String x:Key="Str.Confirm.Ok">Confirmer</sys:String>
+
+</ResourceDictionary>

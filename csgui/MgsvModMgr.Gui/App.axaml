@@ -11,12 +11,12 @@
 
     <Application.Resources>
         <ResourceDictionary>
-            <!-- Localised UI strings live in their own dictionary so a
-                 future language swap is a one-line MergedDictionaries
-                 edit. Keys are documented in Lang/Strings.en.axaml. -->
-            <ResourceDictionary.MergedDictionaries>
-                <ResourceInclude Source="avares://modmgr_gui/Lang/Strings.en.axaml"/>
-            </ResourceDictionary.MergedDictionaries>
+            <!-- Localised UI strings are merged in at runtime by
+                 Lang/LocaleRegistry.Apply() during startup, against
+                 whatever locale is saved in state.txt. The strings
+                 file ships under Lang/Strings.<code>.axaml — drop a
+                 new one in to add a language; the registry discovers
+                 it automatically. -->
 
             <!-- Per-variant brush palette. The Bg / Panel / Border / Text
                  family swaps based on App.RequestedThemeVariant. The

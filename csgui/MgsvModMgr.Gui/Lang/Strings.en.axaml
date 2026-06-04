@@ -2,7 +2,7 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=netstandard">
   <!--
-    English UI strings. Sole source of truth for every user-facing label,
+    English UI strings,
     tooltip, watermark, dialog title and dialog body in the app. Each
     additional locale ships its own copy of this file (Strings.de.axaml,
     Strings.ja.axaml, ...) with the same x:Key set and translated values.
@@ -26,6 +26,14 @@
     XAML callers:    Text="{DynamicResource Str.Mods.Title}"
     Code callers:    L.S("Str.Mods.Title")  (see Lang/L.cs)
   -->
+
+  <!-- Per-locale metadata. Every Strings.*.axaml MUST define
+       Str.Meta.LanguageName as the locale's display name in its own
+       language (so the dropdown reads "English" / "Français" /
+       "日本語" — each user sees their target language in its own
+       script). LocaleRegistry parses this key when enumerating
+       available locales at startup. -->
+  <sys:String x:Key="Str.Meta.LanguageName">English</sys:String>
 
   <!-- App chrome -->
   <sys:String x:Key="Str.App.Title">MGSV Mod Manager</sys:String>
@@ -116,8 +124,13 @@
   <sys:String x:Key="Str.Settings.SsoTip">Open the Nexus approval page in your browser. Once you click Approve there, the API key is filled in for you.</sys:String>
   <sys:String x:Key="Str.Settings.SignIn">Sign in with Nexus</sys:String>
   <sys:String x:Key="Str.Settings.Theme">THEME</sys:String>
-  <sys:String x:Key="Str.Settings.LightTheme">Light theme</sys:String>
+  <sys:String x:Key="Str.Settings.ThemeLight">Light</sys:String>
+  <sys:String x:Key="Str.Settings.ThemeDark">Dark</sys:String>
+  <sys:String x:Key="Str.Settings.ThemeAuto">Auto</sys:String>
+  <sys:String x:Key="Str.Settings.ThemeAutoTip">Follow the operating system's current theme.</sys:String>
   <sys:String x:Key="Str.Settings.ThemeHelp">Swaps the background / panel / text palette. The red/amber install-state colours stay the same.</sys:String>
+  <sys:String x:Key="Str.Settings.Language">LANGUAGE</sys:String>
+  <sys:String x:Key="Str.Settings.LanguageHelp">Switches every label, button, and tooltip in the app. Applies immediately; persists across restarts.</sys:String>
   <sys:String x:Key="Str.Settings.Back">Back</sys:String>
   <sys:String x:Key="Str.Settings.Save">Save</sys:String>
   <sys:String x:Key="Str.Settings.Maintenance">MAINTENANCE</sys:String>

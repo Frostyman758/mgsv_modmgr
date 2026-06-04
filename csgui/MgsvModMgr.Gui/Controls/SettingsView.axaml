@@ -72,19 +72,77 @@
         </Grid>
       </StackPanel>
 
-      <!-- Theme preference. Toggle persists in state.txt and is
-           applied live on flip via ApplyThemeVariant. -->
+      <!-- Language picker. The ComboBox is bound to the registry's
+           discovered locale list; each item renders as its own
+           LocaleInfo.DisplayName (in its own script). Switching writes
+           through SelectedLanguage, which live-swaps the merged
+           strings dictionary so every {DynamicResource Str.*} in the
+           visual tree re-resolves to the new locale immediately. -->
+      <StackPanel Spacing="6">
+        <TextBlock Text="{DynamicResource Str.Settings.Language}" Foreground="{DynamicResource TextDim}"
+                   FontSize="11" FontWeight="SemiBold"/>
+        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextDim}" FontSize="12"
+                   Text="{DynamicResource Str.Settings.LanguageHelp}"/>
+        <ComboBox Margin="0,4,0,0"
+                  HorizontalAlignment="Stretch"
+                  ItemsSource="{Binding Languages}"
+                  SelectedItem="{Binding SelectedLanguage, Mode=TwoWay}"/>
+      </StackPanel>
+
+      <!-- Theme preference. Three button-tiles (Light / Dark / Auto)
+           in a row, each carrying its own glyph + label. Active tile
+           pulses with the DirtyBrush border via the .active class so
+           the user can see at a glance which mode is current. -->
       <StackPanel Spacing="6">
         <TextBlock Text="{DynamicResource Str.Settings.Theme}" Foreground="{DynamicResource TextDim}"
                    FontSize="11" FontWeight="SemiBold"/>
-        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-          <TextBlock Text="{DynamicResource Str.Settings.LightTheme}" Foreground="{DynamicResource Text}"
-                     VerticalAlignment="Center"/>
-          <ToggleSwitch IsChecked="{Binding IsLightTheme, Mode=TwoWay}"
-                        VerticalAlignment="Center"/>
-        </StackPanel>
         <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextDim}" FontSize="12"
                    Text="{DynamicResource Str.Settings.ThemeHelp}"/>
+        <UniformGrid Columns="3" Margin="0,4,0,0">
+          <!-- Light tile. WeatherSunny glyph. -->
+          <Button Classes="theme-tile"
+                  Classes.active="{Binding IsThemeLight}"
+                  Command="{Binding SetThemeLightCommand}">
+            <StackPanel Spacing="6" HorizontalAlignment="Center">
+              <TextBlock Text="&#xF4A4;"
+                         FontFamily="{DynamicResource IconFont}"
+                         FontSize="22"
+                         HorizontalAlignment="Center"/>
+              <TextBlock Text="{DynamicResource Str.Settings.ThemeLight}"
+                         FontSize="12"
+                         HorizontalAlignment="Center"/>
+            </StackPanel>
+          </Button>
+          <!-- Dark tile. WeatherMoon glyph. -->
+          <Button Classes="theme-tile"
+                  Classes.active="{Binding IsThemeDark}"
+                  Command="{Binding SetThemeDarkCommand}">
+            <StackPanel Spacing="6" HorizontalAlignment="Center">
+              <TextBlock Text="&#xF4A1;"
+                         FontFamily="{DynamicResource IconFont}"
+                         FontSize="22"
+                         HorizontalAlignment="Center"/>
+              <TextBlock Text="{DynamicResource Str.Settings.ThemeDark}"
+                         FontSize="12"
+                         HorizontalAlignment="Center"/>
+            </StackPanel>
+          </Button>
+          <!-- Auto tile. CircleHalfFill glyph (split sun/moon disc). -->
+          <Button Classes="theme-tile"
+                  Classes.active="{Binding IsThemeAuto}"
+                  ToolTip.Tip="{DynamicResource Str.Settings.ThemeAutoTip}"
+                  Command="{Binding SetThemeAutoCommand}">
+            <StackPanel Spacing="6" HorizontalAlignment="Center">
+              <TextBlock Text="&#xED28;"
+                         FontFamily="{DynamicResource IconFont}"
+                         FontSize="22"
+                         HorizontalAlignment="Center"/>
+              <TextBlock Text="{DynamicResource Str.Settings.ThemeAuto}"
+                         FontSize="12"
+                         HorizontalAlignment="Center"/>
+            </StackPanel>
+          </Button>
+        </UniformGrid>
       </StackPanel>
 
       <!-- Save / Cancel: sized to match the Browse buttons above so the

@@ -9,6 +9,43 @@
         <Setter Property="Foreground" Value="{DynamicResource Text}" />
     </Style>
 
+    <!-- Theme picker tiles: three square buttons on the Settings page
+         (Light / Dark / Auto), each with a glyph + label. Active tile
+         carries the DirtyBrush border + bg so the current theme is
+         visible at a glance; the hover state lifts non-active tiles
+         to PanelAlt for a subtle "pickable" feel. -->
+    <Style Selector="Button.theme-tile">
+        <Setter Property="Height"     Value="84" />
+        <Setter Property="Padding"    Value="0" />
+        <Setter Property="Margin"     Value="4" />
+        <Setter Property="Background" Value="{DynamicResource Panel}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Border}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius"    Value="8" />
+        <Setter Property="Foreground"      Value="{DynamicResource Text}" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment"   Value="Center" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition  Property="Background"  Duration="0:0:0.15"/>
+                <BrushTransition  Property="BorderBrush" Duration="0:0:0.15"/>
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Button.theme-tile:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource PanelAlt}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Border}" />
+    </Style>
+    <Style Selector="Button.theme-tile.active">
+        <Setter Property="Background" Value="{DynamicResource PanelAlt}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DirtyBrush}" />
+    </Style>
+    <Style Selector="Button.theme-tile.active /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource PanelAlt}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DirtyBrush}" />
+    </Style>
+
     <!-- Custom title-bar window buttons (min / max-restore / close).
          Square 46×36 cells with subtle hover; the .close variant
          flashes the accent red on hover so it reads as "this destroys

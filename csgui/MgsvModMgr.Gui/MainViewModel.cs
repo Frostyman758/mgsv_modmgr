@@ -77,6 +77,13 @@ public sealed partial class MainViewModel : INotifyPropertyChanged
         BrowseDatFpkCommand   = new RelayCommand(BrowseDatFpkAsync);
         SaveSettingsCommand   = new RelayCommand(SaveSettingsAsync);
         ResetApplyStateCommand = new RelayCommand(ResetApplyStateAsync);
+        // The three theme buttons all push through the same setter so
+        // persistence + the live RequestedThemeVariant swap happen in
+        // one place. Avalonia rebroadcasts the theme change to every
+        // {DynamicResource} consumer in the visual tree automatically.
+        SetThemeLightCommand = new RelayCommand(() => ThemeMode = Core.ThemeMode.Light);
+        SetThemeDarkCommand  = new RelayCommand(() => ThemeMode = Core.ThemeMode.Dark);
+        SetThemeAutoCommand  = new RelayCommand(() => ThemeMode = Core.ThemeMode.Auto);
 
         RemoveRowCommand = new RelayCommand<ModRow>(async row =>
         {
@@ -312,6 +319,9 @@ public sealed partial class MainViewModel : INotifyPropertyChanged
     public ICommand BrowseDatFpkCommand   { get; }
     public ICommand SaveSettingsCommand   { get; }
     public ICommand ResetApplyStateCommand { get; }
+    public ICommand SetThemeLightCommand   { get; }
+    public ICommand SetThemeDarkCommand    { get; }
+    public ICommand SetThemeAutoCommand    { get; }
 
     /// <summary>Row-targeted variants for the right-click context menu.</summary>
     public ICommand RemoveRowCommand { get; }
@@ -324,8 +334,10 @@ public sealed partial class MainViewModel : INotifyPropertyChanged
     {
         // Apply persisted theme as the very first paint — before any
         // visible content settles in — so the user never sees a flash
-        // of the default variant.
-        ApplyThemeVariant();
+        // of the default variant. App.axaml.cs already applied it at
+        // startup; this re-applies in case any later code path changed
+        // it before the window opened.
+        App.ApplyThemeVariant(_manager.State.Theme);
 
         if (string.IsNullOrEmpty(_manager.State.GameRoot) ||
             string.IsNullOrEmpty(_manager.State.DatFpk))

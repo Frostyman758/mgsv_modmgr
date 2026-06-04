@@ -292,32 +292,61 @@ public sealed partial class MainViewModel
     }
 
     /// <summary>
-    /// Light-vs-dark theme preference. Persisted in state.txt as
-    /// `theme=light` / `theme=dark`. Writes through to
-    /// Application.Current.RequestedThemeVariant immediately so the
-    /// switch happens live, with all DynamicResource brush bindings
-    /// crossfading via Avalonia's theme-variant resource lookup.
+    /// UI theme preference (Light / Dark / Auto). Persisted in
+    /// state.txt as <c>theme_mode=light|dark|auto</c>. Writes through
+    /// to <c>Application.Current.RequestedThemeVariant</c> immediately
+    /// so the switch happens live; all DynamicResource brush bindings
+    /// crossfade via Avalonia's theme-variant resource lookup.
     /// </summary>
-    public bool IsLightTheme
+    public Core.ThemeMode ThemeMode
     {
-        get => _manager.State.IsLightTheme;
+        get => _manager.State.Theme;
         set
         {
-            if (_manager.State.IsLightTheme == value) return;
-            _manager.State.IsLightTheme = value;
-            ApplyThemeVariant();
+            if (_manager.State.Theme == value) return;
+            _manager.State.Theme = value;
+            App.ApplyThemeVariant(value);
+            _manager.SaveState();
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsThemeLight));
+            OnPropertyChanged(nameof(IsThemeDark));
+            OnPropertyChanged(nameof(IsThemeAuto));
+        }
+    }
+    // Bindable "is this mode active" flags for the 3 theme buttons —
+    // each maps to one of the Classes.active toggles in SettingsView.
+    public bool IsThemeLight => ThemeMode == Core.ThemeMode.Light;
+    public bool IsThemeDark  => ThemeMode == Core.ThemeMode.Dark;
+    public bool IsThemeAuto  => ThemeMode == Core.ThemeMode.Auto;
+
+    /// <summary>
+    /// All UI locales discovered in the bundled Lang/ folder. The
+    /// ComboBox in Settings binds to this list; each item renders as
+    /// its own LocaleInfo.DisplayName (in its own script).
+    /// </summary>
+    public System.Collections.Generic.IReadOnlyList<Lang.LocaleInfo> Languages
+        => Lang.LocaleRegistry.All;
+
+    private Lang.LocaleInfo? _selectedLanguage;
+    /// <summary>
+    /// The currently-active UI language. Two-way bound to the Settings
+    /// ComboBox; writes also persist the choice and live-swap the
+    /// merged strings dictionary, so every {DynamicResource Str.*}
+    /// re-resolves to the new locale immediately.
+    /// </summary>
+    public Lang.LocaleInfo? SelectedLanguage
+    {
+        get => _selectedLanguage ??= Lang.LocaleRegistry.Current
+                                     ?? Lang.LocaleRegistry.Find(_manager.State.Language);
+        set
+        {
+            if (value is null || _selectedLanguage == value) return;
+            _selectedLanguage = value;
+            _manager.State.Language = value.Code;
+            Lang.LocaleRegistry.Apply(value.Code);
             _manager.SaveState();
             OnPropertyChanged();
         }
-    }
-
-    private void ApplyThemeVariant()
-    {
-        var app = Avalonia.Application.Current;
-        if (app is null) return;
-        app.RequestedThemeVariant = _manager.State.IsLightTheme
-            ? Avalonia.Styling.ThemeVariant.Light
-            : Avalonia.Styling.ThemeVariant.Dark;
     }
 
     // Loading / error UI state for the Nexus page.
