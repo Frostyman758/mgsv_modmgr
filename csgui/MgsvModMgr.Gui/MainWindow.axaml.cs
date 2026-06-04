@@ -48,6 +48,14 @@ public partial class MainWindow : Window
         AttachGridHooks();
         HookDirtyBrush(vm);
 
+        // Keep the maximise/restore button's glyph in sync with the
+        // actual window state. Avalonia's WindowState is observable
+        // via WindowStateProperty.
+        PropertyChanged += (_, e) =>
+        {
+            if (e.Property == WindowStateProperty) RefreshMaxRestoreGlyph();
+        };
+
         // Window-wide file drop: accept .mgsv files and any archive
         // SharpCompress can crack open. Hand the paths to the VM's
         // add-mod pipeline which handles extraction + registration.

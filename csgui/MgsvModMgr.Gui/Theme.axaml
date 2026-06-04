@@ -9,6 +9,44 @@
         <Setter Property="Foreground" Value="{DynamicResource Text}" />
     </Style>
 
+    <!-- Custom title-bar window buttons (min / max-restore / close).
+         Square 46×36 cells with subtle hover; the .close variant
+         flashes the accent red on hover so it reads as "this destroys
+         the window" without being aggressive in resting state. -->
+    <Style Selector="Button.window-btn">
+        <Setter Property="Background"      Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Width"           Value="46" />
+        <Setter Property="Height"          Value="36" />
+        <Setter Property="Padding"         Value="0" />
+        <Setter Property="CornerRadius"    Value="0" />
+        <Setter Property="FontFamily"      Value="{DynamicResource IconFont}" />
+        <Setter Property="FontSize"        Value="11" />
+        <Setter Property="Foreground"      Value="{DynamicResource Text}" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment"   Value="Center" />
+    </Style>
+    <Style Selector="Button.window-btn /template/ ContentPresenter">
+        <Setter Property="Background"  Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.window-btn:pointerover /template/ ContentPresenter">
+        <Setter Property="Background"  Value="{DynamicResource PanelAlt}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.window-btn:pressed /template/ ContentPresenter">
+        <Setter Property="Background"  Value="{DynamicResource GhostPressedBg}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.window-btn.close:pointerover /template/ ContentPresenter">
+        <Setter Property="Background"            Value="{DynamicResource Accent}" />
+        <Setter Property="TextElement.Foreground" Value="White" />
+    </Style>
+    <Style Selector="Button.window-btn.close:pressed /template/ ContentPresenter">
+        <Setter Property="Background"            Value="#8E1F1F" />
+        <Setter Property="TextElement.Foreground" Value="White" />
+    </Style>
+
     <!-- TextBlock default -->
     <Style Selector="TextBlock">
         <Setter Property="Foreground" Value="{DynamicResource Text}" />

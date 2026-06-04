@@ -8,12 +8,72 @@
         x:DataType="vm:MainViewModel"
         Title="MGSV Mod Manager"
         Icon="avares://modmgr_gui/Assets/app.ico"
-        Width="1180" Height="780"
+        Width="980" Height="600"
         MinWidth="980" MinHeight="600"
+        WindowStartupLocation="CenterScreen"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="NoChrome"
+        ExtendClientAreaTitleBarHeightHint="-1"
         DragDrop.AllowDrop="True"
         Background="{DynamicResource Bg}">
 
-  <Grid ColumnDefinitions="64,*" Classes.dirty="{Binding IsDirty}">
+  <!-- Custom window chrome.
+       ExtendClientAreaToDecorationsHint+NoChrome lets us paint over
+       the whole client area (including where the OS title bar would
+       be) while still letting the OS handle window resize, snap, and
+       Win-arrow gestures. That's the difference between this version
+       and the previous SystemDecorations="None" attempt — `None`
+       kicked the resize logic off too, which broke corner-drag.
+       Row 0 is our title bar; Row 1 is the original layout. -->
+  <Grid RowDefinitions="36,*">
+    <Border Grid.Row="0"
+            Background="{DynamicResource Bg}"
+            BorderBrush="{DynamicResource Border}"
+            BorderThickness="0,0,0,1"
+            PointerPressed="TitleBar_PointerPressed"
+            DoubleTapped="TitleBar_DoubleTapped">
+      <Grid ColumnDefinitions="auto,*,auto">
+        <!-- App icon + title on the left -->
+        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8"
+                    Margin="10,0,0,0" VerticalAlignment="Center"
+                    IsHitTestVisible="False">
+          <Image Source="avares://modmgr_gui/Assets/app.ico"
+                 Width="16" Height="16"/>
+          <TextBlock Text="MGSV Mod Manager"
+                     Foreground="{DynamicResource Text}"
+                     FontSize="12"
+                     VerticalAlignment="Center"/>
+        </StackPanel>
+        <!-- Centre column is intentionally empty — its job is to be
+             the draggable padding so the user can pick the window up
+             anywhere in the gap. -->
+        <!-- Window buttons on the right -->
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="0">
+          <!-- Fluent UI System Icons glyphs:
+               F15F = subtract (minimise),
+               F0F1 = square (maximise),
+               EBF6 = maximize-restore (restore from maximised),
+               E6CB = dismiss (close).
+               The max/restore button's content swaps in code-behind
+               when the window state flips. -->
+          <Button Classes="window-btn"
+                  Content="&#xF15F;"
+                  ToolTip.Tip="Minimise"
+                  Click="WindowBtn_Minimize"/>
+          <Button Classes="window-btn"
+                  x:Name="MaxRestoreButton"
+                  Content="&#xF0F1;"
+                  ToolTip.Tip="Maximise / Restore"
+                  Click="WindowBtn_MaximizeRestore"/>
+          <Button Classes="window-btn close"
+                  Content="&#xE6CB;"
+                  ToolTip.Tip="Close"
+                  Click="WindowBtn_Close"/>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+  <Grid Grid.Row="1" ColumnDefinitions="64,*" Classes.dirty="{Binding IsDirty}">
 
     <!-- ===================== SIDEBAR ===================== -->
     <!-- Background uses Bg (not Panel) so the sidebar tracks the page-
@@ -1186,5 +1246,6 @@
               Background="{DynamicResource DirtyBrush}"
               CornerRadius="2"/>
     </Canvas>
+  </Grid>
   </Grid>
 </Window>
