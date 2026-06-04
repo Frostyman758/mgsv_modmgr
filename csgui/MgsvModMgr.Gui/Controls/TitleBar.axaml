@@ -1,0 +1,54 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MgsvModMgr.Gui"
+             x:Class="MgsvModMgr.Gui.Controls.TitleBar"
+             x:DataType="vm:MainViewModel">
+  <!-- Custom title bar: app icon + name + window control buttons.
+       Sits at the top of MainWindow.axaml's row 0 and provides
+       the move-drag + maximise-toggle + min/max/close affordances
+       the OS normally draws. The MaxRestoreButton glyph is swapped
+       by MainWindow.ApplicationFrame.cs whenever WindowState changes. -->
+  <Border Background="{DynamicResource Bg}"
+          BorderBrush="{DynamicResource Border}"
+          BorderThickness="0,0,0,1"
+          PointerPressed="TitleBar_PointerPressed"
+          DoubleTapped="TitleBar_DoubleTapped">
+    <Grid ColumnDefinitions="auto,*,auto">
+      <!-- App icon + title on the left -->
+      <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8"
+                  Margin="10,0,0,0" VerticalAlignment="Center"
+                  IsHitTestVisible="False">
+        <Image Source="avares://modmgr_gui/Assets/app.ico"
+               Width="16" Height="16"/>
+        <TextBlock Text="{DynamicResource Str.App.Title}"
+                   Foreground="{DynamicResource Text}"
+                   FontSize="12"
+                   VerticalAlignment="Center"/>
+      </StackPanel>
+      <!-- Centre column intentionally empty so the user can pick the
+           window up anywhere in the gap. -->
+      <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="0">
+        <!-- Fluent UI System Icons glyphs:
+             F15F = subtract (minimise),
+             F0F1 = square (maximise),
+             EBF6 = maximize-restore (restore from maximised),
+             E6CB = dismiss (close).
+             The max/restore button's content swaps in code-behind
+             when the window state flips. -->
+        <Button Classes="window-btn"
+                Content="&#xF15F;"
+                ToolTip.Tip="{DynamicResource Str.App.WinMinimise}"
+                Click="WindowBtn_Minimize"/>
+        <Button Classes="window-btn"
+                x:Name="MaxRestoreButton"
+                Content="&#xF0F1;"
+                ToolTip.Tip="{DynamicResource Str.App.WinMaxRestore}"
+                Click="WindowBtn_MaximizeRestore"/>
+        <Button Classes="window-btn close"
+                Content="&#xE6CB;"
+                ToolTip.Tip="{DynamicResource Str.App.WinClose}"
+                Click="WindowBtn_Close"/>
+      </StackPanel>
+    </Grid>
+  </Border>
+</UserControl>

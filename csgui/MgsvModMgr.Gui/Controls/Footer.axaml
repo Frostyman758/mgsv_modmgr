@@ -1,0 +1,42 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MgsvModMgr.Gui"
+             x:Class="MgsvModMgr.Gui.Controls.Footer"
+             x:DataType="vm:MainViewModel">
+  <!-- Status footer with thin Apply-progress bar pinned above it.
+       Click anywhere on the strip to hide it; auto-shows again when
+       the next Apply starts. -->
+  <DockPanel LastChildFill="True" IsVisible="{Binding IsFooterShown}">
+    <!-- Progress bar: 2px tall. Its fill IS the live DirtyBrush —
+         the same brush instance the toggles, Add button, sidebar Apply
+         pip and trash button paint with. As ApplyProgress moves,
+         code-behind rewrites DirtyBrush.Color and every consumer
+         repaints in the same frame, perfectly in sync. -->
+    <ProgressBar DockPanel.Dock="Top"
+                 Height="2" Minimum="0" Maximum="1"
+                 Value="{Binding ApplyProgress}"
+                 IsVisible="{Binding IsApplying}"
+                 Foreground="{DynamicResource DirtyBrush}"
+                 Background="Transparent"
+                 BorderThickness="0"
+                 CornerRadius="0"
+                 ShowProgressText="False"/>
+    <!-- Footer Background uses Bg so the chrome row tracks the
+         sidebar + header grey in light theme. -->
+    <Border Background="{DynamicResource Bg}"
+            BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0"
+            Padding="24,8"
+            Cursor="Hand"
+            PointerPressed="Footer_PointerPressed"
+            ToolTip.Tip="{DynamicResource Str.Footer.HideTip}">
+      <StackPanel Orientation="Horizontal" Spacing="20">
+        <TextBlock Foreground="{DynamicResource TextDim}" FontSize="11">
+          <Run Text="{DynamicResource Str.Footer.GameRoot}"/><Run Text=" "/><Run Text="{Binding GameRoot}" Foreground="{DynamicResource Text}"/>
+        </TextBlock>
+        <TextBlock Foreground="{DynamicResource TextDim}" FontSize="11">
+          <Run Text="{DynamicResource Str.Footer.DatFpk}"/><Run Text=" "/><Run Text="{Binding DatFpk}" Foreground="{DynamicResource Text}"/>
+        </TextBlock>
+      </StackPanel>
+    </Border>
+  </DockPanel>
+</UserControl>

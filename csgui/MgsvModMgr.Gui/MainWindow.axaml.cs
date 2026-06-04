@@ -13,6 +13,22 @@ using Avalonia.VisualTree;
 
 namespace MgsvModMgr.Gui;
 
+// MainWindow code-behind — the composition root.
+//
+// The XAML side of MainWindow is now purely structural: it places the
+// UserControls under Controls/ into a page-switching grid. The
+// concerns that remain here are the ones that genuinely span multiple
+// sections of the UI:
+//   - DirtyBrush hue lerp (HookDirtyBrush) — drives every install-
+//     state-sensitive control in the window
+//   - window-wide drag-and-drop file accept (Window_DragOver/Drop)
+//   - the search box's live "jump to row" handler, which needs both
+//     the search TextBox (in ModsHeader) AND the DataGrid (in ModsList)
+//   - the right-click column-visibility flyout on the mods header
+//   - column-visibility persistence at startup
+// Drag-reorder lives in MainWindow.DragReorder.cs and the custom
+// chrome lives in MainWindow.ApplicationFrame.cs — both partials of
+// this class.
 public partial class MainWindow : Window
 {
     // Endpoints for the live "dirty" colour ramp.
@@ -36,8 +52,7 @@ public partial class MainWindow : Window
         ApplyPlatformChrome();
         // DevTools always on so the user can press F12 in the shipped
         // build, drill into any visual, and live-edit Margin / Padding /
-        // brushes in the property grid. Avalonia.Diagnostics is already
-        // referenced; this just wires up the F12 binding.
+        // brushes in the property grid.
         this.AttachDevTools();
         var vm = new MainViewModel(this);
         DataContext = vm;
@@ -54,29 +69,39 @@ public partial class MainWindow : Window
         HookDirtyBrush(vm);
 
         // Keep the maximise/restore button's glyph in sync with the
-        // actual window state. Avalonia's WindowState is observable
-        // via WindowStateProperty.
+        // actual window state.
         PropertyChanged += (_, e) =>
         {
             if (e.Property == WindowStateProperty) RefreshMaxRestoreGlyph();
         };
 
         // Window-wide file drop: accept .mgsv files and any archive
-        // SharpCompress can crack open. Hand the paths to the VM's
-        // add-mod pipeline which handles extraction + registration.
+        // SharpCompress can crack open.
         AddHandler(DragDrop.DragOverEvent, Window_DragOver);
         AddHandler(DragDrop.DropEvent,     Window_Drop);
 
-        // Right-click anywhere on the page header (blank area next to
-        // "Installed mods" / between the title and the toolbar) → pops
-        // the column-visibility menu. NAME and ENABLED are filtered
-        // out as essentials.
-        if (ModsHeader is not null)
-            ModsHeader.AddHandler(
+        // Right-click anywhere on the mods page header (blank space
+        // next to the title) → pops the column-visibility menu.
+        // ModsHeader is in a UserControl now; we listen on its inner
+        // Border (HeaderBorder), which the UserControl exposes.
+        var hdr = ModsHeaderHost?.HeaderBorder;
+        if (hdr is not null)
+            hdr.AddHandler(
                 ContextRequestedEvent,
                 ModsHeader_ContextRequested,
                 Avalonia.Interactivity.RoutingStrategies.Bubble);
+
+        // The live "jump-to" search lives on the ModsHeader's TextBox.
+        // The handler needs the DataGrid (in ModsList) to scroll, so
+        // it stays on MainWindow — we just subscribe to the box.
+        if (ModsHeaderHost?.SearchTextBox is { } sbox)
+            sbox.TextChanged += SearchBox_TextChanged;
     }
+
+    // Convenience accessors so the rest of this class (and the partial
+    // siblings) can read the inner grids/canvases without going through
+    // the UserControl property every time.
+    private DataGrid? ModListGrid => ModsListHost?.GridControl;
 
     /// <summary>
     /// Wire MainViewModel.DirtyMix to the shared DirtyBrush resource. We
@@ -116,11 +141,6 @@ public partial class MainWindow : Window
         _dirtyBrush.Color = Color.FromRgb(r, g, b);
     }
 
-    private void Footer_PointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        if (DataContext is MainViewModel vm) vm.HideFooter();
-    }
-
     // ────────────────────────────────────────────────────────────────
     // File drag-drop onto the window: accept .mgsv + archives
     // ────────────────────────────────────────────────────────────────
@@ -130,7 +150,6 @@ public partial class MainWindow : Window
 
     private void Window_DragOver(object? sender, DragEventArgs e)
     {
-        // Accept files only — refuse anything else (text, links, etc).
         var ok = e.Data.Contains(DataFormats.Files) && AnyDroppedPathSupported(e);
         e.DragEffects = ok ? DragDropEffects.Copy : DragDropEffects.None;
         e.Handled = true;
@@ -174,98 +193,6 @@ public partial class MainWindow : Window
         return false;
     }
 
-    /// <summary>
-    /// Infinite scroll: when the user is within ~600 px of the bottom
-    /// of the Nexus card grid, request the next page from the VM. The
-    /// VM gates the call against CanLoadMoreNexus, so repeated fires
-    /// during the scroll animation are harmless.
-    /// </summary>
-    private void NexusTag_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
-    {
-        if (sender is Button b && b.Tag is string tag && DataContext is MainViewModel vm)
-            vm.FilterByTag(tag);
-    }
-
-    private void NexusGridScroll_ScrollChanged(object? sender, ScrollChangedEventArgs e)
-    {
-        if (sender is not ScrollViewer sv) return;
-        if (DataContext is not MainViewModel vm) return;
-        var bottomGap = sv.Extent.Height - (sv.Offset.Y + sv.Viewport.Height);
-        if (bottomGap < 600 && vm.CanLoadMoreNexus)
-            _ = vm.LoadMoreNexusAsync();
-    }
-
-    private void NexusCard_PointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        // Click anywhere on the card → drill into the detail view for
-        // that mod. The card's DataContext is the NexusModCard binding
-        // target; the page-level VM owns the selection state.
-        if (sender is Border b
-            && b.DataContext is NexusModCard card
-            && DataContext is MainViewModel vm)
-        {
-            vm.NexusSelectedMod = card;
-            e.Handled = true;
-        }
-    }
-
-    // ────────────────────────────────────────────────────────────────
-    // Search pill: collapses ↔ expands via the Border's Width transition.
-    // ────────────────────────────────────────────────────────────────
-
-    private const double SearchExpandedWidth = 280;
-
-    private void SearchPill_PointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        // Only respond when collapsed — once expanded, clicks inside go
-        // to the TextBox and should not re-trigger expansion logic.
-        if (SearchBox is null || SearchBox.IsVisible) return;
-        ExpandSearch();
-        e.Handled = true;
-    }
-
-    private void ExpandSearch()
-    {
-        if (SearchPill is null || SearchBox is null) return;
-        SearchBox.IsVisible = true;
-        SearchPill.Width    = SearchExpandedWidth;
-        // Toggle the .expanded pseudo-class on the outer pill; the
-        // Theme.axaml styles take it from there (red backplate + white
-        // glyph) — keeps brush ownership inside XAML where DirtyBrush
-        // live-shifts cleanly without code-behind interpolation.
-        if (!SearchPill.Classes.Contains("expanded"))
-            SearchPill.Classes.Add("expanded");
-        // Focus on the next dispatcher tick so the visibility flip has
-        // propagated through layout before the focus call lands.
-        Dispatcher.UIThread.Post(() => SearchBox.Focus(), DispatcherPriority.Background);
-    }
-
-    private void CollapseSearch()
-    {
-        if (SearchPill is null || SearchBox is null) return;
-        SearchBox.IsVisible = false;
-        SearchPill.Width    = 40;
-        SearchPill.Classes.Remove("expanded");
-    }
-
-    private void SearchBox_LostFocus(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
-    {
-        // Auto-collapse only if the user didn't actually search anything.
-        // If they typed a query, keep the bar open so the filter stays
-        // visible/visible-feedback even when focus moves elsewhere.
-        if (string.IsNullOrEmpty(SearchBox?.Text)) CollapseSearch();
-    }
-
-    private void SearchBox_KeyDown(object? sender, KeyEventArgs e)
-    {
-        if (e.Key == Key.Escape)
-        {
-            if (SearchBox is not null) SearchBox.Text = "";
-            CollapseSearch();
-            e.Handled = true;
-        }
-    }
-
     // ────────────────────────────────────────────────────────────────
     // Column visibility: right-click any column header for a toggle menu
     // ────────────────────────────────────────────────────────────────
@@ -274,9 +201,8 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// Walks each DataGrid column once at startup and flips IsVisible
-    /// off for any column header that's listed in MainViewModel
-    /// HiddenColumns (read from state.txt). Essentials are never
-    /// touched even if a stale state file lists them.
+    /// off for any column header listed in MainViewModel HiddenColumns
+    /// (read from state.txt). Essentials are never touched.
     /// </summary>
     private void ApplyHiddenColumnsFromState()
     {
@@ -294,15 +220,14 @@ public partial class MainWindow : Window
     {
         try
         {
-            if (ModListGrid is null || ModsHeader is null) return;
+            var hdr = ModsHeaderHost?.HeaderBorder;
+            if (ModListGrid is null || hdr is null) return;
 
             // Ignore right-clicks that landed on the toolbar buttons
-            // (Up/Down/Search/Trash/Add) — those should keep their own
-            // default behaviour. Anything else inside the header strip
-            // (title text, blank space) pops the column menu.
+            // (Up/Down/Search/Trash/Add).
             if (e.Source is Visual src)
             {
-                for (var n = src; n is not null && !ReferenceEquals(n, ModsHeader); n = n.GetVisualParent())
+                for (var n = src; n is not null && !ReferenceEquals(n, hdr); n = n.GetVisualParent())
                 {
                     if (n is Button) return;
                 }
@@ -310,8 +235,6 @@ public partial class MainWindow : Window
 
             var flyout = new MenuFlyout
             {
-                // Pops up exactly where the user right-clicked, not
-                // pinned to the header strip's bottom edge.
                 Placement = PlacementMode.Pointer,
             };
             foreach (var col in ModListGrid.Columns)
@@ -332,15 +255,13 @@ public partial class MainWindow : Window
                 {
                     capturedCol.IsVisible  = !capturedCol.IsVisible;
                     capturedItem.IsChecked = capturedCol.IsVisible;
-                    // Persist: hidden=true → write hidecol=NAME to
-                    // state.txt; visible=true → remove that line.
                     if (DataContext is MainViewModel mvm)
                         mvm.SetColumnHidden(capturedName, !capturedCol.IsVisible);
                 };
                 flyout.Items.Add(item);
             }
 
-            flyout.ShowAt(ModsHeader);
+            flyout.ShowAt(hdr);
             e.Handled = true;
         }
         catch (Exception ex)
@@ -360,7 +281,7 @@ public partial class MainWindow : Window
     {
         if (DataContext is not MainViewModel vm) return;
         if (ModListGrid is null) return;
-        var q = SearchBox?.Text;
+        var q = ModsHeaderHost?.SearchTextBox?.Text;
         if (string.IsNullOrWhiteSpace(q)) return;
 
         var match = vm.Mods.FirstOrDefault(m =>

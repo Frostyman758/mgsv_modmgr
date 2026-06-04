@@ -1,0 +1,36 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="MgsvModMgr.Gui.Controls.DragOverlay"
+             IsHitTestVisible="False">
+  <!-- Transparent canvas pinned above the main content. Hosts the
+       "lifted" row ghost and the insertion indicator line.
+       IsHitTestVisible=False so it never blocks pointer input;
+       positions are written from MainWindow.DragReorder.cs each
+       PointerMoved frame while a drag is in flight. -->
+  <Canvas x:Name="OverlayRoot">
+    <!-- Lifted row ghost: floats with the cursor while dragging.
+         Tinted with the live DirtyBrush so it matches the rest of
+         the install-state palette. -->
+    <Border x:Name="Ghost"
+            IsVisible="False"
+            Background="{DynamicResource PanelAlt}"
+            BorderBrush="{DynamicResource DirtyBrush}"
+            BorderThickness="1"
+            CornerRadius="6"
+            Padding="14,8"
+            Opacity="0.95"
+            BoxShadow="0 8 22 0 #00000080">
+      <TextBlock x:Name="GhostText"
+                 Foreground="{DynamicResource Text}"
+                 FontWeight="SemiBold" FontSize="13"/>
+    </Border>
+    <!-- Insertion indicator: a thin horizontal bar that snaps to the
+         gap between two rows, showing exactly where the dragged item
+         will land on release. -->
+    <Border x:Name="InsertLine"
+            IsVisible="False"
+            Height="3"
+            Background="{DynamicResource DirtyBrush}"
+            CornerRadius="2"/>
+  </Canvas>
+</UserControl>

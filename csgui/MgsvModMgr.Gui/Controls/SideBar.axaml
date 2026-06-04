@@ -1,0 +1,82 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MgsvModMgr.Gui"
+             x:Class="MgsvModMgr.Gui.Controls.SideBar"
+             x:DataType="vm:MainViewModel">
+  <!-- Icon nav rail. Bg (not Panel) so the sidebar tracks the page-
+       header strip's tone in light theme — keeps "chrome" surfaces
+       (sidebar / header / footer) one shade, and "content" surfaces
+       (data area / cards) the off-white. In dark, Bg == Panel so
+       visually identical to before.
+
+       Fluent UI System Icons glyphs (bundled font, MIT). Codepoints:
+         EB09 = Library (Mods),  E45B = Checkmark (Apply),
+         E1A2 = ArrowUndo,       F582 = WindowConsole (Log),
+         E7B0 = DocumentText,    E974 = Globe (Nexus),
+         EFD2 = Settings,        EA5B = Info
+
+       Top stack:
+         - Mods (library) and Nexus (globe) are always visible — those
+           are the two top-level views the user moves between.
+         - Apply / Revert / Log / DictExport only make sense in the
+           install context; they live inside a Border.sidebar-collapse
+           that animates MaxHeight + Opacity down to zero while the
+           user is on the Nexus page, then slides back when they
+           click Mods. ClipToBounds keeps the slide tidy. -->
+  <Border Background="{DynamicResource Bg}"
+          BorderBrush="{DynamicResource Border}" BorderThickness="0,0,1,0"
+          BoxShadow="4 0 14 0 #00000060">
+    <DockPanel LastChildFill="False">
+      <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,16,0,0"
+                  HorizontalAlignment="Center">
+        <Button Classes="sidebar" Classes.active="{Binding IsModsPage}"
+                ToolTip.Tip="{DynamicResource Str.Sidebar.Mods}"
+                Content="&#xEB09;"
+                Command="{Binding ShowModsCommand}"/>
+
+        <Border Classes="sidebar-collapse"
+                Classes.collapsed="{Binding IsAwayFromInstallList}">
+          <StackPanel Spacing="6" HorizontalAlignment="Center">
+            <Button Classes="sidebar" Classes.dirty="{Binding IsDirty}"
+                    ToolTip.Tip="{DynamicResource Str.Sidebar.Apply}"
+                    Content="&#xE45B;"
+                    IsEnabled="{Binding !IsApplying}"
+                    Command="{Binding ApplyCommand}"/>
+            <Button Classes="sidebar"
+                    ToolTip.Tip="{DynamicResource Str.Sidebar.Revert}"
+                    Content="&#xE1A2;"
+                    IsEnabled="{Binding !IsApplying}"
+                    Command="{Binding RevertCommand}"/>
+            <Button Classes="sidebar" Classes.active="{Binding IsLogPage}"
+                    ToolTip.Tip="{DynamicResource Str.Sidebar.Log}"
+                    Content="&#xF582;"
+                    Command="{Binding ToggleLogCommand}"/>
+            <Button Classes="sidebar"
+                    ToolTip.Tip="{DynamicResource Str.Sidebar.ExportDict}"
+                    Content="&#xE7B0;"
+                    IsEnabled="{Binding !IsApplying}"
+                    Command="{Binding ExportDictCommand}"/>
+          </StackPanel>
+        </Border>
+
+        <!-- Nexus Mods browser (globe glyph) — always visible. -->
+        <Button Classes="sidebar" Classes.active="{Binding IsNexusPage}"
+                ToolTip.Tip="{DynamicResource Str.Sidebar.Nexus}"
+                Content="&#xE974;"
+                Command="{Binding ShowNexusCommand}"/>
+      </StackPanel>
+
+      <StackPanel DockPanel.Dock="Bottom" Spacing="6" Margin="0,0,0,16"
+                  HorizontalAlignment="Center">
+        <Button Classes="sidebar" Classes.active="{Binding IsSettingsPage}"
+                ToolTip.Tip="{DynamicResource Str.Sidebar.Settings}"
+                Content="&#xEFD2;"
+                Command="{Binding ShowSettingsCommand}"/>
+        <Button Classes="sidebar"
+                ToolTip.Tip="{DynamicResource Str.Sidebar.About}"
+                Content="&#xEA5B;"
+                Command="{Binding AboutCommand}"/>
+      </StackPanel>
+    </DockPanel>
+  </Border>
+</UserControl>

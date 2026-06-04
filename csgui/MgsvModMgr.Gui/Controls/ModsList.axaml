@@ -1,0 +1,149 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MgsvModMgr.Gui"
+             x:Class="MgsvModMgr.Gui.Controls.ModsList"
+             x:DataType="vm:MainViewModel">
+  <!-- The DataGrid for the Installed Mods page + row context menu.
+       Drag-reorder is wired by MainWindow.DragReorder.cs against the
+       grid exposed by <see cref="GridControl"/>. Column visibility
+       (hide/show TAGS / VERSION / QAR / GAMEDIR) is wired by
+       MainWindow via a right-click on the header strip. -->
+  <DataGrid x:Name="ModListGrid"
+            ItemsSource="{Binding Mods}"
+            SelectedItem="{Binding SelectedMod, Mode=TwoWay}"
+            AutoGenerateColumns="False"
+            CanUserReorderColumns="False"
+            CanUserResizeColumns="True"
+            CanUserSortColumns="False"
+            GridLinesVisibility="None"
+            HeadersVisibility="Column"
+            SelectionMode="Single"
+            IsReadOnly="True"
+            Background="{DynamicResource Panel}"
+            BorderThickness="0"
+            RowBackground="{DynamicResource Panel}"
+            RowHeight="60">
+
+    <DataGrid.Columns>
+
+      <!-- NAME: mod name + author stacked. The subtitle prefers the
+           author so users see who made each mod; it falls back to the
+           file-name only when metadata.xml didn't include an author.
+           Marked essential (cannot be hidden via the header context
+           menu). -->
+      <DataGridTemplateColumn Header="{DynamicResource Str.Mods.Col.Name}" Width="3*" MinWidth="260">
+        <DataGridTemplateColumn.CellTemplate>
+          <DataTemplate x:DataType="vm:ModRow">
+            <StackPanel Spacing="2" VerticalAlignment="Center" Margin="12,0">
+              <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14"
+                         TextTrimming="CharacterEllipsis"/>
+              <TextBlock Text="{Binding Subtitle}" Foreground="{DynamicResource TextDim}" FontSize="11"
+                         TextTrimming="CharacterEllipsis"/>
+            </StackPanel>
+          </DataTemplate>
+        </DataGridTemplateColumn.CellTemplate>
+      </DataGridTemplateColumn>
+
+      <!-- TAGS: user-defined free-form labels, rendered as small chips.
+           Persisted per mod in state.txt. -->
+      <DataGridTemplateColumn Header="{DynamicResource Str.Mods.Col.Tags}" Width="170" MinWidth="120">
+        <DataGridTemplateColumn.CellTemplate>
+          <DataTemplate x:DataType="vm:ModRow">
+            <ItemsControl ItemsSource="{Binding Tags}"
+                          VerticalAlignment="Center" Margin="6,0">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <WrapPanel Orientation="Horizontal" ItemSpacing="4" LineSpacing="4"/>
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Border Classes="chip-tag">
+                    <TextBlock Text="{Binding}"/>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </DataTemplate>
+        </DataGridTemplateColumn.CellTemplate>
+      </DataGridTemplateColumn>
+
+      <DataGridTextColumn Header="{DynamicResource Str.Mods.Col.Version}" Binding="{Binding Version}" Width="90"  MinWidth="60"/>
+
+      <!-- QAR / GAMEDIR right-aligned -->
+      <DataGridTemplateColumn Header="{DynamicResource Str.Mods.Col.Qar}" Width="80" MinWidth="60">
+        <DataGridTemplateColumn.CellTemplate>
+          <DataTemplate x:DataType="vm:ModRow">
+            <TextBlock Text="{Binding QarCount}" Foreground="{DynamicResource TextDim}"
+                       HorizontalAlignment="Right" VerticalAlignment="Center"
+                       Margin="0,0,12,0"/>
+          </DataTemplate>
+        </DataGridTemplateColumn.CellTemplate>
+      </DataGridTemplateColumn>
+      <DataGridTemplateColumn Header="{DynamicResource Str.Mods.Col.GameDir}" Width="90" MinWidth="60">
+        <DataGridTemplateColumn.CellTemplate>
+          <DataTemplate x:DataType="vm:ModRow">
+            <TextBlock Text="{Binding GameDirCount}" Foreground="{DynamicResource TextDim}"
+                       HorizontalAlignment="Right" VerticalAlignment="Center"
+                       Margin="0,0,12,0"/>
+          </DataTemplate>
+        </DataGridTemplateColumn.CellTemplate>
+      </DataGridTemplateColumn>
+
+      <!-- ENABLED column placed LAST so the toggle column lives on the
+           right edge of the table, directly under the Add-mod button
+           in the toolbar above. -->
+      <DataGridTemplateColumn Header="{DynamicResource Str.Mods.Col.Enabled}" Width="100" CanUserResize="False">
+        <DataGridTemplateColumn.CellTemplate>
+          <DataTemplate x:DataType="vm:ModRow">
+            <ToggleSwitch Classes.pending="{Binding IsPending}"
+                          IsChecked="{Binding Enabled, Mode=TwoWay}"
+                          Width="40"
+                          HorizontalAlignment="Right"
+                          VerticalAlignment="Center"
+                          Margin="0,0,15,0"
+                          IsEnabled="{Binding !((vm:MainViewModel)DataContext).IsApplying, RelativeSource={RelativeSource AncestorType=Window}}"/>
+          </DataTemplate>
+        </DataGridTemplateColumn.CellTemplate>
+      </DataGridTemplateColumn>
+
+    </DataGrid.Columns>
+
+    <DataGrid.ContextMenu>
+      <ContextMenu x:CompileBindings="False">
+        <MenuItem Header="{DynamicResource Str.Mods.Ctx.Toggle}"
+                  Command="{Binding ToggleRowCommand}"
+                  CommandParameter="{Binding SelectedMod}"/>
+        <Separator/>
+        <!-- Move up / down: matching glyphs to the toolbar's ghost icon
+             buttons so the context menu reads as the same action. -->
+        <MenuItem Header="{DynamicResource Str.Mods.Ctx.MoveUp}" Command="{Binding MoveUpCommand}">
+          <MenuItem.Icon>
+            <TextBlock Text="&#xE48B;"
+                       FontFamily="{DynamicResource IconFont}"
+                       FontSize="13"/>
+          </MenuItem.Icon>
+        </MenuItem>
+        <MenuItem Header="{DynamicResource Str.Mods.Ctx.MoveDown}" Command="{Binding MoveDownCommand}">
+          <MenuItem.Icon>
+            <TextBlock Text="&#xE483;"
+                       FontFamily="{DynamicResource IconFont}"
+                       FontSize="13"/>
+          </MenuItem.Icon>
+        </MenuItem>
+        <Separator/>
+        <!-- Remove: danger-classed so text + trash glyph paint with the
+             live DirtyBrush. -->
+        <MenuItem Header="{DynamicResource Str.Mods.Ctx.Remove}" Classes="danger"
+                  Command="{Binding RemoveCommand}">
+          <MenuItem.Icon>
+            <TextBlock Text="&#xE666;"
+                       FontFamily="{DynamicResource IconFont}"
+                       FontSize="13"
+                       Foreground="{DynamicResource DirtyBrush}"/>
+          </MenuItem.Icon>
+        </MenuItem>
+      </ContextMenu>
+    </DataGrid.ContextMenu>
+  </DataGrid>
+</UserControl>

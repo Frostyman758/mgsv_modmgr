@@ -1,0 +1,71 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MgsvModMgr.Gui"
+             x:Class="MgsvModMgr.Gui.Controls.NexusHeader"
+             x:DataType="vm:MainViewModel">
+  <!-- Nexus browser page header strip.
+       Same shape as the Mods header: title + subtitle on the left,
+       a horizontal toolbar of action buttons on the right. The filter
+       buttons (Trending / Latest added / Latest updated) highlight
+       via Classes.active when their mode is current. -->
+  <Border Padding="24,18,24,14" Background="{DynamicResource Bg}">
+    <Grid ColumnDefinitions="*,auto">
+      <StackPanel Grid.Column="0" Spacing="2">
+        <TextBlock Text="{DynamicResource Str.Nexus.Title}" FontSize="22" FontWeight="SemiBold"/>
+        <TextBlock Text="{DynamicResource Str.Nexus.Subtitle}"
+                   Foreground="{DynamicResource TextDim}" FontSize="12"/>
+      </StackPanel>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8"
+                  VerticalAlignment="Center" Margin="0,0,-4,0">
+        <!-- Always-expanded inline search box. Filters the currently
+             loaded mod set by Name / Author / Summary substring.
+             Full-catalogue text search needs the GraphQL endpoint —
+             not wired yet. -->
+        <Border Width="220" Height="40"
+                Background="Transparent"
+                BorderBrush="{DynamicResource Border}"
+                BorderThickness="1"
+                CornerRadius="8">
+          <Grid ColumnDefinitions="36,*">
+            <TextBlock Grid.Column="0" Text="&#xEF9A;"
+                       FontFamily="{DynamicResource IconFont}"
+                       FontSize="15"
+                       Foreground="{DynamicResource TextDim}"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"/>
+            <TextBox Grid.Column="1"
+                     Classes="search-pill"
+                     Background="Transparent"
+                     BorderThickness="0"
+                     VerticalContentAlignment="Center"
+                     Padding="0,0,12,0"
+                     FontSize="13"
+                     Watermark="{DynamicResource Str.Nexus.SearchWatermark}"
+                     Foreground="{DynamicResource Text}"
+                     CaretBrush="{DynamicResource Text}"
+                     Text="{Binding NexusSearchText, Mode=TwoWay}"/>
+          </Grid>
+        </Border>
+        <Button Classes="ghost icon" Content="&#xE178;"
+                Classes.active="{Binding IsTrendingFilter}"
+                ToolTip.Tip="{DynamicResource Str.Nexus.Trending}"
+                IsEnabled="{Binding !IsNexusLoading}"
+                Command="{Binding SetTrendingFilterCommand}"/>
+        <Button Classes="ghost icon" Content="&#xEC73;"
+                Classes.active="{Binding IsLatestAddedFilter}"
+                ToolTip.Tip="{DynamicResource Str.Nexus.LatestAdded}"
+                IsEnabled="{Binding !IsNexusLoading}"
+                Command="{Binding SetLatestAddedFilterCommand}"/>
+        <Button Classes="ghost icon" Content="&#xE347;"
+                Classes.active="{Binding IsLatestUpdatedFilter}"
+                ToolTip.Tip="{DynamicResource Str.Nexus.LatestUpdated}"
+                IsEnabled="{Binding !IsNexusLoading}"
+                Command="{Binding SetLatestUpdatedFilterCommand}"/>
+        <Button Classes="ghost icon" Content="&#xE0BC;"
+                ToolTip.Tip="{DynamicResource Str.Nexus.Refresh}"
+                IsEnabled="{Binding !IsNexusLoading}"
+                Command="{Binding RefreshNexusCommand}"/>
+      </StackPanel>
+    </Grid>
+  </Border>
+</UserControl>

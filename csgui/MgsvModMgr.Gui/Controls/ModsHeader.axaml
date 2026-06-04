@@ -1,0 +1,94 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MgsvModMgr.Gui"
+             x:Class="MgsvModMgr.Gui.Controls.ModsHeader"
+             x:DataType="vm:MainViewModel">
+  <!-- Installed mods page header strip.
+       Right-click anywhere in the blank space (outside the title text
+       and the toolbar buttons) → pops the DataGrid column-visibility
+       menu. The MainWindow wires that up via ContextRequested because
+       it needs access to the ModListGrid columns. -->
+  <Border x:Name="HeaderRoot" Padding="24,18,24,14"
+          Background="{DynamicResource Bg}">
+    <Grid ColumnDefinitions="*,auto">
+      <StackPanel Grid.Column="0" Spacing="2">
+        <TextBlock Text="{DynamicResource Str.Mods.Title}" FontSize="22" FontWeight="SemiBold"/>
+        <TextBlock Text="{Binding HeaderSubtitle}" Foreground="{DynamicResource TextDim}" FontSize="12"/>
+      </StackPanel>
+      <!-- Negative right margin shifts the toolbar 4px past the page's
+           right padding so the Add button's right edge lands on the
+           same X as the ENABLED-column toggle's right edge. -->
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8"
+                  VerticalAlignment="Center" Margin="0,0,-4,0">
+        <Button Classes="ghost icon"   Content="&#xE48B;"
+                ToolTip.Tip="{DynamicResource Str.Mods.MoveUp}"
+                IsEnabled="{Binding !IsApplying}"
+                Command="{Binding MoveUpCommand}"/>
+        <Button Classes="ghost icon"   Content="&#xE483;"
+                ToolTip.Tip="{DynamicResource Str.Mods.MoveDown}"
+                IsEnabled="{Binding !IsApplying}"
+                Command="{Binding MoveDownCommand}"/>
+        <!-- Search pill: 40×40 button matching the trash button's
+             danger palette. Click → expands leftward via a Width
+             transition into a full search bar; LostFocus with empty
+             text → collapses back. The `.expanded` class flips via
+             code-behind to drive the icon backplate red + glyph white. -->
+        <Border x:Name="SearchPill"
+                Background="Transparent"
+                BorderBrush="{DynamicResource DirtyBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Width="40" Height="40"
+                Cursor="Hand"
+                ClipToBounds="True"
+                PointerPressed="SearchPill_PointerPressed">
+          <Border.Transitions>
+            <Transitions>
+              <DoubleTransition Property="Width" Duration="0:0:0.22"
+                                Easing="QuadraticEaseOut"/>
+            </Transitions>
+          </Border.Transitions>
+          <Grid ColumnDefinitions="40,*">
+            <Border Grid.Column="0" x:Name="SearchIconBg"
+                    Background="Transparent">
+              <Border.Transitions>
+                <Transitions>
+                  <BrushTransition Property="Background" Duration="0:0:0.22"/>
+                </Transitions>
+              </Border.Transitions>
+              <TextBlock x:Name="SearchIconGlyph"
+                         Text="&#xEF9A;"
+                         FontFamily="{DynamicResource IconFont}"
+                         FontSize="16"
+                         Foreground="{DynamicResource DirtyBrush}"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center"/>
+            </Border>
+            <TextBox Grid.Column="1" x:Name="SearchBox"
+                     Classes="search-pill"
+                     IsVisible="False"
+                     Background="Transparent"
+                     BorderThickness="0"
+                     VerticalContentAlignment="Center"
+                     Padding="0,0,12,0"
+                     FontSize="13"
+                     Watermark="{DynamicResource Str.Mods.SearchWatermark}"
+                     Foreground="{DynamicResource Text}"
+                     CaretBrush="{DynamicResource Text}"
+                     Text="{Binding SearchText, Mode=TwoWay}"
+                     LostFocus="SearchBox_LostFocus"
+                     KeyDown="SearchBox_KeyDown"/>
+          </Grid>
+        </Border>
+        <Button Classes="danger icon"  Content="&#xE666;"
+                ToolTip.Tip="{DynamicResource Str.Mods.Remove}"
+                IsEnabled="{Binding !IsApplying}"
+                Command="{Binding RemoveCommand}"/>
+        <Button Classes="primary icon" Content="&#xE00C;"
+                ToolTip.Tip="{DynamicResource Str.Mods.Add}"
+                IsEnabled="{Binding !IsApplying}"
+                Command="{Binding AddCommand}"/>
+      </StackPanel>
+    </Grid>
+  </Border>
+</UserControl>

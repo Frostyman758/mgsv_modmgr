@@ -16,6 +16,22 @@ namespace MgsvModMgr.Gui;
 // partial sibling to keep MainWindow.axaml.cs under 500 lines.
 public partial class MainWindow
 {
+    // Convenience wrappers around the UserControl-exposed properties
+    // so this file reads as if the named controls still lived directly
+    // on MainWindow. Each returns null if the host hasn't loaded yet
+    // (defensive — the AttachGridHooks call happens at ctor time).
+    private Border?    DragGhost      => DragOverlayHost?.GhostBorder;
+    private TextBlock? DragGhostText  => DragOverlayHost?.GhostTextBlock;
+    private Border?    DragInsertLine => DragOverlayHost?.InsertIndicator;
+
+    // Coordinate reference for every position calc below. Cursor reads,
+    // row transforms, and Canvas writes all live in the SAME visual's
+    // space (the overlay's Canvas), so positions written into the
+    // Canvas appear exactly under the cursor regardless of how the
+    // overlay is mounted in the parent grid. Falls back to `this`
+    // (the Window) before the visual tree is realised.
+    private Visual CoordRoot => (Visual?)DragOverlayHost?.Surface ?? this;
+
     private void AttachGridHooks()
     {
         if (ModListGrid is null) return;
@@ -90,7 +106,7 @@ public partial class MainWindow
         }
 
         _dragSource  = row;
-        _pressOrigin = e.GetPosition(this);
+        _pressOrigin = e.GetPosition(CoordRoot);
         _dragArmed   = true;
         // Hold pointer focus on the grid so we keep receiving Moved/Released
         // even when the cursor leaves a particular DataGridRow's bounds.
@@ -109,7 +125,7 @@ public partial class MainWindow
     {
         if (_dragSource is null) return;
 
-        var p = e.GetPosition(this);
+        var p = e.GetPosition(CoordRoot);
 
         // Arm → active drag transition: wait for the user to commit to a
         // real gesture (>5px) before showing the ghost; otherwise a plain
@@ -215,7 +231,7 @@ public partial class MainWindow
             .Where(r => r.DataContext is ModRow)
             .OrderBy(r =>
             {
-                var t = r.TransformToVisual(this);
+                var t = r.TransformToVisual(CoordRoot);
                 return t.HasValue ? t.Value.Transform(new Point(0, 0)).Y : double.MaxValue;
             })
             .ToList();
@@ -226,7 +242,7 @@ public partial class MainWindow
 
         foreach (var dgr in rows)
         {
-            var t = dgr.TransformToVisual(this);
+            var t = dgr.TransformToVisual(CoordRoot);
             if (!t.HasValue) continue;
             var tl = t.Value.Transform(new Point(0, 0));
             var midY = tl.Y + dgr.Bounds.Height / 2.0;
@@ -246,7 +262,7 @@ public partial class MainWindow
         {
             // Cursor is below every row → insert at the end.
             var last = rows[^1];
-            var t = last.TransformToVisual(this);
+            var t = last.TransformToVisual(CoordRoot);
             if (t.HasValue)
             {
                 var tl = t.Value.Transform(new Point(0, 0));
@@ -316,7 +332,7 @@ public partial class MainWindow
 
         // Ghost-in-ModListGrid-local-coords. If it's not in the top or
         // bottom edge band, there's nothing to do this tick.
-        var t = ModListGrid.TransformToVisual(this);
+        var t = ModListGrid.TransformToVisual(CoordRoot);
         if (!t.HasValue || !t.Value.TryInvert(out var inv)) return;
         var localY = inv.Transform(new Point(0, _lastDragCursor.Y - 10)).Y;
         var h = ModListGrid.Bounds.Height;
@@ -363,7 +379,7 @@ public partial class MainWindow
             .Where(r => r.DataContext is ModRow)
             .Select(r =>
             {
-                var tt = r.TransformToVisual(this);
+                var tt = r.TransformToVisual(CoordRoot);
                 var y  = tt.HasValue ? tt.Value.Transform(new Point(0, 0)).Y : double.NaN;
                 return (Row: r, Y: y);
             })

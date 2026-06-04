@@ -1,0 +1,39 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="MgsvModMgr.Gui.Controls.ResizeGripsOverlay"
+             IsVisible="False">
+  <!-- 8 transparent grip borders pinned to each edge + corner of the
+       window. Hidden by default; MainWindow.ApplyPlatformChrome reveals
+       this overlay on non-Windows platforms where SystemDecorations=None
+       takes away the OS edge-resize hit-zones. Centre cell has no
+       Background so pointer events pass straight through to whatever
+       sits underneath. -->
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="8"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="8"/>
+    </Grid.RowDefinitions>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="8"/>
+      <ColumnDefinition Width="*"/>
+      <ColumnDefinition Width="8"/>
+    </Grid.ColumnDefinitions>
+    <Border Grid.Row="0" Grid.Column="0" Background="Transparent"
+            Cursor="TopLeftCorner"     Tag="NorthWest" PointerPressed="Grip_PointerPressed"/>
+    <Border Grid.Row="0" Grid.Column="2" Background="Transparent"
+            Cursor="TopRightCorner"    Tag="NorthEast" PointerPressed="Grip_PointerPressed"/>
+    <Border Grid.Row="2" Grid.Column="0" Background="Transparent"
+            Cursor="BottomLeftCorner"  Tag="SouthWest" PointerPressed="Grip_PointerPressed"/>
+    <Border Grid.Row="2" Grid.Column="2" Background="Transparent"
+            Cursor="BottomRightCorner" Tag="SouthEast" PointerPressed="Grip_PointerPressed"/>
+    <Border Grid.Row="0" Grid.Column="1" Background="Transparent"
+            Cursor="TopSide"    Tag="North" PointerPressed="Grip_PointerPressed"/>
+    <Border Grid.Row="2" Grid.Column="1" Background="Transparent"
+            Cursor="BottomSide" Tag="South" PointerPressed="Grip_PointerPressed"/>
+    <Border Grid.Row="1" Grid.Column="0" Background="Transparent"
+            Cursor="LeftSide"   Tag="West"  PointerPressed="Grip_PointerPressed"/>
+    <Border Grid.Row="1" Grid.Column="2" Background="Transparent"
+            Cursor="RightSide"  Tag="East"  PointerPressed="Grip_PointerPressed"/>
+  </Grid>
+</UserControl>

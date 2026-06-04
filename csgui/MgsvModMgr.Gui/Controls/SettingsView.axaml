@@ -1,0 +1,114 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MgsvModMgr.Gui"
+             x:Class="MgsvModMgr.Gui.Controls.SettingsView"
+             x:DataType="vm:MainViewModel">
+  <!-- Settings page body. Header strip is rendered separately in
+       MainWindow.axaml (so all four pages share their header band);
+       this control is just the scrolling form below it. -->
+  <ScrollViewer>
+    <StackPanel Spacing="24" Margin="28,22,28,22" MaxWidth="720" HorizontalAlignment="Stretch">
+
+      <!-- Game root -->
+      <StackPanel Spacing="6">
+        <TextBlock Text="{DynamicResource Str.Settings.GameRoot}" Foreground="{DynamicResource TextDim}"
+                   FontSize="11" FontWeight="SemiBold"/>
+        <TextBlock Text="{DynamicResource Str.Settings.GameRootHelp}"
+                   Foreground="{DynamicResource TextDim}" FontSize="12"/>
+        <Grid ColumnDefinitions="*,auto" Margin="0,4,0,0">
+          <TextBox Grid.Column="0" Classes="path"
+                   Watermark="{DynamicResource Str.Settings.GameRootWatermark}"
+                   Text="{Binding GameRootField, Mode=TwoWay}"/>
+          <Button Grid.Column="1" Classes="ghost" Content="{DynamicResource Str.Settings.Browse}"
+                  Margin="8,0,0,0" Width="100"
+                  Command="{Binding BrowseGameRootCommand}"/>
+        </Grid>
+      </StackPanel>
+
+      <!-- datfpk -->
+      <StackPanel Spacing="6">
+        <TextBlock Text="{DynamicResource Str.Settings.DatFpk}" Foreground="{DynamicResource TextDim}"
+                   FontSize="11" FontWeight="SemiBold"/>
+        <TextBlock Text="{DynamicResource Str.Settings.DatFpkHelp}"
+                   Foreground="{DynamicResource TextDim}" FontSize="12"/>
+        <Grid ColumnDefinitions="*,auto" Margin="0,4,0,0">
+          <TextBox Grid.Column="0" Classes="path"
+                   Watermark="{DynamicResource Str.Settings.DatFpkWatermark}"
+                   Text="{Binding DatFpkField, Mode=TwoWay}"/>
+          <Button Grid.Column="1" Classes="ghost" Content="{DynamicResource Str.Settings.Browse}"
+                  Margin="8,0,0,0" Width="100"
+                  Command="{Binding BrowseDatFpkCommand}"/>
+        </Grid>
+      </StackPanel>
+
+      <!-- Nexus Mods API key. Two paths to populate it:
+           (a) the "Sign in with Nexus" button below, which opens a
+               browser approval page (SSO) and pipes the key back
+               through a WebSocket;
+           (b) paste a Personal API key manually from
+               nexusmods.com → My Account → API.
+           Either way the key needs Save Settings to persist. -->
+      <StackPanel Spacing="6">
+        <TextBlock Text="{DynamicResource Str.Settings.NexusKey}" Foreground="{DynamicResource TextDim}"
+                   FontSize="11" FontWeight="SemiBold"/>
+        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextDim}" FontSize="12"
+                   Text="{DynamicResource Str.Settings.NexusKeyHelp}"/>
+        <Grid ColumnDefinitions="*,auto" Margin="0,4,0,0">
+          <TextBox Grid.Column="0" Classes="path"
+                   Watermark="{DynamicResource Str.Settings.NexusKeyWatermark}"
+                   PasswordChar="•"
+                   Text="{Binding NexusApiKeyField, Mode=TwoWay}"/>
+          <Button Grid.Column="1" Classes="ghost"
+                  Margin="8,0,0,0" Padding="14,8"
+                  ToolTip.Tip="{DynamicResource Str.Settings.SsoTip}"
+                  Command="{Binding NexusSsoSignInCommand}">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <TextBlock Text="&#xEA7A;"
+                         FontFamily="{DynamicResource IconFont}"
+                         FontSize="14" VerticalAlignment="Center"/>
+              <TextBlock Text="{DynamicResource Str.Settings.SignIn}" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
+        </Grid>
+      </StackPanel>
+
+      <!-- Theme preference. Toggle persists in state.txt and is
+           applied live on flip via ApplyThemeVariant. -->
+      <StackPanel Spacing="6">
+        <TextBlock Text="{DynamicResource Str.Settings.Theme}" Foreground="{DynamicResource TextDim}"
+                   FontSize="11" FontWeight="SemiBold"/>
+        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+          <TextBlock Text="{DynamicResource Str.Settings.LightTheme}" Foreground="{DynamicResource Text}"
+                     VerticalAlignment="Center"/>
+          <ToggleSwitch IsChecked="{Binding IsLightTheme, Mode=TwoWay}"
+                        VerticalAlignment="Center"/>
+        </StackPanel>
+        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextDim}" FontSize="12"
+                   Text="{DynamicResource Str.Settings.ThemeHelp}"/>
+      </StackPanel>
+
+      <!-- Save / Cancel: sized to match the Browse buttons above so the
+           right edges line up neatly with the form fields. -->
+      <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" Margin="0,8,0,0">
+        <Button Classes="ghost"   Content="{DynamicResource Str.Settings.Back}"  Width="100"
+                Command="{Binding ShowModsCommand}"/>
+        <Button Classes="primary" Content="{DynamicResource Str.Settings.Save}"  Width="100"
+                Command="{Binding SaveSettingsCommand}"/>
+      </StackPanel>
+
+      <!-- ─── Maintenance ─────────────────────────────────────────── -->
+      <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0"
+              Margin="0,24,0,0" Padding="0,20,0,0">
+        <StackPanel Spacing="6">
+          <TextBlock Text="{DynamicResource Str.Settings.Maintenance}" Foreground="{DynamicResource TextDim}"
+                     FontSize="11" FontWeight="SemiBold"/>
+          <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextDim}" FontSize="12"
+                     Text="{DynamicResource Str.Settings.MaintenanceHelp}"/>
+          <Button Classes="ghost" Content="{DynamicResource Str.Settings.ResetApply}"
+                  HorizontalAlignment="Left" Margin="0,6,0,0"
+                  Command="{Binding ResetApplyStateCommand}"/>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

@@ -1,0 +1,118 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MgsvModMgr.Gui"
+             x:Class="MgsvModMgr.Gui.Controls.LogView"
+             x:DataType="vm:MainViewModel">
+  <!-- Log + conflicts page. Unlike the other pages this one doesn't
+       carry a title+subtitle strip — the two internal section headers
+       (ACTIVITY LOG / FILE CONFLICTS) act as their own titles. The
+       parent mounts this control across both header and content rows
+       so the headers claim the full vertical space all the way up to
+       the window chrome. -->
+  <Grid RowDefinitions="*,*">
+
+    <!-- Top half: existing activity log -->
+    <DockPanel Grid.Row="0" LastChildFill="True">
+      <Border DockPanel.Dock="Top" Background="{DynamicResource PanelAlt}"
+              BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1"
+              Padding="14,10">
+        <Grid ColumnDefinitions="*,auto">
+          <TextBlock Grid.Column="0" Text="{DynamicResource Str.Log.Title}"
+                     Foreground="{DynamicResource TextDim}"
+                     FontSize="11" FontWeight="SemiBold"
+                     VerticalAlignment="Center"/>
+          <Button Grid.Column="1" Classes="ghost" Content="{DynamicResource Str.Log.Back}"
+                  Padding="10,4"
+                  Command="{Binding ShowModsCommand}"/>
+        </Grid>
+      </Border>
+      <TextBox Classes="log"
+               BorderThickness="0" CornerRadius="0"
+               IsReadOnly="True"
+               AcceptsReturn="True"
+               TextWrapping="NoWrap"
+               Text="{Binding LogText}"
+               Name="LogBox"/>
+    </DockPanel>
+
+    <!-- Bottom half: file conflicts -->
+    <DockPanel Grid.Row="1" LastChildFill="True">
+      <Border DockPanel.Dock="Top" Background="{DynamicResource PanelAlt}"
+              BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,1"
+              Padding="14,10">
+        <Grid ColumnDefinitions="*,auto">
+          <TextBlock Grid.Column="0" Text="{DynamicResource Str.Log.Conflicts}"
+                     Foreground="{DynamicResource TextDim}"
+                     FontSize="11" FontWeight="SemiBold"
+                     VerticalAlignment="Center"/>
+          <TextBlock Grid.Column="1"
+                     Text="{Binding ConflictsCountLabel}"
+                     Foreground="{DynamicResource TextDim}"
+                     FontSize="11"
+                     VerticalAlignment="Center"/>
+        </Grid>
+      </Border>
+
+      <!-- Empty state: no conflicts (everything is harmonious) -->
+      <Border IsVisible="{Binding !HasConflicts}"
+              HorizontalAlignment="Center" VerticalAlignment="Center"
+              Padding="20,16">
+        <TextBlock Text="{DynamicResource Str.Log.NoConflicts}"
+                   Foreground="{DynamicResource TextDim}"
+                   FontStyle="Italic"
+                   TextAlignment="Center"
+                   TextWrapping="Wrap"
+                   MaxWidth="520"/>
+      </Border>
+
+      <!-- Conflicts list -->
+      <ScrollViewer IsVisible="{Binding HasConflicts}"
+                    HorizontalScrollBarVisibility="Disabled"
+                    VerticalScrollBarVisibility="Auto"
+                    Padding="0">
+        <ItemsControl ItemsSource="{Binding Conflicts}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:ConflictRowVm">
+              <Border BorderBrush="{DynamicResource Border}"
+                      BorderThickness="0,0,0,1"
+                      Padding="16,10">
+                <Grid ColumnDefinitions="auto,*,auto" ColumnSpacing="12">
+                  <!-- Category chip on the left (QAR / GAMEDIR / FPK) -->
+                  <Border Grid.Column="0" Classes="chip-tag" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Category}"/>
+                  </Border>
+                  <!-- Path + winner / loser stack -->
+                  <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Path}"
+                               FontFamily="Cascadia Mono,Consolas,Menlo,monospace"
+                               FontSize="11"
+                               TextTrimming="CharacterEllipsis"
+                               Foreground="{DynamicResource Text}"/>
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <TextBlock Text="{DynamicResource Str.Log.Winner}" Foreground="{DynamicResource TextDim}" FontSize="11"/>
+                      <TextBlock Text="{Binding Winner}"
+                                 Foreground="{DynamicResource DirtyBrush}"
+                                 FontWeight="SemiBold" FontSize="11"/>
+                      <TextBlock Text="•" Foreground="{DynamicResource TextDim}" FontSize="11"
+                                 Margin="6,0,0,0"/>
+                      <TextBlock Text="{DynamicResource Str.Log.Overridden}" Foreground="{DynamicResource TextDim}" FontSize="11"/>
+                      <TextBlock Text="{Binding OverriddenJoined}"
+                                 Foreground="{DynamicResource TextDim}"
+                                 FontSize="11"
+                                 TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                  </StackPanel>
+                  <TextBlock Grid.Column="2"
+                             Text="{Binding CountSubtitle}"
+                             Foreground="{DynamicResource TextDim}"
+                             FontSize="11"
+                             VerticalAlignment="Center"/>
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+    </DockPanel>
+  </Grid>
+</UserControl>
