@@ -155,6 +155,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(IsNexusPage));
             OnPropertyChanged(nameof(IsSettingsPage));
             OnPropertyChanged(nameof(IsLogPage));
+            OnPropertyChanged(nameof(IsAwayFromInstallList));
         }
     }
 
@@ -208,6 +209,15 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public bool IsNexusPage    => CurrentPage == Page.Nexus;
     public bool IsSettingsPage => CurrentPage == Page.Settings;
     public bool IsLogPage      => CurrentPage == Page.Log;
+    /// <summary>
+    /// True when the user is on a "non install-list" page — Nexus
+    /// browser or Settings. Drives the sidebar collapse so the
+    /// Apply/Revert/Log/ExportDict pip strip slides away on either of
+    /// those pages instead of just Nexus. Switching between Nexus and
+    /// Settings doesn't flicker the strip back into view, because the
+    /// predicate stays true across the whole non-install-list trip.
+    /// </summary>
+    public bool IsAwayFromInstallList => IsNexusPage || IsSettingsPage;
 
     // Settings form fields. Bound two-way; the running manager state isn't
     // touched until Save fires.
@@ -388,6 +398,35 @@ public sealed class MainViewModel : INotifyPropertyChanged
         set => Set(ref _nexusApiKeyField, value);
     }
 
+    /// <summary>
+    /// Light-vs-dark theme preference. Persisted in state.txt as
+    /// `theme=light` / `theme=dark`. Writes through to
+    /// Application.Current.RequestedThemeVariant immediately so the
+    /// switch happens live, with all DynamicResource brush bindings
+    /// crossfading via Avalonia's theme-variant resource lookup.
+    /// </summary>
+    public bool IsLightTheme
+    {
+        get => _manager.State.IsLightTheme;
+        set
+        {
+            if (_manager.State.IsLightTheme == value) return;
+            _manager.State.IsLightTheme = value;
+            ApplyThemeVariant();
+            _manager.SaveState();
+            OnPropertyChanged();
+        }
+    }
+
+    private void ApplyThemeVariant()
+    {
+        var app = Avalonia.Application.Current;
+        if (app is null) return;
+        app.RequestedThemeVariant = _manager.State.IsLightTheme
+            ? Avalonia.Styling.ThemeVariant.Light
+            : Avalonia.Styling.ThemeVariant.Dark;
+    }
+
     // Loading / error UI state for the Nexus page.
     private bool _isNexusLoading;
     public  bool  IsNexusLoading
@@ -563,6 +602,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     public Task OnOpenedAsync()
     {
+        // Apply persisted theme as the very first paint — before any
+        // visible content settles in — so the user never sees a flash
+        // of the default variant.
+        ApplyThemeVariant();
+
         if (string.IsNullOrEmpty(_manager.State.GameRoot) ||
             string.IsNullOrEmpty(_manager.State.DatFpk))
         {
@@ -704,10 +748,6 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private async Task AddModAsync()
     {
-        // Accept both bare .mgsv files (what SnakeBite produces) AND
-        // the wrapper archives that Nexus mods often ship in. The
-        // archive types match what SharpCompress can crack open in
-        // NexusDownloader: zip / rar / 7z / tar(.gz).
         var files = await _window.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
             Title          = "Select .mgsv mod(s) or archive(s)",
@@ -734,6 +774,20 @@ public sealed class MainViewModel : INotifyPropertyChanged
             .ToList();
         if (pickedPaths.Count == 0) return;
 
+        await RunAddModPipelineAsync(pickedPaths);
+    }
+
+    /// <summary>
+    /// Shared add-mod pipeline used by both the file-picker path and
+    /// the window-wide drag-drop path.
+    /// Accepts bare .mgsv files AND wrapper archives that mod authors
+    /// ship on Nexus (zip / rar / 7z / tar / tar.gz). Expands the
+    /// archives, calls AddMod for each contained .mgsv, narrates
+    /// progress to the activity log, rolls failures into an error
+    /// dialog at the end.
+    /// </summary>
+    private async Task RunAddModPipelineAsync(IReadOnlyList<string> pickedPaths)
+    {
         // Expand archives into their contained .mgsv files. Bare .mgsv
         // entries pass through unchanged. Each archive's extracted
         // .mgsv files go into a unique temp dir we clean up at the end.
@@ -829,6 +883,21 @@ public sealed class MainViewModel : INotifyPropertyChanged
     /// </summary>
     private static List<string> ExtractMgsvFiles(string archivePath, string destDir)
         => NexusDownloader.ExtractMgsvFiles(archivePath, destDir);
+
+    /// <summary>
+    /// Entry point for files dropped onto the window. Same downstream
+    /// pipeline as the file-picker AddModAsync path — archive
+    /// extraction, per-file AddMod, log narration, error rollup.
+    /// </summary>
+    public async Task AddDroppedFilesAsync(IReadOnlyList<string> pickedPaths)
+    {
+        if (pickedPaths.Count == 0) return;
+        // Make sure the user sees what's happening — drop happens
+        // anywhere on the window, so flip to the Mods page if not
+        // already there.
+        if (!IsModsPage && !IsLogPage) CurrentPage = Page.Mods;
+        await RunAddModPipelineAsync(pickedPaths);
+    }
 
     /// <summary>Best-effort cleanup; failures are ignored.</summary>
     private static void CleanupTempDirs(IEnumerable<string> dirs)

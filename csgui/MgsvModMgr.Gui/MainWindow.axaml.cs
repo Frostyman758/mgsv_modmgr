@@ -7,6 +7,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 
@@ -46,6 +47,12 @@ public partial class MainWindow : Window
 
         AttachGridHooks();
         HookDirtyBrush(vm);
+
+        // Window-wide file drop: accept .mgsv files and any archive
+        // SharpCompress can crack open. Hand the paths to the VM's
+        // add-mod pipeline which handles extraction + registration.
+        AddHandler(DragDrop.DragOverEvent, Window_DragOver);
+        AddHandler(DragDrop.DropEvent,     Window_Drop);
 
         // Right-click anywhere on the page header (blank area next to
         // "Installed mods" / between the title and the toolbar) → pops
@@ -486,6 +493,59 @@ public partial class MainWindow : Window
     private void Footer_PointerPressed(object? sender, PointerPressedEventArgs e)
     {
         if (DataContext is MainViewModel vm) vm.HideFooter();
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    // File drag-drop onto the window: accept .mgsv + archives
+    // ────────────────────────────────────────────────────────────────
+
+    private static readonly string[] DroppableExtensions =
+        { ".mgsv", ".zip", ".rar", ".7z", ".tar", ".gz" };
+
+    private void Window_DragOver(object? sender, DragEventArgs e)
+    {
+        // Accept files only — refuse anything else (text, links, etc).
+        var ok = e.Data.Contains(DataFormats.Files) && AnyDroppedPathSupported(e);
+        e.DragEffects = ok ? DragDropEffects.Copy : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private async void Window_Drop(object? sender, DragEventArgs e)
+    {
+        e.Handled = true;
+        if (DataContext is not MainViewModel vm) return;
+        var files = e.Data.GetFiles();
+        if (files is null) return;
+
+        var paths = files
+            .Select(f => f.TryGetLocalPath())
+            .Where(p => !string.IsNullOrEmpty(p) && IsSupportedExt(p!))
+            .Cast<string>()
+            .ToList();
+        if (paths.Count == 0) return;
+
+        await vm.AddDroppedFilesAsync(paths);
+    }
+
+    private static bool AnyDroppedPathSupported(DragEventArgs e)
+    {
+        var files = e.Data.GetFiles();
+        if (files is null) return false;
+        foreach (var f in files)
+        {
+            var p = f.TryGetLocalPath();
+            if (!string.IsNullOrEmpty(p) && IsSupportedExt(p!)) return true;
+        }
+        return false;
+    }
+
+    private static bool IsSupportedExt(string path)
+    {
+        var ext = System.IO.Path.GetExtension(path);
+        if (string.IsNullOrEmpty(ext)) return false;
+        foreach (var supported in DroppableExtensions)
+            if (string.Equals(ext, supported, StringComparison.OrdinalIgnoreCase)) return true;
+        return false;
     }
 
     private void NexusCard_PointerPressed(object? sender, PointerPressedEventArgs e)

@@ -10,12 +10,18 @@
         Icon="avares://modmgr_gui/Assets/app.ico"
         Width="1180" Height="780"
         MinWidth="980" MinHeight="600"
+        DragDrop.AllowDrop="True"
         Background="{DynamicResource Bg}">
 
   <Grid ColumnDefinitions="64,*" Classes.dirty="{Binding IsDirty}">
 
     <!-- ===================== SIDEBAR ===================== -->
-    <Border Grid.Column="0" Background="{DynamicResource Panel}"
+    <!-- Background uses Bg (not Panel) so the sidebar tracks the page-
+         header strip's tone in light theme — keeps "chrome" surfaces
+         (sidebar / header / footer) one shade, and "content" surfaces
+         (data area / cards) the off-white. In dark, Bg == Panel so
+         visually identical to before. -->
+    <Border Grid.Column="0" Background="{DynamicResource Bg}"
             BorderBrush="{DynamicResource Border}" BorderThickness="0,0,1,0"
             BoxShadow="4 0 14 0 #00000060">
       <DockPanel LastChildFill="False">
@@ -41,7 +47,7 @@
                   Command="{Binding ShowModsCommand}"/>
 
           <Border Classes="sidebar-collapse"
-                  Classes.collapsed="{Binding IsNexusPage}">
+                  Classes.collapsed="{Binding IsAwayFromInstallList}">
             <StackPanel Spacing="6" HorizontalAlignment="Center">
               <Button Classes="sidebar" Classes.dirty="{Binding IsDirty}"
                       ToolTip.Tip="Apply pending changes to the game install"
@@ -95,7 +101,8 @@
            column-visibility menu. Wired in code-behind. -->
       <Border x:Name="ModsHeader" Grid.Row="0" Padding="24,18,24,14"
               Background="{DynamicResource Bg}"
-              IsVisible="{Binding IsModsPage}">
+              Classes="page"
+              Classes.active="{Binding IsModsPage}">
         <Grid ColumnDefinitions="*,auto">
           <StackPanel Grid.Column="0" Spacing="2">
             <TextBlock Text="Installed mods" FontSize="22" FontWeight="SemiBold"/>
@@ -173,18 +180,12 @@
                          Padding="0,0,12,0"
                          FontSize="13"
                          Watermark="Search list"
-                         Foreground="White"
-                         CaretBrush="White"
+                         Foreground="{DynamicResource Text}"
+                         CaretBrush="{DynamicResource Text}"
                          Text="{Binding SearchText, Mode=TwoWay}"
                          TextChanged="SearchBox_TextChanged"
                          LostFocus="SearchBox_LostFocus"
-                         KeyDown="SearchBox_KeyDown">
-                  <TextBox.Resources>
-                    <SolidColorBrush x:Key="TextControlPlaceholderForeground"            Color="White" Opacity="0.65"/>
-                    <SolidColorBrush x:Key="TextControlPlaceholderForegroundPointerOver" Color="White" Opacity="0.75"/>
-                    <SolidColorBrush x:Key="TextControlPlaceholderForegroundFocused"     Color="White" Opacity="0.55"/>
-                  </TextBox.Resources>
-                </TextBox>
+                         KeyDown="SearchBox_KeyDown"/>
               </Grid>
             </Border>
             <Button Classes="danger icon"  Content="&#xE666;"
@@ -205,7 +206,8 @@
            filter buttons (Trending / Latest added / Latest updated)
            highlight via Classes.active when their mode is current. -->
       <Border Grid.Row="0" Padding="24,18,24,14" Background="{DynamicResource Bg}"
-              IsVisible="{Binding IsNexusPage}">
+              Classes="page"
+              Classes.active="{Binding IsNexusPage}">
         <Grid ColumnDefinitions="*,auto">
           <StackPanel Grid.Column="0" Spacing="2">
             <TextBlock Text="Nexus Mods" FontSize="22" FontWeight="SemiBold"/>
@@ -238,15 +240,9 @@
                          Padding="0,0,12,0"
                          FontSize="13"
                          Watermark="Search loaded mods"
-                         Foreground="White"
-                         CaretBrush="White"
-                         Text="{Binding NexusSearchText, Mode=TwoWay}">
-                  <TextBox.Resources>
-                    <SolidColorBrush x:Key="TextControlPlaceholderForeground"            Color="White" Opacity="0.45"/>
-                    <SolidColorBrush x:Key="TextControlPlaceholderForegroundPointerOver" Color="White" Opacity="0.55"/>
-                    <SolidColorBrush x:Key="TextControlPlaceholderForegroundFocused"     Color="White" Opacity="0.4"/>
-                  </TextBox.Resources>
-                </TextBox>
+                         Foreground="{DynamicResource Text}"
+                         CaretBrush="{DynamicResource Text}"
+                         Text="{Binding NexusSearchText, Mode=TwoWay}"/>
               </Grid>
             </Border>
             <Button Classes="ghost icon" Content="&#xE178;"
@@ -274,7 +270,8 @@
 
       <!-- ─── Settings page header ─── -->
       <Border Grid.Row="0" Padding="24,18,24,14" Background="{DynamicResource Bg}"
-              IsVisible="{Binding IsSettingsPage}">
+              Classes="page"
+              Classes.active="{Binding IsSettingsPage}">
         <StackPanel Spacing="2">
           <TextBlock Text="Settings" FontSize="22" FontWeight="SemiBold"/>
           <TextBlock Text="Tell the manager where MGSV:TPP and datfpk.exe live."
@@ -287,7 +284,8 @@
               Background="{DynamicResource Panel}"
               BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0"
               ClipToBounds="True"
-              IsVisible="{Binding IsModsPage}">
+              Classes="page"
+              Classes.active="{Binding IsModsPage}">
         <DataGrid x:Name="ModListGrid"
                   ItemsSource="{Binding Mods}"
                   SelectedItem="{Binding SelectedMod, Mode=TwoWay}"
@@ -439,7 +437,8 @@
       <Border Grid.Row="1" Margin="0,4,0,0"
               Background="{DynamicResource Panel}"
               BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0"
-              IsVisible="{Binding IsNexusPage}">
+              Classes="page"
+              Classes.active="{Binding IsNexusPage}">
         <Grid>
           <!-- Empty state: shown when no API key has been entered yet. -->
           <Border IsVisible="{Binding NexusNeedsApiKey}"
@@ -751,7 +750,8 @@
       <Border Grid.Row="1" Margin="0,4,0,0"
               Background="{DynamicResource Panel}"
               BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0"
-              IsVisible="{Binding IsSettingsPage}">
+              Classes="page"
+              Classes.active="{Binding IsSettingsPage}">
         <ScrollViewer>
           <StackPanel Spacing="24" Margin="28,22,28,22" MaxWidth="720" HorizontalAlignment="Stretch">
 
@@ -820,6 +820,23 @@
               </Grid>
             </StackPanel>
 
+            <!-- Theme preference. Toggle persists in state.txt and is
+                 applied live on flip via ApplyThemeVariant. -->
+            <StackPanel Spacing="6">
+              <TextBlock Text="THEME" Foreground="{DynamicResource TextDim}"
+                         FontSize="11" FontWeight="SemiBold"/>
+              <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                <TextBlock Text="Light theme" Foreground="{DynamicResource Text}"
+                           VerticalAlignment="Center"/>
+                <ToggleSwitch IsChecked="{Binding IsLightTheme, Mode=TwoWay}"
+                              VerticalAlignment="Center"/>
+              </StackPanel>
+              <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextDim}" FontSize="12">
+                Swaps the background / panel / text palette. The
+                red/amber install-state colours stay the same.
+              </TextBlock>
+            </StackPanel>
+
             <!-- Save / Cancel: sized to match the Browse buttons above so the
                  right edges line up neatly with the form fields. -->
             <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" Margin="0,8,0,0">
@@ -853,7 +870,8 @@
       <Border Grid.Row="1" Margin="0,4,0,0"
               Background="{DynamicResource Panel}"
               BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0"
-              IsVisible="{Binding IsLogPage}">
+              Classes="page"
+              Classes.active="{Binding IsLogPage}">
         <DockPanel LastChildFill="True">
           <Border DockPanel.Dock="Top" Background="{DynamicResource PanelAlt}"
                   BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1"
@@ -899,7 +917,9 @@
                      BorderThickness="0"
                      CornerRadius="0"
                      ShowProgressText="False"/>
-        <Border Background="{DynamicResource Panel}"
+        <!-- Footer Background uses Bg so the chrome row tracks the
+             sidebar + header grey in light theme. -->
+        <Border Background="{DynamicResource Bg}"
                 BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0"
                 Padding="24,8"
                 Cursor="Hand"

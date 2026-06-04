@@ -11,27 +11,77 @@
 
     <Application.Resources>
         <ResourceDictionary>
-            <!-- Palette: MGSV / Phantom Pain — single mid-grey for app+widget bg,
-                 blood-red accent, amber for "needs apply" state. -->
-            <Color  x:Key="BgColor">#131316</Color>
-            <Color  x:Key="PanelColor">#131316</Color>
-            <Color  x:Key="PanelAltColor">#1A1A1E</Color>
-            <Color  x:Key="BorderColor">#26262B</Color>
-            <Color  x:Key="TextColor">#E8E8EA</Color>
-            <Color  x:Key="TextDimColor">#7C7C84</Color>
-            <Color  x:Key="AccentColor">#B62A2A</Color>
-            <Color  x:Key="AccentDimColor">#5A1414</Color>
-            <!-- Amber family used while IsDirty=true. Mirrors PENDING APPLY chip. -->
-            <Color  x:Key="DirtyColor">#B89030</Color>
-            <Color  x:Key="DirtyHoverColor">#D4A848</Color>
-            <Color  x:Key="DirtyDimColor">#8E6520</Color>
+            <!-- Per-variant brush palette. The Bg / Panel / Border / Text
+                 family swaps based on App.RequestedThemeVariant. The
+                 red+amber accent palette intentionally stays the same
+                 across both themes — that's the mod-manager's brand
+                 identity, not a chrome detail. -->
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="Bg"           Color="#131316" />
+                    <SolidColorBrush x:Key="Panel"        Color="#131316" />
+                    <SolidColorBrush x:Key="PanelAlt"     Color="#1A1A1E" />
+                    <SolidColorBrush x:Key="Border"       Color="#26262B" />
+                    <SolidColorBrush x:Key="Text"         Color="#E8E8EA" />
+                    <SolidColorBrush x:Key="TextDim"      Color="#7C7C84" />
+                    <SolidColorBrush x:Key="RowSelect"    Color="#26262C" />
+                    <SolidColorBrush x:Key="RowSelectHov" Color="#2E2E34" />
+                    <SolidColorBrush x:Key="HeaderHover"  Color="#1F1F23" />
+                    <!-- Chrome accents that previously hardcoded dark
+                         hex literals: toolbar-active button bg, Nexus
+                         card hover bg, tag-chip bg + border. -->
+                    <SolidColorBrush x:Key="ToolbarActiveBg" Color="#1E1F25" />
+                    <SolidColorBrush x:Key="CardHoverBg"     Color="#1F1F25" />
+                    <SolidColorBrush x:Key="ChipBg"          Color="#23232A" />
+                    <SolidColorBrush x:Key="ChipBorder"      Color="#3A3A45" />
+                    <SolidColorBrush x:Key="GhostPressedBg"  Color="#0F0F12" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Light">
+                    <!-- Bg (page header strip / sidebar / footer): the
+                         calmer grey the user sees on the "Installed
+                         mods" strip. Panel (data area / cards): a soft
+                         off-white — not pure #FFFFFF, which read as
+                         glaring against the rest. PanelAlt for hover
+                         and table-header tints sits between them. -->
+                    <SolidColorBrush x:Key="Bg"           Color="#EBEBEF" />
+                    <SolidColorBrush x:Key="Panel"        Color="#F8F8FA" />
+                    <SolidColorBrush x:Key="PanelAlt"     Color="#E0E0E5" />
+                    <SolidColorBrush x:Key="Border"       Color="#D2D2D7" />
+                    <SolidColorBrush x:Key="Text"         Color="#1A1A1F" />
+                    <SolidColorBrush x:Key="TextDim"      Color="#6C6C72" />
+                    <!-- Row selection + header hover paint as a sit-just-
+                         above-panel grey in light, so the highlight feels
+                         like a subtle "this row is current" instead of a
+                         dark slab. Dark theme keeps its existing values. -->
+                    <SolidColorBrush x:Key="RowSelect"    Color="#DEDEE4" />
+                    <SolidColorBrush x:Key="RowSelectHov" Color="#D3D3DA" />
+                    <SolidColorBrush x:Key="HeaderHover"  Color="#DCDCE2" />
+                    <!-- Same accents as the Dark variant, paletted for
+                         light. Active filter pill = subtle elevated
+                         grey; card hover = slightly darker than panel
+                         so the hover is felt without being heavy;
+                         chip = pill that sits clearly above the card
+                         background without going jet-black. -->
+                    <SolidColorBrush x:Key="ToolbarActiveBg" Color="#DCDCE3" />
+                    <SolidColorBrush x:Key="CardHoverBg"     Color="#EAEAEF" />
+                    <SolidColorBrush x:Key="ChipBg"          Color="#E5E5EA" />
+                    <SolidColorBrush x:Key="ChipBorder"      Color="#C5C5CB" />
+                    <!-- Ghost button pressed: visibly darker than the
+                         hover state (PanelAlt) but stays in the light
+                         palette. Was painted #0F0F12 which is jet-dark
+                         and looked wrong against light chrome. -->
+                    <SolidColorBrush x:Key="GhostPressedBg"  Color="#C0C0C7" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
 
-            <SolidColorBrush x:Key="Bg"        Color="{StaticResource BgColor}" />
-            <SolidColorBrush x:Key="Panel"     Color="{StaticResource PanelColor}" />
-            <SolidColorBrush x:Key="PanelAlt"  Color="{StaticResource PanelAltColor}" />
-            <SolidColorBrush x:Key="Border"    Color="{StaticResource BorderColor}" />
-            <SolidColorBrush x:Key="Text"      Color="{StaticResource TextColor}" />
-            <SolidColorBrush x:Key="TextDim"   Color="{StaticResource TextDimColor}" />
+            <!-- Theme-invariant palette. Accent red + amber stay the same
+                 in both themes; they're the install-state language. -->
+            <Color x:Key="AccentColor">#B62A2A</Color>
+            <Color x:Key="AccentDimColor">#5A1414</Color>
+            <Color x:Key="DirtyColor">#B89030</Color>
+            <Color x:Key="DirtyHoverColor">#D4A848</Color>
+            <Color x:Key="DirtyDimColor">#8E6520</Color>
+
             <SolidColorBrush x:Key="Accent"    Color="{StaticResource AccentColor}" />
             <SolidColorBrush x:Key="AccentDim" Color="{StaticResource AccentDimColor}" />
 

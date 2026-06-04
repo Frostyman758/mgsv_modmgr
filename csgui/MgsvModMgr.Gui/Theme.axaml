@@ -14,6 +14,33 @@
         <Setter Property="Foreground" Value="{DynamicResource Text}" />
     </Style>
 
+    <!-- Page transitions: each top-level page Border stays in the
+         visual tree at all times (no IsVisible toggle) and instead
+         crossfades via Opacity. The Border carries Classes="page" and
+         Classes.active is bound to the matching IsXxxPage predicate
+         in the VM — when that flips, the Opacity transition takes
+         over the visual switch. IsHitTestVisible follows so the
+         non-active pages don't intercept clicks while fading out.
+         Animations stay GPU-friendly and frame-locked. -->
+    <Style Selector="Border.page">
+        <Setter Property="Opacity"          Value="0" />
+        <Setter Property="IsHitTestVisible" Value="False" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <!-- 280ms matches the sidebar collapse-group's
+                     MaxHeight transition exactly, so page fade-in and
+                     the install-action pip strip collapse complete in
+                     the same beat when you navigate to Nexus or
+                     Settings. Easing matched too. -->
+                <DoubleTransition Property="Opacity" Duration="0:0:0.28" Easing="QuadraticEaseOut"/>
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Border.page.active">
+        <Setter Property="Opacity"          Value="1" />
+        <Setter Property="IsHitTestVisible" Value="True" />
+    </Style>
+
     <!-- Sidebar collapse-group: a vertical strip of install-action
          sidebar buttons that animates closed when the user navigates
          to the Nexus page (and back open when they return to Mods).
@@ -25,8 +52,11 @@
         <Setter Property="Opacity"      Value="1" />
         <Setter Property="Transitions">
             <Transitions>
+                <!-- Both halves of the collapse complete on the same
+                     beat (280ms) so the strip's height + fade finish
+                     in lockstep with the page fade-in elsewhere. -->
                 <DoubleTransition Property="MaxHeight" Duration="0:0:0.28" Easing="QuadraticEaseOut"/>
-                <DoubleTransition Property="Opacity"   Duration="0:0:0.22" Easing="QuadraticEaseOut"/>
+                <DoubleTransition Property="Opacity"   Duration="0:0:0.28" Easing="QuadraticEaseOut"/>
             </Transitions>
         </Setter>
     </Style>
@@ -167,7 +197,7 @@
         <Setter Property="TextElement.Foreground" Value="{DynamicResource Text}" />
     </Style>
     <Style Selector="Button.ghost:pressed /template/ ContentPresenter">
-        <Setter Property="Background"  Value="#0F0F12" />
+        <Setter Property="Background"  Value="{DynamicResource GhostPressedBg}" />
         <Setter Property="BorderBrush" Value="{DynamicResource Border}" />
         <Setter Property="TextElement.Foreground" Value="{DynamicResource Text}" />
     </Style>
@@ -468,7 +498,7 @@
         <Setter Property="MinHeight"       Value="40" />
     </Style>
     <Style Selector="DataGridColumnHeader:pointerover">
-        <Setter Property="Background" Value="#1F1F23" />
+        <Setter Property="Background" Value="{DynamicResource HeaderHover}" />
     </Style>
     <!-- Hide the vertical separator line column headers paint between
          themselves — same "no hard rules" treatment as the body cells. -->
@@ -488,12 +518,14 @@
     <!-- Selection: neutral elevated grey, not red-tinted. The accent
          palette is owned by DirtyBrush (which lives across many controls
          at once) — keeping selection chromatically neutral means it never
-         clashes with whichever colour DirtyBrush is currently showing. -->
+         clashes with whichever colour DirtyBrush is currently showing.
+         RowSelect / RowSelectHov resources swap per theme variant so
+         the highlight reads as "subtle elevation" in both dark and light. -->
     <Style Selector="DataGridRow:selected /template/ Rectangle#BackgroundRectangle">
-        <Setter Property="Fill" Value="#26262C" />
+        <Setter Property="Fill" Value="{DynamicResource RowSelect}" />
     </Style>
     <Style Selector="DataGridRow:selected:pointerover /template/ Rectangle#BackgroundRectangle">
-        <Setter Property="Fill" Value="#2E2E34" />
+        <Setter Property="Fill" Value="{DynamicResource RowSelectHov}" />
     </Style>
 
 
@@ -535,7 +567,7 @@
          primarily). Adds the DirtyBrush-tinted outline + subtle filled
          bg so the currently-active filter reads as "selected". -->
     <Style Selector="Button.ghost.active /template/ ContentPresenter">
-        <Setter Property="Background"  Value="#1E1F25" />
+        <Setter Property="Background"  Value="{DynamicResource ToolbarActiveBg}" />
         <Setter Property="BorderBrush" Value="{DynamicResource DirtyBrush}" />
     </Style>
     <Style Selector="Button.ghost.active">
@@ -584,7 +616,7 @@
         </Setter>
     </Style>
     <Style Selector="Border.nexus-card:pointerover">
-        <Setter Property="Background"  Value="#1F1F25" />
+        <Setter Property="Background"  Value="{DynamicResource CardHoverBg}" />
         <Setter Property="BorderBrush" Value="{DynamicResource DirtyBrush}" />
     </Style>
 
@@ -592,8 +624,8 @@
          existing pending/disabled chips that user tags read as user-
          authored content. -->
     <Style Selector="Border.chip-tag">
-        <Setter Property="Background"      Value="#23232A" />
-        <Setter Property="BorderBrush"     Value="#3A3A45" />
+        <Setter Property="Background"      Value="{DynamicResource ChipBg}" />
+        <Setter Property="BorderBrush"     Value="{DynamicResource ChipBorder}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius"    Value="10" />
         <Setter Property="Padding"         Value="8,2" />

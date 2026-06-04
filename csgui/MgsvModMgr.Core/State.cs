@@ -8,6 +8,8 @@ public sealed class State
     public string DatFpk   { get; set; } = "";
     /// <summary>Personal API key from nexusmods.com/users/myaccount?tab=api.</summary>
     public string NexusApiKey { get; set; } = "";
+    /// <summary>Persisted UI preference; false = dark, true = light.</summary>
+    public bool IsLightTheme { get; set; }
     public ObservableCollection<ModInfo> Mods { get; } = new();
 
     /// <summary>
@@ -22,7 +24,8 @@ public static class StateIo
 {
     public static void Load(State s, string statePath)
     {
-        s.GameRoot = ""; s.DatFpk = ""; s.NexusApiKey = ""; s.Mods.Clear(); s.HiddenColumns.Clear();
+        s.GameRoot = ""; s.DatFpk = ""; s.NexusApiKey = ""; s.IsLightTheme = false;
+        s.Mods.Clear(); s.HiddenColumns.Clear();
         if (!File.Exists(statePath)) return;
 
         ModInfo? cur = null;
@@ -35,6 +38,7 @@ public static class StateIo
             if (line.StartsWith("datfpk="))    { s.DatFpk   = line[7..];  cur = null; continue; }
             if (line.StartsWith("hidecol="))   { var n = line[8..]; if (n.Length > 0) s.HiddenColumns.Add(n); cur = null; continue; }
             if (line.StartsWith("nexus_apikey=")) { s.NexusApiKey = line[13..]; cur = null; continue; }
+            if (line.StartsWith("theme="))        { s.IsLightTheme = line[6..] == "light"; cur = null; continue; }
             if (line == "[mod]")               { cur = new ModInfo(); s.Mods.Add(cur); continue; }
             if (cur is null) continue;
 
@@ -82,6 +86,7 @@ public static class StateIo
         f.WriteLine($"datfpk={s.DatFpk}");
         foreach (var c in s.HiddenColumns) f.WriteLine($"hidecol={c}");
         if (!string.IsNullOrEmpty(s.NexusApiKey)) f.WriteLine($"nexus_apikey={s.NexusApiKey}");
+        f.WriteLine($"theme={(s.IsLightTheme ? "light" : "dark")}");
         foreach (var m in s.Mods)
         {
             f.WriteLine();
