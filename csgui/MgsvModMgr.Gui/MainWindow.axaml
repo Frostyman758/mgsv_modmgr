@@ -304,16 +304,18 @@
 
           <DataGrid.Columns>
 
-            <!-- NAME: mod name + id stacked. Bumped to 3* + larger MinWidth
-                 so longer mod names don't ellipsis as aggressively. Marked
-                 essential (cannot be hidden via the header context menu). -->
+            <!-- NAME: mod name + author stacked. The subtitle prefers
+                 the author so users see who made each mod; it falls
+                 back to the file-name only when metadata.xml didn't
+                 include an author. Marked essential (cannot be hidden
+                 via the header context menu). -->
             <DataGridTemplateColumn Header="NAME" Width="3*" MinWidth="260">
               <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ModRow">
                   <StackPanel Spacing="2" VerticalAlignment="Center" Margin="12,0">
                     <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14"
                                TextTrimming="CharacterEllipsis"/>
-                    <TextBlock Text="{Binding Id}" Foreground="{DynamicResource TextDim}" FontSize="11"
+                    <TextBlock Text="{Binding Subtitle}" Foreground="{DynamicResource TextDim}" FontSize="11"
                                TextTrimming="CharacterEllipsis"/>
                   </StackPanel>
                 </DataTemplate>
@@ -346,7 +348,8 @@
             </DataGridTemplateColumn>
 
             <DataGridTextColumn Header="VERSION" Binding="{Binding Version}" Width="90"  MinWidth="60"/>
-            <DataGridTextColumn Header="AUTHOR"  Binding="{Binding Author}"  Width="*"   MinWidth="100"/>
+            <!-- (Former AUTHOR column removed: the author now lives
+                 directly under the mod name in the NAME column.) -->
 
             <!-- QAR / GAMEDIR right-aligned -->
             <DataGridTemplateColumn Header="QAR" Width="80" MinWidth="60">

@@ -24,6 +24,13 @@ public sealed class ModRow : INotifyPropertyChanged
     public string Name         => string.IsNullOrEmpty(_mod.Name) ? _mod.Id : _mod.Name;
     public string Version      => _mod.Version;
     public string Author       => _mod.Author;
+    /// <summary>
+    /// Subtitle line shown under the mod name on the NAME column.
+    /// Prefers the author so users see who made the mod; falls back
+    /// to the id/file-name only when an author wasn't packaged into
+    /// the mod's metadata.xml.
+    /// </summary>
+    public string Subtitle     => string.IsNullOrWhiteSpace(_mod.Author) ? _mod.Id : _mod.Author;
     public int           QarCount     => _mod.QarPaths.Count;
     public int           GameDirCount => _mod.GameDirEntries.Count;
     public List<string>  Tags         => _mod.Tags;
