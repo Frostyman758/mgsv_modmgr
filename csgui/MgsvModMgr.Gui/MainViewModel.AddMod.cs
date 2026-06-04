@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Platform.Storage;
 using MgsvModMgr.Core;
+using MgsvModMgr.Gui.Lang;
 
 namespace MgsvModMgr.Gui;
 
@@ -16,16 +17,16 @@ public sealed partial class MainViewModel
     {
         var files = await _window.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
-            Title          = "Select .mgsv mod(s) or archive(s)",
+            Title          = L.S("Str.AddMod.PickerTitle"),
             AllowMultiple  = true,
             FileTypeFilter = new[]
             {
-                new FilePickerFileType("Mods + archives")
+                new FilePickerFileType(L.S("Str.AddMod.FilterModsArchives"))
                 {
                     Patterns = new[] { "*.mgsv", "*.zip", "*.rar", "*.7z", "*.tar", "*.tar.gz" },
                 },
-                new FilePickerFileType("SnakeBite mods") { Patterns = new[] { "*.mgsv" } },
-                new FilePickerFileType("Archives")
+                new FilePickerFileType(L.S("Str.AddMod.FilterMods")) { Patterns = new[] { "*.mgsv" } },
+                new FilePickerFileType(L.S("Str.AddMod.FilterArchives"))
                 {
                     Patterns = new[] { "*.zip", "*.rar", "*.7z", "*.tar", "*.tar.gz" },
                 },
@@ -93,8 +94,8 @@ public sealed partial class MainViewModel
         }
         if (paths.Count == 0)
         {
-            await ShowError("No mods to add",
-                "None of the selected files contained an installable .mgsv mod.");
+            await ShowError(L.S("Str.AddMod.NoneTitle"),
+                L.S("Str.AddMod.NoneBody"));
             CleanupTempDirs(tempDirs);
             return;
         }
@@ -134,9 +135,9 @@ public sealed partial class MainViewModel
             var head    = failures.Take(8).Select(f => $"• {f.Name}: {f.Error}");
             var summary = string.Join("\n", head);
             if (failures.Count > 8)
-                summary += $"\n• and {failures.Count - 8} more failure(s)";
+                summary += "\n• " + L.F("Str.AddMod.MoreFailures", failures.Count - 8);
             await ShowError(
-                $"{failures.Count} of {paths.Count} could not be added",
+                L.F("Str.AddMod.FailedTitle", failures.Count, paths.Count),
                 summary);
         }
     }

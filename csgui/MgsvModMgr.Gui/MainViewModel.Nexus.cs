@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia.Threading;
 using MgsvModMgr.Core;
+using MgsvModMgr.Gui.Lang;
 
 namespace MgsvModMgr.Gui;
 
@@ -255,9 +256,8 @@ public sealed partial class MainViewModel
         catch (Exception ex)
         {
             AppendLog($"Nexus SSO failed: {ex.Message}");
-            await ShowError("Sign-in failed",
-                $"{ex.Message}\n\nYou can still paste a Personal API key manually from " +
-                "nexusmods.com → My Account → API.");
+            await ShowError(L.S("Str.Errors.SignInFailed"),
+                ex.Message + L.S("Str.Errors.SignInFailedSuffix"));
         }
         finally { _isSsoInFlight = false; }
     }
@@ -498,15 +498,15 @@ public sealed partial class MainViewModel
         }
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
         {
-            NexusError = "API key was rejected. Re-check it in Settings.";
+            NexusError = L.S("Str.Nexus.Err.ApiKey");
         }
         catch (TaskCanceledException)
         {
-            NexusError = "Request timed out. Check your connection and try again.";
+            NexusError = L.S("Str.Nexus.Err.Timeout");
         }
         catch (Exception ex)
         {
-            NexusError = $"Failed to load Nexus mods: {ex.Message}";
+            NexusError = L.F("Str.Nexus.Err.LoadFmt", ex.Message);
         }
         finally
         {

@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Platform.Storage;
+using MgsvModMgr.Gui.Lang;
 
 namespace MgsvModMgr.Gui;
 
@@ -23,7 +24,7 @@ public sealed partial class MainViewModel
     {
         var folder = await _window.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
         {
-            Title = "Select MGSV:TPP game root",
+            Title = L.S("Str.Settings.GameRootPicker"),
         });
         var path = folder.Count > 0 ? folder[0].TryGetLocalPath() : null;
         if (path is not null) GameRootField = path;
@@ -35,12 +36,12 @@ public sealed partial class MainViewModel
         // bare `datfpk` binary. Allow either via the picker.
         var files = await _window.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
-            Title          = "Select datfpk binary",
+            Title          = L.S("Str.Settings.DatFpkPicker"),
             AllowMultiple  = false,
             FileTypeFilter = new[]
             {
-                new FilePickerFileType("datfpk")     { Patterns = new[] { "datfpk", "datfpk.exe" } },
-                new FilePickerFileType("Executables"){ Patterns = new[] { "*.exe", "*" } },
+                new FilePickerFileType("datfpk")                          { Patterns = new[] { "datfpk", "datfpk.exe" } },
+                new FilePickerFileType(L.S("Str.Settings.FilterExecutables")) { Patterns = new[] { "*.exe", "*" } },
             },
         });
         var path = files.Count > 0 ? files[0].TryGetLocalPath() : null;
@@ -49,23 +50,20 @@ public sealed partial class MainViewModel
 
     private async Task ResetApplyStateAsync()
     {
-        var ok = await ConfirmAsync(
-            "Clear the Apply cache and tmp\\host_* scratch directories?\n\n" +
-            "The next Apply will rebuild every host from scratch. This does NOT " +
-            "touch your game install or the registered mod list.");
+        var ok = await ConfirmAsync(L.S("Str.Settings.ResetPrompt"));
         if (!ok) return;
         try
         {
             await Task.Run(() => _manager.ResetApplyState());
         }
-        catch (Exception ex) { await ShowError("Reset failed", ex.Message); }
+        catch (Exception ex) { await ShowError(L.S("Str.Errors.ResetFailed"), ex.Message); }
     }
 
     private async Task SaveSettingsAsync()
     {
         if (string.IsNullOrWhiteSpace(GameRootField) || string.IsNullOrWhiteSpace(DatFpkField))
         {
-            await ShowError("Save failed", "Both Game root and datfpk paths are required.");
+            await ShowError(L.S("Str.Errors.SaveFailed"), L.S("Str.Errors.SaveFailedBody"));
             return;
         }
         try
@@ -91,6 +89,6 @@ public sealed partial class MainViewModel
             OnPropertyChanged(nameof(NexusNeedsApiKey));
             CurrentPage = Page.Mods;
         }
-        catch (Exception ex) { await ShowError("Save failed", ex.Message); }
+        catch (Exception ex) { await ShowError(L.S("Str.Errors.SaveFailed"), ex.Message); }
     }
 }

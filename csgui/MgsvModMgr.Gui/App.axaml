@@ -11,6 +11,13 @@
 
     <Application.Resources>
         <ResourceDictionary>
+            <!-- Localised UI strings live in their own dictionary so a
+                 future language swap is a one-line MergedDictionaries
+                 edit. Keys are documented in Lang/Strings.en.axaml. -->
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="avares://modmgr_gui/Lang/Strings.en.axaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
             <!-- Per-variant brush palette. The Bg / Panel / Border / Text
                  family swaps based on App.RequestedThemeVariant. The
                  red+amber accent palette intentionally stays the same

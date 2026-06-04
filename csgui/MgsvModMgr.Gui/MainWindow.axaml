@@ -6,7 +6,7 @@
         x:Class="MgsvModMgr.Gui.MainWindow"
         x:Name="Root"
         x:DataType="vm:MainViewModel"
-        Title="MGSV Mod Manager"
+        Title="{DynamicResource Str.App.Title}"
         Icon="avares://modmgr_gui/Assets/app.ico"
         Width="980" Height="600"
         MinWidth="980" MinHeight="600"
@@ -42,7 +42,7 @@
                     IsHitTestVisible="False">
           <Image Source="avares://modmgr_gui/Assets/app.ico"
                  Width="16" Height="16"/>
-          <TextBlock Text="MGSV Mod Manager"
+          <TextBlock Text="{DynamicResource Str.App.Title}"
                      Foreground="{DynamicResource Text}"
                      FontSize="12"
                      VerticalAlignment="Center"/>
@@ -61,16 +61,16 @@
                when the window state flips. -->
           <Button Classes="window-btn"
                   Content="&#xF15F;"
-                  ToolTip.Tip="Minimise"
+                  ToolTip.Tip="{DynamicResource Str.App.WinMinimise}"
                   Click="WindowBtn_Minimize"/>
           <Button Classes="window-btn"
                   x:Name="MaxRestoreButton"
                   Content="&#xF0F1;"
-                  ToolTip.Tip="Maximise / Restore"
+                  ToolTip.Tip="{DynamicResource Str.App.WinMaxRestore}"
                   Click="WindowBtn_MaximizeRestore"/>
           <Button Classes="window-btn close"
                   Content="&#xE6CB;"
-                  ToolTip.Tip="Close"
+                  ToolTip.Tip="{DynamicResource Str.App.WinClose}"
                   Click="WindowBtn_Close"/>
         </StackPanel>
       </Grid>
@@ -105,7 +105,7 @@
         <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,16,0,0"
                     HorizontalAlignment="Center">
           <Button Classes="sidebar" Classes.active="{Binding IsModsPage}"
-                  ToolTip.Tip="Installed mods"
+                  ToolTip.Tip="{DynamicResource Str.Sidebar.Mods}"
                   Content="&#xEB09;"
                   Command="{Binding ShowModsCommand}"/>
 
@@ -113,21 +113,21 @@
                   Classes.collapsed="{Binding IsAwayFromInstallList}">
             <StackPanel Spacing="6" HorizontalAlignment="Center">
               <Button Classes="sidebar" Classes.dirty="{Binding IsDirty}"
-                      ToolTip.Tip="Apply pending changes to the game install"
+                      ToolTip.Tip="{DynamicResource Str.Sidebar.Apply}"
                       Content="&#xE45B;"
                       IsEnabled="{Binding !IsApplying}"
                       Command="{Binding ApplyCommand}"/>
               <Button Classes="sidebar"
-                      ToolTip.Tip="Restore the original game files; undo every mod change in the install"
+                      ToolTip.Tip="{DynamicResource Str.Sidebar.Revert}"
                       Content="&#xE1A2;"
                       IsEnabled="{Binding !IsApplying}"
                       Command="{Binding RevertCommand}"/>
               <Button Classes="sidebar" Classes.active="{Binding IsLogPage}"
-                      ToolTip.Tip="Activity log from the last Apply"
+                      ToolTip.Tip="{DynamicResource Str.Sidebar.Log}"
                       Content="&#xF582;"
                       Command="{Binding ToggleLogCommand}"/>
               <Button Classes="sidebar"
-                      ToolTip.Tip="Rebuild PathDictionary.txt and ExplicitPathDictionary.txt against every installed mod"
+                      ToolTip.Tip="{DynamicResource Str.Sidebar.ExportDict}"
                       Content="&#xE7B0;"
                       IsEnabled="{Binding !IsApplying}"
                       Command="{Binding ExportDictCommand}"/>
@@ -136,7 +136,7 @@
 
           <!-- Nexus Mods browser (globe glyph) — always visible. -->
           <Button Classes="sidebar" Classes.active="{Binding IsNexusPage}"
-                  ToolTip.Tip="Browse Nexus Mods"
+                  ToolTip.Tip="{DynamicResource Str.Sidebar.Nexus}"
                   Content="&#xE974;"
                   Command="{Binding ShowNexusCommand}"/>
         </StackPanel>
@@ -144,11 +144,11 @@
         <StackPanel DockPanel.Dock="Bottom" Spacing="6" Margin="0,0,0,16"
                     HorizontalAlignment="Center">
           <Button Classes="sidebar" Classes.active="{Binding IsSettingsPage}"
-                  ToolTip.Tip="Game root, datfpk path"
+                  ToolTip.Tip="{DynamicResource Str.Sidebar.Settings}"
                   Content="&#xEFD2;"
                   Command="{Binding ShowSettingsCommand}"/>
           <Button Classes="sidebar"
-                  ToolTip.Tip="About this manager"
+                  ToolTip.Tip="{DynamicResource Str.Sidebar.About}"
                   Content="&#xEA5B;"
                   Command="{Binding AboutCommand}"/>
         </StackPanel>
@@ -168,7 +168,7 @@
               Classes.active="{Binding IsModsPage}">
         <Grid ColumnDefinitions="*,auto">
           <StackPanel Grid.Column="0" Spacing="2">
-            <TextBlock Text="Installed mods" FontSize="22" FontWeight="SemiBold"/>
+            <TextBlock Text="{DynamicResource Str.Mods.Title}" FontSize="22" FontWeight="SemiBold"/>
             <TextBlock Text="{Binding HeaderSubtitle}" Foreground="{DynamicResource TextDim}" FontSize="12"/>
           </StackPanel>
           <!-- Negative right margin shifts the toolbar 4px past the
@@ -179,11 +179,11 @@
           <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8"
                       VerticalAlignment="Center" Margin="0,0,-4,0">
             <Button Classes="ghost icon"   Content="&#xE48B;"
-                    ToolTip.Tip="Move selected mod up in load order"
+                    ToolTip.Tip="{DynamicResource Str.Mods.MoveUp}"
                     IsEnabled="{Binding !IsApplying}"
                     Command="{Binding MoveUpCommand}"/>
             <Button Classes="ghost icon"   Content="&#xE483;"
-                    ToolTip.Tip="Move selected mod down in load order"
+                    ToolTip.Tip="{DynamicResource Str.Mods.MoveDown}"
                     IsEnabled="{Binding !IsApplying}"
                     Command="{Binding MoveDownCommand}"/>
             <!-- Search pill: 40×40 button matching the trash button's
@@ -242,7 +242,7 @@
                          VerticalContentAlignment="Center"
                          Padding="0,0,12,0"
                          FontSize="13"
-                         Watermark="Search list"
+                         Watermark="{DynamicResource Str.Mods.SearchWatermark}"
                          Foreground="{DynamicResource Text}"
                          CaretBrush="{DynamicResource Text}"
                          Text="{Binding SearchText, Mode=TwoWay}"
@@ -252,11 +252,11 @@
               </Grid>
             </Border>
             <Button Classes="danger icon"  Content="&#xE666;"
-                    ToolTip.Tip="Remove selected mod (run Apply afterwards to rebuild without it)"
+                    ToolTip.Tip="{DynamicResource Str.Mods.Remove}"
                     IsEnabled="{Binding !IsApplying}"
                     Command="{Binding RemoveCommand}"/>
             <Button Classes="primary icon" Content="&#xE00C;"
-                    ToolTip.Tip="Add a .mgsv mod archive"
+                    ToolTip.Tip="{DynamicResource Str.Mods.Add}"
                     IsEnabled="{Binding !IsApplying}"
                     Command="{Binding AddCommand}"/>
           </StackPanel>
@@ -273,8 +273,8 @@
               Classes.active="{Binding IsNexusPage}">
         <Grid ColumnDefinitions="*,auto">
           <StackPanel Grid.Column="0" Spacing="2">
-            <TextBlock Text="Nexus Mods" FontSize="22" FontWeight="SemiBold"/>
-            <TextBlock Text="Browse, search, and install mods from nexusmods.com"
+            <TextBlock Text="{DynamicResource Str.Nexus.Title}" FontSize="22" FontWeight="SemiBold"/>
+            <TextBlock Text="{DynamicResource Str.Nexus.Subtitle}"
                        Foreground="{DynamicResource TextDim}" FontSize="12"/>
           </StackPanel>
           <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8"
@@ -302,7 +302,7 @@
                          VerticalContentAlignment="Center"
                          Padding="0,0,12,0"
                          FontSize="13"
-                         Watermark="Search loaded mods"
+                         Watermark="{DynamicResource Str.Nexus.SearchWatermark}"
                          Foreground="{DynamicResource Text}"
                          CaretBrush="{DynamicResource Text}"
                          Text="{Binding NexusSearchText, Mode=TwoWay}"/>
@@ -310,21 +310,21 @@
             </Border>
             <Button Classes="ghost icon" Content="&#xE178;"
                     Classes.active="{Binding IsTrendingFilter}"
-                    ToolTip.Tip="Trending"
+                    ToolTip.Tip="{DynamicResource Str.Nexus.Trending}"
                     IsEnabled="{Binding !IsNexusLoading}"
                     Command="{Binding SetTrendingFilterCommand}"/>
             <Button Classes="ghost icon" Content="&#xEC73;"
                     Classes.active="{Binding IsLatestAddedFilter}"
-                    ToolTip.Tip="Latest added"
+                    ToolTip.Tip="{DynamicResource Str.Nexus.LatestAdded}"
                     IsEnabled="{Binding !IsNexusLoading}"
                     Command="{Binding SetLatestAddedFilterCommand}"/>
             <Button Classes="ghost icon" Content="&#xE347;"
                     Classes.active="{Binding IsLatestUpdatedFilter}"
-                    ToolTip.Tip="Latest updated"
+                    ToolTip.Tip="{DynamicResource Str.Nexus.LatestUpdated}"
                     IsEnabled="{Binding !IsNexusLoading}"
                     Command="{Binding SetLatestUpdatedFilterCommand}"/>
             <Button Classes="ghost icon" Content="&#xE0BC;"
-                    ToolTip.Tip="Refresh"
+                    ToolTip.Tip="{DynamicResource Str.Nexus.Refresh}"
                     IsEnabled="{Binding !IsNexusLoading}"
                     Command="{Binding RefreshNexusCommand}"/>
           </StackPanel>
@@ -336,8 +336,8 @@
               Classes="page"
               Classes.active="{Binding IsSettingsPage}">
         <StackPanel Spacing="2">
-          <TextBlock Text="Settings" FontSize="22" FontWeight="SemiBold"/>
-          <TextBlock Text="Tell the manager where MGSV:TPP and datfpk.exe live."
+          <TextBlock Text="{DynamicResource Str.Settings.Title}" FontSize="22" FontWeight="SemiBold"/>
+          <TextBlock Text="{DynamicResource Str.Settings.Subtitle}"
                      Foreground="{DynamicResource TextDim}" FontSize="12"/>
         </StackPanel>
       </Border>
@@ -372,7 +372,7 @@
                  back to the file-name only when metadata.xml didn't
                  include an author. Marked essential (cannot be hidden
                  via the header context menu). -->
-            <DataGridTemplateColumn Header="NAME" Width="3*" MinWidth="260">
+            <DataGridTemplateColumn Header="{DynamicResource Str.Mods.Col.Name}" Width="3*" MinWidth="260">
               <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ModRow">
                   <StackPanel Spacing="2" VerticalAlignment="Center" Margin="12,0">
@@ -388,7 +388,7 @@
             <!-- TAGS: user-defined free-form labels, rendered as small chips.
                  Persisted per mod in state.txt. Editing UI comes in a later
                  pass; for now this just surfaces what the data already has. -->
-            <DataGridTemplateColumn Header="TAGS" Width="170" MinWidth="120">
+            <DataGridTemplateColumn Header="{DynamicResource Str.Mods.Col.Tags}" Width="170" MinWidth="120">
               <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ModRow">
                   <ItemsControl ItemsSource="{Binding Tags}"
@@ -410,12 +410,12 @@
               </DataGridTemplateColumn.CellTemplate>
             </DataGridTemplateColumn>
 
-            <DataGridTextColumn Header="VERSION" Binding="{Binding Version}" Width="90"  MinWidth="60"/>
+            <DataGridTextColumn Header="{DynamicResource Str.Mods.Col.Version}" Binding="{Binding Version}" Width="90"  MinWidth="60"/>
             <!-- (Former AUTHOR column removed: the author now lives
                  directly under the mod name in the NAME column.) -->
 
             <!-- QAR / GAMEDIR right-aligned -->
-            <DataGridTemplateColumn Header="QAR" Width="80" MinWidth="60">
+            <DataGridTemplateColumn Header="{DynamicResource Str.Mods.Col.Qar}" Width="80" MinWidth="60">
               <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ModRow">
                   <TextBlock Text="{Binding QarCount}" Foreground="{DynamicResource TextDim}"
@@ -424,7 +424,7 @@
                 </DataTemplate>
               </DataGridTemplateColumn.CellTemplate>
             </DataGridTemplateColumn>
-            <DataGridTemplateColumn Header="GAMEDIR" Width="90" MinWidth="60">
+            <DataGridTemplateColumn Header="{DynamicResource Str.Mods.Col.GameDir}" Width="90" MinWidth="60">
               <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ModRow">
                   <TextBlock Text="{Binding GameDirCount}" Foreground="{DynamicResource TextDim}"
@@ -442,7 +442,7 @@
                  lands on the same X as the Add button's right edge
                  (accounting for the DataGrid scrollbar gutter, which
                  eats space on the column's right). -->
-            <DataGridTemplateColumn Header="ENABLED" Width="100" CanUserResize="False">
+            <DataGridTemplateColumn Header="{DynamicResource Str.Mods.Col.Enabled}" Width="100" CanUserResize="False">
               <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ModRow">
                   <ToggleSwitch Classes.pending="{Binding IsPending}"
@@ -460,21 +460,21 @@
 
           <DataGrid.ContextMenu>
             <ContextMenu x:CompileBindings="False">
-              <MenuItem Header="Toggle enabled"
+              <MenuItem Header="{DynamicResource Str.Mods.Ctx.Toggle}"
                         Command="{Binding ToggleRowCommand}"
                         CommandParameter="{Binding SelectedMod}"/>
               <Separator/>
               <!-- Move up / down: matching glyphs to the toolbar's ghost
                    icon buttons so the context menu reads as the same
                    action as the toolbar entries. -->
-              <MenuItem Header="Move up" Command="{Binding MoveUpCommand}">
+              <MenuItem Header="{DynamicResource Str.Mods.Ctx.MoveUp}" Command="{Binding MoveUpCommand}">
                 <MenuItem.Icon>
                   <TextBlock Text="&#xE48B;"
                              FontFamily="{DynamicResource IconFont}"
                              FontSize="13"/>
                 </MenuItem.Icon>
               </MenuItem>
-              <MenuItem Header="Move down" Command="{Binding MoveDownCommand}">
+              <MenuItem Header="{DynamicResource Str.Mods.Ctx.MoveDown}" Command="{Binding MoveDownCommand}">
                 <MenuItem.Icon>
                   <TextBlock Text="&#xE483;"
                              FontFamily="{DynamicResource IconFont}"
@@ -485,7 +485,7 @@
               <!-- Remove: danger-classed so text + trash glyph paint
                    with the live DirtyBrush, matching the toolbar's
                    trash button colour & hover treatment. -->
-              <MenuItem Header="Remove..." Classes="danger"
+              <MenuItem Header="{DynamicResource Str.Mods.Ctx.Remove}" Classes="danger"
                         Command="{Binding RemoveCommand}">
                 <MenuItem.Icon>
                   <TextBlock Text="&#xE666;"
@@ -520,16 +520,13 @@
                          FontSize="34"
                          Foreground="{DynamicResource DirtyBrush}"
                          HorizontalAlignment="Center"/>
-              <TextBlock Text="Sign in to Nexus Mods"
+              <TextBlock Text="{DynamicResource Str.Nexus.SignInTitle}"
                          FontSize="18" FontWeight="SemiBold"
                          HorizontalAlignment="Center"/>
               <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextDim}"
-                         TextAlignment="Center" FontSize="13" LineHeight="20">
-                Browsing the mod catalogue needs a Nexus Mods Personal API key.
-                Generate one at nexusmods.com → My Account → API and paste it
-                into Settings.
-              </TextBlock>
-              <Button Classes="primary" Content="Open Settings"
+                         TextAlignment="Center" FontSize="13" LineHeight="20"
+                         Text="{DynamicResource Str.Nexus.SignInBody}"/>
+              <Button Classes="primary" Content="{DynamicResource Str.Nexus.OpenSettings}"
                       HorizontalAlignment="Center" Padding="18,8"
                       Command="{Binding ShowSettingsCommand}"/>
             </StackPanel>
@@ -545,7 +542,7 @@
                        FontSize="34"
                        Foreground="{DynamicResource DirtyBrush}"
                        HorizontalAlignment="Center"/>
-            <TextBlock Text="Loading trending mods..."
+            <TextBlock Text="{DynamicResource Str.Nexus.Loading}"
                        Foreground="{DynamicResource TextDim}"
                        HorizontalAlignment="Center"/>
           </StackPanel>
@@ -561,7 +558,7 @@
               <TextBlock Text="{Binding NexusError}"
                          Foreground="{DynamicResource Text}"
                          TextWrapping="Wrap" TextAlignment="Center"/>
-              <Button Classes="ghost" Content="Open Settings"
+              <Button Classes="ghost" Content="{DynamicResource Str.Nexus.OpenSettings}"
                       HorizontalAlignment="Center"
                       Command="{Binding ShowSettingsCommand}"/>
             </StackPanel>
@@ -592,7 +589,7 @@
                       BorderThickness="1" CornerRadius="14"
                       Padding="14,6">
                 <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                  <TextBlock Text="Filtering:" Foreground="{DynamicResource TextDim}" FontSize="11"
+                  <TextBlock Text="{DynamicResource Str.Nexus.Filtering}" Foreground="{DynamicResource TextDim}" FontSize="11"
                              VerticalAlignment="Center"/>
                   <TextBlock Text="{Binding FacetFilterDisplay}"
                              Foreground="{DynamicResource Text}"
@@ -600,7 +597,7 @@
                              VerticalAlignment="Center"/>
                   <Button Classes="ghost" Padding="6,2"
                           Content="✕"
-                          ToolTip.Tip="Clear filter"
+                          ToolTip.Tip="{DynamicResource Str.Nexus.ClearFilter}"
                           Command="{Binding ClearFacetFiltersCommand}"/>
                 </StackPanel>
               </Border>
@@ -695,12 +692,12 @@
                                FontFamily="{DynamicResource IconFont}"
                                FontSize="14"
                                VerticalAlignment="Center"/>
-                    <TextBlock Text="Back to browse" VerticalAlignment="Center"/>
+                    <TextBlock Text="{DynamicResource Str.Nexus.BackToBrowse}" VerticalAlignment="Center"/>
                   </StackPanel>
                 </Button>
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
                   <Button Classes="ghost" Padding="14,7"
-                          Content="Open on Nexus"
+                          Content="{DynamicResource Str.Nexus.OpenOnNexus}"
                           Command="{Binding OpenNexusInBrowserCommand}"/>
                   <!-- Install: open the mod's Files tab. User hits
                        "Manual download" on Nexus, then drags the saved
@@ -711,8 +708,8 @@
                        the nxm:// route only fires for Premium accounts
                        (handler is still wired and active if it does). -->
                   <Button Classes="primary" Padding="18,8"
-                          Content="Install"
-                          ToolTip.Tip="Open the mod's Files tab on Nexus. Click 'Manual download' there, then drop the saved archive onto the Mods page's + button."
+                          Content="{DynamicResource Str.Nexus.Install}"
+                          ToolTip.Tip="{DynamicResource Str.Nexus.InstallTip}"
                           Command="{Binding OpenNexusFilesPageCommand}"/>
                 </StackPanel>
               </Grid>
@@ -771,7 +768,7 @@
                     <Button Classes="chip-button"
                             IsVisible="{Binding NexusSelectedMod.Category, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                             Command="{Binding FilterByCurrentCategoryCommand}"
-                            ToolTip.Tip="Show all mods in this category">
+                            ToolTip.Tip="{DynamicResource Str.Nexus.ShowCategory}">
                       <Border Classes="chip-tag">
                         <TextBlock Text="{Binding NexusSelectedMod.Category}"/>
                       </Border>
@@ -780,9 +777,9 @@
                          to the grid filtered to that author's mods. -->
                     <Button Classes="link-button"
                             Command="{Binding FilterByCurrentAuthorCommand}"
-                            ToolTip.Tip="Show all mods by this author">
+                            ToolTip.Tip="{DynamicResource Str.Nexus.ShowAuthor}">
                       <TextBlock VerticalAlignment="Center">
-                        <Run Text="by " Foreground="{DynamicResource TextDim}"/><Run
+                        <Run Text="{DynamicResource Str.Nexus.By}" Foreground="{DynamicResource TextDim}"/><Run Text=" "/><Run
                               Text="{Binding NexusSelectedMod.Author}"
                               Foreground="{DynamicResource DirtyBrush}"
                               FontWeight="SemiBold"/>
@@ -799,7 +796,7 @@
                       <TextBlock Text="{Binding NexusSelectedMod.Downloads, StringFormat='{}{0:N0}'}"
                                  FontSize="16" FontWeight="SemiBold"
                                  HorizontalAlignment="Center"/>
-                      <TextBlock Text="Downloads"
+                      <TextBlock Text="{DynamicResource Str.Nexus.Downloads}"
                                  Foreground="{DynamicResource TextDim}"
                                  FontSize="10"
                                  HorizontalAlignment="Center"/>
@@ -810,7 +807,7 @@
                       <TextBlock Text="{Binding NexusSelectedMod.Endorsements, StringFormat='{}{0:N0}'}"
                                  FontSize="16" FontWeight="SemiBold"
                                  HorizontalAlignment="Center"/>
-                      <TextBlock Text="Endorsements"
+                      <TextBlock Text="{DynamicResource Str.Nexus.Endorsements}"
                                  Foreground="{DynamicResource TextDim}"
                                  FontSize="10"
                                  HorizontalAlignment="Center"/>
@@ -822,7 +819,7 @@
                                  FontSize="16" FontWeight="SemiBold"
                                  HorizontalAlignment="Center"
                                  TextTrimming="CharacterEllipsis"/>
-                      <TextBlock Text="Version"
+                      <TextBlock Text="{DynamicResource Str.Nexus.Version}"
                                  Foreground="{DynamicResource TextDim}"
                                  FontSize="10"
                                  HorizontalAlignment="Center"/>
@@ -835,7 +832,7 @@
                    list query. -->
               <Border Classes="info-card">
                 <StackPanel Spacing="10">
-                  <TextBlock Text="ABOUT"
+                  <TextBlock Text="{DynamicResource Str.Nexus.About}"
                              Foreground="{DynamicResource TextDim}"
                              FontSize="11" FontWeight="SemiBold"/>
                   <TextBlock Text="{Binding NexusSelectedMod.Summary}"
@@ -855,7 +852,7 @@
               <Border Classes="info-card"
                       IsVisible="{Binding NexusSelectedMod.HasRequirements}">
                 <StackPanel Spacing="10">
-                  <TextBlock Text="REQUIREMENTS"
+                  <TextBlock Text="{DynamicResource Str.Nexus.Requirements}"
                              Foreground="{DynamicResource TextDim}"
                              FontSize="11" FontWeight="SemiBold"/>
                   <ItemsControl ItemsSource="{Binding NexusSelectedMod.Requirements}">
@@ -898,7 +895,7 @@
               <Border Classes="info-card"
                       IsVisible="{Binding NexusSelectedMod.Tags.Count}">
                 <StackPanel Spacing="10">
-                  <TextBlock Text="TAGS"
+                  <TextBlock Text="{DynamicResource Str.Nexus.Tags}"
                              Foreground="{DynamicResource TextDim}"
                              FontSize="11" FontWeight="SemiBold"/>
                   <ItemsControl ItemsSource="{Binding NexusSelectedMod.Tags}">
@@ -944,15 +941,15 @@
 
             <!-- Game root -->
             <StackPanel Spacing="6">
-              <TextBlock Text="GAME ROOT" Foreground="{DynamicResource TextDim}"
+              <TextBlock Text="{DynamicResource Str.Settings.GameRoot}" Foreground="{DynamicResource TextDim}"
                          FontSize="11" FontWeight="SemiBold"/>
-              <TextBlock Text="The folder that contains mgsvtpp.exe."
+              <TextBlock Text="{DynamicResource Str.Settings.GameRootHelp}"
                          Foreground="{DynamicResource TextDim}" FontSize="12"/>
               <Grid ColumnDefinitions="*,auto" Margin="0,4,0,0">
                 <TextBox Grid.Column="0" Classes="path"
-                         Watermark="C:\Program Files (x86)\Steam\steamapps\common\MGS_TPP"
+                         Watermark="{DynamicResource Str.Settings.GameRootWatermark}"
                          Text="{Binding GameRootField, Mode=TwoWay}"/>
-                <Button Grid.Column="1" Classes="ghost" Content="Browse..."
+                <Button Grid.Column="1" Classes="ghost" Content="{DynamicResource Str.Settings.Browse}"
                         Margin="8,0,0,0" Width="100"
                         Command="{Binding BrowseGameRootCommand}"/>
               </Grid>
@@ -960,15 +957,15 @@
 
             <!-- datfpk -->
             <StackPanel Spacing="6">
-              <TextBlock Text="DATFPK" Foreground="{DynamicResource TextDim}"
+              <TextBlock Text="{DynamicResource Str.Settings.DatFpk}" Foreground="{DynamicResource TextDim}"
                          FontSize="11" FontWeight="SemiBold"/>
-              <TextBlock Text="Path to the datfpk packer/unpacker binary. Required by Apply."
+              <TextBlock Text="{DynamicResource Str.Settings.DatFpkHelp}"
                          Foreground="{DynamicResource TextDim}" FontSize="12"/>
               <Grid ColumnDefinitions="*,auto" Margin="0,4,0,0">
                 <TextBox Grid.Column="0" Classes="path"
-                         Watermark="C:\tools\datfpk.exe   (or /usr/local/bin/datfpk)"
+                         Watermark="{DynamicResource Str.Settings.DatFpkWatermark}"
                          Text="{Binding DatFpkField, Mode=TwoWay}"/>
-                <Button Grid.Column="1" Classes="ghost" Content="Browse..."
+                <Button Grid.Column="1" Classes="ghost" Content="{DynamicResource Str.Settings.Browse}"
                         Margin="8,0,0,0" Width="100"
                         Command="{Binding BrowseDatFpkCommand}"/>
               </Grid>
@@ -982,26 +979,24 @@
                      nexusmods.com → My Account → API.
                  Either way the key needs Save Settings to persist. -->
             <StackPanel Spacing="6">
-              <TextBlock Text="NEXUS MODS API KEY" Foreground="{DynamicResource TextDim}"
+              <TextBlock Text="{DynamicResource Str.Settings.NexusKey}" Foreground="{DynamicResource TextDim}"
                          FontSize="11" FontWeight="SemiBold"/>
-              <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextDim}" FontSize="12">
-                Sign in via Nexus to authorise this app and receive an
-                API key, or paste a Personal API key manually.
-              </TextBlock>
+              <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextDim}" FontSize="12"
+                         Text="{DynamicResource Str.Settings.NexusKeyHelp}"/>
               <Grid ColumnDefinitions="*,auto" Margin="0,4,0,0">
                 <TextBox Grid.Column="0" Classes="path"
-                         Watermark="paste your Personal API key here"
+                         Watermark="{DynamicResource Str.Settings.NexusKeyWatermark}"
                          PasswordChar="•"
                          Text="{Binding NexusApiKeyField, Mode=TwoWay}"/>
                 <Button Grid.Column="1" Classes="ghost"
                         Margin="8,0,0,0" Padding="14,8"
-                        ToolTip.Tip="Open the Nexus approval page in your browser. Once you click Approve there, the API key is filled in for you."
+                        ToolTip.Tip="{DynamicResource Str.Settings.SsoTip}"
                         Command="{Binding NexusSsoSignInCommand}">
                   <StackPanel Orientation="Horizontal" Spacing="8">
                     <TextBlock Text="&#xEA7A;"
                                FontFamily="{DynamicResource IconFont}"
                                FontSize="14" VerticalAlignment="Center"/>
-                    <TextBlock Text="Sign in with Nexus" VerticalAlignment="Center"/>
+                    <TextBlock Text="{DynamicResource Str.Settings.SignIn}" VerticalAlignment="Center"/>
                   </StackPanel>
                 </Button>
               </Grid>
@@ -1010,26 +1005,24 @@
             <!-- Theme preference. Toggle persists in state.txt and is
                  applied live on flip via ApplyThemeVariant. -->
             <StackPanel Spacing="6">
-              <TextBlock Text="THEME" Foreground="{DynamicResource TextDim}"
+              <TextBlock Text="{DynamicResource Str.Settings.Theme}" Foreground="{DynamicResource TextDim}"
                          FontSize="11" FontWeight="SemiBold"/>
               <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                <TextBlock Text="Light theme" Foreground="{DynamicResource Text}"
+                <TextBlock Text="{DynamicResource Str.Settings.LightTheme}" Foreground="{DynamicResource Text}"
                            VerticalAlignment="Center"/>
                 <ToggleSwitch IsChecked="{Binding IsLightTheme, Mode=TwoWay}"
                               VerticalAlignment="Center"/>
               </StackPanel>
-              <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextDim}" FontSize="12">
-                Swaps the background / panel / text palette. The
-                red/amber install-state colours stay the same.
-              </TextBlock>
+              <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextDim}" FontSize="12"
+                         Text="{DynamicResource Str.Settings.ThemeHelp}"/>
             </StackPanel>
 
             <!-- Save / Cancel: sized to match the Browse buttons above so the
                  right edges line up neatly with the form fields. -->
             <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" Margin="0,8,0,0">
-              <Button Classes="ghost"   Content="Back"  Width="100"
+              <Button Classes="ghost"   Content="{DynamicResource Str.Settings.Back}"  Width="100"
                       Command="{Binding ShowModsCommand}"/>
-              <Button Classes="primary" Content="Save"  Width="100"
+              <Button Classes="primary" Content="{DynamicResource Str.Settings.Save}"  Width="100"
                       Command="{Binding SaveSettingsCommand}"/>
             </StackPanel>
 
@@ -1037,14 +1030,11 @@
             <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0"
                     Margin="0,24,0,0" Padding="0,20,0,0">
               <StackPanel Spacing="6">
-                <TextBlock Text="MAINTENANCE" Foreground="{DynamicResource TextDim}"
+                <TextBlock Text="{DynamicResource Str.Settings.Maintenance}" Foreground="{DynamicResource TextDim}"
                            FontSize="11" FontWeight="SemiBold"/>
-                <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextDim}" FontSize="12">
-                  Clear the Apply cache and per-host scratch directories. The next Apply
-                  will rebuild every host from scratch. Does not touch your game install
-                  or the mod list.
-                </TextBlock>
-                <Button Classes="ghost" Content="Reset Apply state"
+                <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextDim}" FontSize="12"
+                           Text="{DynamicResource Str.Settings.MaintenanceHelp}"/>
+                <Button Classes="ghost" Content="{DynamicResource Str.Settings.ResetApply}"
                         HorizontalAlignment="Left" Margin="0,6,0,0"
                         Command="{Binding ResetApplyStateCommand}"/>
               </StackPanel>
@@ -1073,11 +1063,11 @@
                     BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1"
                     Padding="14,10">
               <Grid ColumnDefinitions="*,auto">
-                <TextBlock Grid.Column="0" Text="ACTIVITY LOG"
+                <TextBlock Grid.Column="0" Text="{DynamicResource Str.Log.Title}"
                            Foreground="{DynamicResource TextDim}"
                            FontSize="11" FontWeight="SemiBold"
                            VerticalAlignment="Center"/>
-                <Button Grid.Column="1" Classes="ghost" Content="Back to mods"
+                <Button Grid.Column="1" Classes="ghost" Content="{DynamicResource Str.Log.Back}"
                         Padding="10,4"
                         Command="{Binding ShowModsCommand}"/>
               </Grid>
@@ -1097,7 +1087,7 @@
                     BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,1"
                     Padding="14,10">
               <Grid ColumnDefinitions="*,auto">
-                <TextBlock Grid.Column="0" Text="FILE CONFLICTS"
+                <TextBlock Grid.Column="0" Text="{DynamicResource Str.Log.Conflicts}"
                            Foreground="{DynamicResource TextDim}"
                            FontSize="11" FontWeight="SemiBold"
                            VerticalAlignment="Center"/>
@@ -1113,7 +1103,7 @@
             <Border IsVisible="{Binding !HasConflicts}"
                     HorizontalAlignment="Center" VerticalAlignment="Center"
                     Padding="20,16">
-              <TextBlock Text="No file conflicts detected. The enabled mods don't fight over any files in the current load order."
+              <TextBlock Text="{DynamicResource Str.Log.NoConflicts}"
                          Foreground="{DynamicResource TextDim}"
                          FontStyle="Italic"
                          TextAlignment="Center"
@@ -1145,13 +1135,13 @@
                                      TextTrimming="CharacterEllipsis"
                                      Foreground="{DynamicResource Text}"/>
                           <StackPanel Orientation="Horizontal" Spacing="6">
-                            <TextBlock Text="winner:" Foreground="{DynamicResource TextDim}" FontSize="11"/>
+                            <TextBlock Text="{DynamicResource Str.Log.Winner}" Foreground="{DynamicResource TextDim}" FontSize="11"/>
                             <TextBlock Text="{Binding Winner}"
                                        Foreground="{DynamicResource DirtyBrush}"
                                        FontWeight="SemiBold" FontSize="11"/>
                             <TextBlock Text="•" Foreground="{DynamicResource TextDim}" FontSize="11"
                                        Margin="6,0,0,0"/>
-                            <TextBlock Text="overridden:" Foreground="{DynamicResource TextDim}" FontSize="11"/>
+                            <TextBlock Text="{DynamicResource Str.Log.Overridden}" Foreground="{DynamicResource TextDim}" FontSize="11"/>
                             <TextBlock Text="{Binding OverriddenJoined}"
                                        Foreground="{DynamicResource TextDim}"
                                        FontSize="11"
@@ -1201,13 +1191,13 @@
                 Padding="24,8"
                 Cursor="Hand"
                 PointerPressed="Footer_PointerPressed"
-                ToolTip.Tip="Click to hide. Reappears automatically while an Apply is running.">
+                ToolTip.Tip="{DynamicResource Str.Footer.HideTip}">
           <StackPanel Orientation="Horizontal" Spacing="20">
             <TextBlock Foreground="{DynamicResource TextDim}" FontSize="11">
-              <Run Text="Game root:"/><Run Text=" "/><Run Text="{Binding GameRoot}" Foreground="{DynamicResource Text}"/>
+              <Run Text="{DynamicResource Str.Footer.GameRoot}"/><Run Text=" "/><Run Text="{Binding GameRoot}" Foreground="{DynamicResource Text}"/>
             </TextBlock>
             <TextBlock Foreground="{DynamicResource TextDim}" FontSize="11">
-              <Run Text="datfpk:"/><Run Text=" "/><Run Text="{Binding DatFpk}" Foreground="{DynamicResource Text}"/>
+              <Run Text="{DynamicResource Str.Footer.DatFpk}"/><Run Text=" "/><Run Text="{Binding DatFpk}" Foreground="{DynamicResource Text}"/>
             </TextBlock>
           </StackPanel>
         </Border>

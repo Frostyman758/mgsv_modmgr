@@ -13,6 +13,7 @@ using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using MgsvModMgr.Core;
 using MgsvModMgr.Gui.Commands;
+using MgsvModMgr.Gui.Lang;
 
 namespace MgsvModMgr.Gui;
 
@@ -272,9 +273,9 @@ public sealed partial class MainViewModel : INotifyPropertyChanged
 
     public string HeaderSubtitle => Mods.Count switch
     {
-        0 => "No mods installed yet. Click '+ Add mod' to get started.",
-        1 => "1 mod installed.",
-        _ => $"{Mods.Count} mods installed.",
+        0 => L.S("Str.Subtitle.None"),
+        1 => L.S("Str.Subtitle.One"),
+        _ => L.F("Str.Subtitle.Many", Mods.Count),
     };
 
     // ─── Commands ──────────────────────────────────────────────────────────
@@ -385,7 +386,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged
             SyncRows();
             MarkDirty();
         }
-        catch (Exception ex) { await ShowError("Remove failed", ex.Message); }
+        catch (Exception ex) { await ShowError(L.S("Str.Errors.RemoveFailed"), ex.Message); }
     }
 
     private void Move(int delta)
@@ -462,7 +463,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged
     {
         if (string.IsNullOrEmpty(_manager.State.GameRoot))
         {
-            await ShowError("Cannot export", "Game root is not set. Use the gear icon first.");
+            await ShowError(L.S("Str.Errors.CannotExport"), L.S("Str.Errors.CannotExportBody"));
             return;
         }
         try
@@ -470,7 +471,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged
             var added = await Task.Run(() => _manager.RebuildDictionary());
             AppendLog($"Dictionary export: +{added} new entries written to {_manager.State.GameRoot}");
         }
-        catch (Exception ex) { await ShowError("Export failed", ex.Message); }
+        catch (Exception ex) { await ShowError(L.S("Str.Errors.ExportFailed"), ex.Message); }
     }
 
     // ─── Logging ───────────────────────────────────────────────────────────
