@@ -66,6 +66,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         SetLatestUpdatedFilterCommand = new RelayCommand(() => { CurrentNexusFilter = NexusFilter.LatestUpdated; _ = LoadNexusAsync(); });
         RefreshNexusCommand           = new RelayCommand(() => _ = LoadNexusAsync());
         OpenNexusFilesPageCommand     = new RelayCommand(OpenSelectedNexusFilesPage);
+        NexusSsoSignInCommand         = new RelayCommand(SignInWithNexusAsync);
 
         // Settings page.
         BrowseGameRootCommand = new RelayCommand(BrowseGameRootAsync);
@@ -249,6 +250,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public ICommand SetLatestUpdatedFilterCommand  { get; }
     public ICommand RefreshNexusCommand            { get; }
     public ICommand OpenNexusFilesPageCommand      { get; }
+    public ICommand NexusSsoSignInCommand          { get; }
 
     // ── Nexus Mods browser ───────────────────────────────────────────
     /// <summary>Cards rendered on the Nexus browser page (filtered view).</summary>
@@ -328,6 +330,35 @@ public sealed class MainViewModel : INotifyPropertyChanged
         if (string.IsNullOrEmpty(url)) return;
         OpenInBrowser(url + "?tab=files");
     }
+
+    /// <summary>
+    /// Drive the Nexus SSO flow end-to-end. On success the returned
+    /// API key is written into the Settings field; the user still
+    /// needs to click Save to persist it (so they have a chance to
+    /// review and cancel if anything looks off). On failure the
+    /// activity log gets a one-liner and the page surfaces an error.
+    /// </summary>
+    private async Task SignInWithNexusAsync()
+    {
+        if (_isSsoInFlight) return;
+        _isSsoInFlight = true;
+        try
+        {
+            AppendLog("Nexus SSO: opening approval page in your browser...");
+            var key = await NexusSso.AuthenticateAsync(OpenInBrowser);
+            NexusApiKeyField = key;
+            AppendLog("Nexus SSO: received API key. Click Save to persist it.");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Nexus SSO failed: {ex.Message}");
+            await ShowError("Sign-in failed",
+                $"{ex.Message}\n\nYou can still paste a Personal API key manually from " +
+                "nexusmods.com → My Account → API.");
+        }
+        finally { _isSsoInFlight = false; }
+    }
+    private bool _isSsoInFlight;
 
     private static void OpenInBrowser(string url)
     {
@@ -673,23 +704,80 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private async Task AddModAsync()
     {
+        // Accept both bare .mgsv files (what SnakeBite produces) AND
+        // the wrapper archives that Nexus mods often ship in. The
+        // archive types match what SharpCompress can crack open in
+        // NexusDownloader: zip / rar / 7z / tar(.gz).
         var files = await _window.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
-            Title          = "Select .mgsv mod(s)",
+            Title          = "Select .mgsv mod(s) or archive(s)",
             AllowMultiple  = true,
             FileTypeFilter = new[]
             {
+                new FilePickerFileType("Mods + archives")
+                {
+                    Patterns = new[] { "*.mgsv", "*.zip", "*.rar", "*.7z", "*.tar", "*.tar.gz" },
+                },
                 new FilePickerFileType("SnakeBite mods") { Patterns = new[] { "*.mgsv" } },
+                new FilePickerFileType("Archives")
+                {
+                    Patterns = new[] { "*.zip", "*.rar", "*.7z", "*.tar", "*.tar.gz" },
+                },
             },
         });
         if (files.Count == 0) return;
 
-        var paths = files
+        var pickedPaths = files
             .Select(f => f.TryGetLocalPath())
             .Where(p => !string.IsNullOrEmpty(p))
             .Cast<string>()
             .ToList();
-        if (paths.Count == 0) return;
+        if (pickedPaths.Count == 0) return;
+
+        // Expand archives into their contained .mgsv files. Bare .mgsv
+        // entries pass through unchanged. Each archive's extracted
+        // .mgsv files go into a unique temp dir we clean up at the end.
+        var tempDirs = new List<string>();
+        var paths    = new List<string>();
+        foreach (var picked in pickedPaths)
+        {
+            if (picked.EndsWith(".mgsv", StringComparison.OrdinalIgnoreCase))
+            {
+                paths.Add(picked);
+                continue;
+            }
+            try
+            {
+                var scratch = System.IO.Path.Combine(
+                    System.IO.Path.GetTempPath(),
+                    "mgsv_modmgr_extract",
+                    Guid.NewGuid().ToString("N"));
+                System.IO.Directory.CreateDirectory(scratch);
+                tempDirs.Add(scratch);
+
+                AppendLog($"Scanning {System.IO.Path.GetFileName(picked)} for .mgsv contents...");
+                var found = await Task.Run(() => ExtractMgsvFiles(picked, scratch));
+                if (found.Count == 0)
+                {
+                    AppendLog($"  no .mgsv files found inside {System.IO.Path.GetFileName(picked)}");
+                    continue;
+                }
+                foreach (var f in found)
+                    AppendLog($"  extracted {System.IO.Path.GetFileName(f)}");
+                paths.AddRange(found);
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"  ERROR extracting {System.IO.Path.GetFileName(picked)}: {ex.Message}");
+            }
+        }
+        if (paths.Count == 0)
+        {
+            await ShowError("No mods to add",
+                "None of the selected files contained an installable .mgsv mod.");
+            CleanupTempDirs(tempDirs);
+            return;
+        }
 
         // Heavy I/O (zip extract + metadata.xml parse + dictionary update)
         // for each archive. state.txt and the two dictionary files are
@@ -719,6 +807,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 AppendLog($"  ERROR adding {System.IO.Path.GetFileName(path)}: {ex.Message}");
             }
         }
+        CleanupTempDirs(tempDirs);
 
         if (failures.Count > 0)
         {
@@ -729,6 +818,24 @@ public sealed class MainViewModel : INotifyPropertyChanged
             await ShowError(
                 $"{failures.Count} of {paths.Count} could not be added",
                 summary);
+        }
+    }
+
+    /// <summary>
+    /// Crack open a zip/rar/7z/tar archive and pull every .mgsv inside
+    /// into a scratch directory. Delegates to the shared SharpCompress
+    /// helper in NexusDownloader so the nxm download path and the
+    /// manual Add Mod path share one extraction implementation.
+    /// </summary>
+    private static List<string> ExtractMgsvFiles(string archivePath, string destDir)
+        => NexusDownloader.ExtractMgsvFiles(archivePath, destDir);
+
+    /// <summary>Best-effort cleanup; failures are ignored.</summary>
+    private static void CleanupTempDirs(IEnumerable<string> dirs)
+    {
+        foreach (var d in dirs)
+        {
+            try { System.IO.Directory.Delete(d, recursive: true); } catch { }
         }
     }
 

@@ -606,14 +606,17 @@
                   <Button Classes="ghost" Padding="14,7"
                           Content="Open on Nexus"
                           Command="{Binding OpenNexusInBrowserCommand}"/>
-                  <!-- Install: routes the user to the mod's Files tab.
-                       Clicking "Mod Manager Download" there fires nxm://
-                       which our registered protocol handler catches and
-                       feeds into HandleNxmUrlAsync → download → extract
-                       → AddMod → mod appears in Installed mods. -->
+                  <!-- Install: open the mod's Files tab. User hits
+                       "Manual download" on Nexus, then drags the saved
+                       archive (rar / zip / 7z / .mgsv) onto the Mods
+                       page's + button — our Add flow extracts the
+                       .mgsv automatically. Nexus removed the in-page
+                       "Mod Manager Download" button for free users so
+                       the nxm:// route only fires for Premium accounts
+                       (handler is still wired and active if it does). -->
                   <Button Classes="primary" Padding="18,8"
                           Content="Install"
-                          ToolTip.Tip="Open the mod's Files tab; click 'Mod Manager Download' there to send the file back to this app"
+                          ToolTip.Tip="Open the mod's Files tab on Nexus. Click 'Manual download' there, then drop the saved archive onto the Mods page's + button."
                           Command="{Binding OpenNexusFilesPageCommand}"/>
                 </StackPanel>
               </Grid>
@@ -784,19 +787,37 @@
               </Grid>
             </StackPanel>
 
-            <!-- Nexus Mods API key -->
+            <!-- Nexus Mods API key. Two paths to populate it:
+                 (a) the "Sign in with Nexus" button below, which opens
+                     a browser approval page (SSO) and pipes the key
+                     back through a WebSocket;
+                 (b) paste a Personal API key manually from
+                     nexusmods.com → My Account → API.
+                 Either way the key needs Save Settings to persist. -->
             <StackPanel Spacing="6">
               <TextBlock Text="NEXUS MODS API KEY" Foreground="{DynamicResource TextDim}"
                          FontSize="11" FontWeight="SemiBold"/>
               <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextDim}" FontSize="12">
-                Personal API key from
-                nexusmods.com → My Account → API. Required to browse the
-                Nexus mod catalogue inside this app.
+                Sign in via Nexus to authorise this app and receive an
+                API key, or paste a Personal API key manually.
               </TextBlock>
-              <TextBox Classes="path"
-                       Watermark="paste your Personal API key here"
-                       PasswordChar="•"
-                       Text="{Binding NexusApiKeyField, Mode=TwoWay}"/>
+              <Grid ColumnDefinitions="*,auto" Margin="0,4,0,0">
+                <TextBox Grid.Column="0" Classes="path"
+                         Watermark="paste your Personal API key here"
+                         PasswordChar="•"
+                         Text="{Binding NexusApiKeyField, Mode=TwoWay}"/>
+                <Button Grid.Column="1" Classes="ghost"
+                        Margin="8,0,0,0" Padding="14,8"
+                        ToolTip.Tip="Open the Nexus approval page in your browser. Once you click Approve there, the API key is filled in for you."
+                        Command="{Binding NexusSsoSignInCommand}">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="&#xEA7A;"
+                               FontFamily="{DynamicResource IconFont}"
+                               FontSize="14" VerticalAlignment="Center"/>
+                    <TextBlock Text="Sign in with Nexus" VerticalAlignment="Center"/>
+                  </StackPanel>
+                </Button>
+              </Grid>
             </StackPanel>
 
             <!-- Save / Cancel: sized to match the Browse buttons above so the

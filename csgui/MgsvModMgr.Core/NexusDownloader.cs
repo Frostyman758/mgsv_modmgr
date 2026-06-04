@@ -120,6 +120,31 @@ public static class NexusDownloader
         }
     }
 
+    /// <summary>
+    /// Extract every <c>.mgsv</c> entry from an archive on disk into
+    /// <paramref name="destDir"/>. Returns the list of extracted file
+    /// paths. Used both by the nxm download path and the manual
+    /// "Add archive" flow on the Mods page.
+    /// </summary>
+    public static List<string> ExtractMgsvFiles(string archivePath, string destDir)
+    {
+        Directory.CreateDirectory(destDir);
+        var extracted = new List<string>();
+        using var archive = ArchiveFactory.Open(archivePath);
+        foreach (var entry in archive.Entries)
+        {
+            if (entry.IsDirectory) continue;
+            var key = entry.Key ?? "";
+            if (!key.EndsWith(".mgsv", StringComparison.OrdinalIgnoreCase)) continue;
+            var outPath = Path.Combine(destDir, Path.GetFileName(key));
+            using (var es = entry.OpenEntryStream())
+            using (var fs = File.Create(outPath))
+                es.CopyTo(fs);
+            extracted.Add(outPath);
+        }
+        return extracted;
+    }
+
     private static string SafeFileNameFromUrl(string url)
     {
         var name = "download.bin";
