@@ -101,6 +101,30 @@ public sealed class MainViewModel : INotifyPropertyChanged
     /// <summary>Rows bound by the main list.</summary>
     public ObservableCollection<ModRow> Mods { get; } = new();
 
+    /// <summary>
+    /// File-path conflicts among currently-enabled mods, refreshed
+    /// after any state change (add / remove / toggle / reorder /
+    /// apply). Drives the lower half of the Log page.
+    /// </summary>
+    public ObservableCollection<ConflictRowVm> Conflicts { get; } = new();
+    public bool   HasConflicts        => Conflicts.Count > 0;
+    public string ConflictsCountLabel =>
+        Conflicts.Count switch
+        {
+            0 => "No file conflicts in the current load order.",
+            1 => "1 file conflict",
+            var n => $"{n} file conflicts",
+        };
+
+    private void RefreshConflicts()
+    {
+        Conflicts.Clear();
+        foreach (var c in _manager.DetectConflicts())
+            Conflicts.Add(ConflictRowVm.From(c));
+        OnPropertyChanged(nameof(HasConflicts));
+        OnPropertyChanged(nameof(ConflictsCountLabel));
+    }
+
     private ModRow? _selectedMod;
     public  ModRow? SelectedMod { get => _selectedMod; set => Set(ref _selectedMod, value); }
 
@@ -139,7 +163,14 @@ public sealed class MainViewModel : INotifyPropertyChanged
         private set { if (Set(ref _isDirty, value)) OnPropertyChanged(nameof(DirtyMix)); }
     }
 
-    private void MarkDirty() => IsDirty = true;
+    private void MarkDirty()
+    {
+        IsDirty = true;
+        // Toggles, reorders, and Apply all funnel through MarkDirty
+        // (without going through SyncRows), so refresh the conflict
+        // list here too so the Log page's lower half tracks live.
+        RefreshConflicts();
+    }
 
     /// <summary>Which content page the main area is showing.</summary>
     private Page _currentPage = Page.Mods;
@@ -742,6 +773,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
             }));
         }
         OnPropertyChanged(nameof(HeaderSubtitle));
+        // Conflicts depend on which mods are present + their order +
+        // their enabled flag. SyncRows fires on every mutation that
+        // touches any of those, so this is the right central spot.
+        RefreshConflicts();
     }
 
     // ─── Command handlers ──────────────────────────────────────────────────

@@ -380,6 +380,65 @@ public sealed class ModManager
     /// or the dictionary files (use the dictionary export action).
     /// Returns the number of artifacts cleared.
     /// </summary>
+    /// <summary>
+    /// Walks every enabled mod's contributions (QAR paths, loose
+    /// gamedir entries, FPK inner entries) in load-order priority and
+    /// returns the file paths that more than one mod wants to provide.
+    /// For each conflict, <see cref="ConflictInfo.Contributors"/> lists
+    /// the mod ids with the load-order winner first.
+    /// </summary>
+    public List<ConflictInfo> DetectConflicts()
+    {
+        // Three separate buckets so we can label each conflict by
+        // layer (a "QAR vs QAR" collision means something different
+        // visually to the user than "FPK vs FPK" — they cohabit but
+        // are managed differently at Apply time).
+        var qar     = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        var gamedir = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        var fpk     = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var mod in State.Mods)
+        {
+            if (!mod.Enabled) continue;
+            foreach (var p in mod.QarPaths)
+                AddTo(qar, p, mod.Id);
+            foreach (var g in mod.GameDirEntries)
+                AddTo(gamedir, g, mod.Id);
+            foreach (var (host, entries) in mod.FpkEntries)
+                foreach (var e in entries)
+                    AddTo(fpk, $"{host} :: {e}", mod.Id);
+        }
+
+        var conflicts = new List<ConflictInfo>();
+        Collect(qar,     "QAR",     conflicts);
+        Collect(gamedir, "GAMEDIR", conflicts);
+        Collect(fpk,     "FPK",     conflicts);
+        return conflicts
+            .OrderBy(c => c.Category, StringComparer.Ordinal)
+            .ThenBy (c => c.Path,     StringComparer.Ordinal)
+            .ToList();
+
+        static void AddTo(Dictionary<string, List<string>> map, string path, string modId)
+        {
+            if (!map.TryGetValue(path, out var list)) map[path] = list = new();
+            list.Add(modId);
+        }
+
+        static void Collect(Dictionary<string, List<string>> map, string category, List<ConflictInfo> sink)
+        {
+            foreach (var (path, mods) in map)
+            {
+                if (mods.Count < 2) continue;
+                sink.Add(new ConflictInfo
+                {
+                    Path         = path,
+                    Category     = category,
+                    Contributors = mods,
+                });
+            }
+        }
+    }
+
     public (int cacheEntriesCleared, int hostDirsCleared) ResetApplyState()
     {
         EnsureInitialised();

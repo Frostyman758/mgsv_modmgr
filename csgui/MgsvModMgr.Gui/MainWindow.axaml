@@ -869,34 +869,124 @@
         </ScrollViewer>
       </Border>
 
-      <!-- ─── Log page content (Row 1, page-routed) ─── -->
-      <Border Grid.Row="1" Margin="0,4,0,0"
+      <!-- ─── Log page content (spans the header AND content rows) ─── -->
+      <!-- Unlike the other pages, the Log doesn't carry a title +
+           subtitle strip — its two section headers (ACTIVITY LOG /
+           FILE CONFLICTS) act as their own titles. Spanning Row 0+1
+           kills the empty "forehead" that other pages reserve for
+           their title block, so the log + conflict list claim the
+           full vertical space all the way up to the window chrome. -->
+      <Border Grid.Row="0" Grid.RowSpan="2"
               Background="{DynamicResource Panel}"
-              BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0"
+              BorderBrush="{DynamicResource Border}" BorderThickness="0"
               Classes="page"
               Classes.active="{Binding IsLogPage}">
-        <DockPanel LastChildFill="True">
-          <Border DockPanel.Dock="Top" Background="{DynamicResource PanelAlt}"
-                  BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1"
-                  Padding="14,10">
-            <Grid ColumnDefinitions="*,auto">
-              <TextBlock Grid.Column="0" Text="ACTIVITY LOG"
+        <Grid RowDefinitions="*,*">
+
+          <!-- Top half: existing activity log -->
+          <DockPanel Grid.Row="0" LastChildFill="True">
+            <Border DockPanel.Dock="Top" Background="{DynamicResource PanelAlt}"
+                    BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1"
+                    Padding="14,10">
+              <Grid ColumnDefinitions="*,auto">
+                <TextBlock Grid.Column="0" Text="ACTIVITY LOG"
+                           Foreground="{DynamicResource TextDim}"
+                           FontSize="11" FontWeight="SemiBold"
+                           VerticalAlignment="Center"/>
+                <Button Grid.Column="1" Classes="ghost" Content="Back to mods"
+                        Padding="10,4"
+                        Command="{Binding ShowModsCommand}"/>
+              </Grid>
+            </Border>
+            <TextBox Classes="log"
+                     BorderThickness="0" CornerRadius="0"
+                     IsReadOnly="True"
+                     AcceptsReturn="True"
+                     TextWrapping="NoWrap"
+                     Text="{Binding LogText}"
+                     Name="LogBox"/>
+          </DockPanel>
+
+          <!-- Bottom half: file conflicts -->
+          <DockPanel Grid.Row="1" LastChildFill="True">
+            <Border DockPanel.Dock="Top" Background="{DynamicResource PanelAlt}"
+                    BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,1"
+                    Padding="14,10">
+              <Grid ColumnDefinitions="*,auto">
+                <TextBlock Grid.Column="0" Text="FILE CONFLICTS"
+                           Foreground="{DynamicResource TextDim}"
+                           FontSize="11" FontWeight="SemiBold"
+                           VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1"
+                           Text="{Binding ConflictsCountLabel}"
+                           Foreground="{DynamicResource TextDim}"
+                           FontSize="11"
+                           VerticalAlignment="Center"/>
+              </Grid>
+            </Border>
+
+            <!-- Empty state: no conflicts (everything is harmonious) -->
+            <Border IsVisible="{Binding !HasConflicts}"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Padding="20,16">
+              <TextBlock Text="No file conflicts detected. The enabled mods don't fight over any files in the current load order."
                          Foreground="{DynamicResource TextDim}"
-                         FontSize="11" FontWeight="SemiBold"
-                         VerticalAlignment="Center"/>
-              <Button Grid.Column="1" Classes="ghost" Content="Back to mods"
-                      Padding="10,4"
-                      Command="{Binding ShowModsCommand}"/>
-            </Grid>
-          </Border>
-          <TextBox Classes="log"
-                   BorderThickness="0" CornerRadius="0"
-                   IsReadOnly="True"
-                   AcceptsReturn="True"
-                   TextWrapping="NoWrap"
-                   Text="{Binding LogText}"
-                   Name="LogBox"/>
-        </DockPanel>
+                         FontStyle="Italic"
+                         TextAlignment="Center"
+                         TextWrapping="Wrap"
+                         MaxWidth="520"/>
+            </Border>
+
+            <!-- Conflicts list -->
+            <ScrollViewer IsVisible="{Binding HasConflicts}"
+                          HorizontalScrollBarVisibility="Disabled"
+                          VerticalScrollBarVisibility="Auto"
+                          Padding="0">
+              <ItemsControl ItemsSource="{Binding Conflicts}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:ConflictRowVm">
+                    <Border BorderBrush="{DynamicResource Border}"
+                            BorderThickness="0,0,0,1"
+                            Padding="16,10">
+                      <Grid ColumnDefinitions="auto,*,auto" ColumnSpacing="12">
+                        <!-- Category chip on the left (QAR / GAMEDIR / FPK) -->
+                        <Border Grid.Column="0" Classes="chip-tag" VerticalAlignment="Center">
+                          <TextBlock Text="{Binding Category}"/>
+                        </Border>
+                        <!-- Path + winner / loser stack -->
+                        <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
+                          <TextBlock Text="{Binding Path}"
+                                     FontFamily="Cascadia Mono,Consolas,Menlo,monospace"
+                                     FontSize="11"
+                                     TextTrimming="CharacterEllipsis"
+                                     Foreground="{DynamicResource Text}"/>
+                          <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="winner:" Foreground="{DynamicResource TextDim}" FontSize="11"/>
+                            <TextBlock Text="{Binding Winner}"
+                                       Foreground="{DynamicResource DirtyBrush}"
+                                       FontWeight="SemiBold" FontSize="11"/>
+                            <TextBlock Text="•" Foreground="{DynamicResource TextDim}" FontSize="11"
+                                       Margin="6,0,0,0"/>
+                            <TextBlock Text="overridden:" Foreground="{DynamicResource TextDim}" FontSize="11"/>
+                            <TextBlock Text="{Binding OverriddenJoined}"
+                                       Foreground="{DynamicResource TextDim}"
+                                       FontSize="11"
+                                       TextTrimming="CharacterEllipsis"/>
+                          </StackPanel>
+                        </StackPanel>
+                        <TextBlock Grid.Column="2"
+                                   Text="{Binding CountSubtitle}"
+                                   Foreground="{DynamicResource TextDim}"
+                                   FontSize="11"
+                                   VerticalAlignment="Center"/>
+                      </Grid>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+          </DockPanel>
+        </Grid>
       </Border>
 
       <!-- Row 2 unused (the old log expander lived here). -->
