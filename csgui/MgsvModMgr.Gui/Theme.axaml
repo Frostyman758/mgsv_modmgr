@@ -15,9 +15,12 @@
          visible at a glance; the hover state lifts non-active tiles
          to PanelAlt for a subtle "pickable" feel. -->
     <Style Selector="Button.theme-tile">
+        <!-- Fixed 84×84 squares; the parent StackPanel.Spacing
+             controls inter-tile gap so the inner Margin stays 0. -->
+        <Setter Property="Width"      Value="84" />
         <Setter Property="Height"     Value="84" />
         <Setter Property="Padding"    Value="0" />
-        <Setter Property="Margin"     Value="4" />
+        <Setter Property="Margin"     Value="0" />
         <Setter Property="Background" Value="{DynamicResource Panel}" />
         <Setter Property="BorderBrush" Value="{DynamicResource Border}" />
         <Setter Property="BorderThickness" Value="1" />

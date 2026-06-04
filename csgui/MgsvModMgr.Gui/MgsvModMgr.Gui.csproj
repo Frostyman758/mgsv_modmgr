@@ -33,7 +33,45 @@
          render identically on Windows, Linux, and macOS without
          depending on a system-installed Segoe Fluent Icons font. -->
     <AvaloniaResource Include="Assets\Fonts\FluentSystemIcons-Resizable.ttf" />
+    <!-- Localised UI strings — one file per locale, discovered at
+         startup by Lang/LocaleRegistry. The SDK's default AvaloniaXaml
+         auto-glob only catches .axaml files with a code-behind partner,
+         which these don't have — so we register them explicitly as
+         AvaloniaXaml here. That gets them compiled and made loadable
+         via avares:// URIs. Adding a new locale = drop
+         Strings.<code>.axaml in Lang/; the glob below picks it up
+         automatically. -->
+    <AvaloniaXaml Include="Lang\Strings.*.axaml" />
   </ItemGroup>
+
+  <!-- Build-time locale discovery.
+       Every Lang\Strings.*.axaml file emits its own
+         [assembly: AssemblyMetadata("BundledLocale", "Strings.<code>")]
+       attribute into the compiled assembly. LocaleRegistry reads
+       those attributes at startup and strips the "Strings." prefix
+       to get the locale code. No probing of ISO lists, no exception
+       storms, and any code the user picks (2-letter "ar", 3-letter
+       "ara", region tag "pt-BR", or even something exotic) gets
+       discovered automatically.
+
+       The AssemblyAttribute emission MUST live inside a Target,
+       not a root ItemGroup. Root-level ItemGroups don't task-batch
+       %(metadata) references — the metadata expansion happens at
+       project-load time before items are batched, so every locale
+       file collapses into a single empty-Value attribute. Inside a
+       Target, item batching kicks in and each _LocaleSource gets
+       its own AssemblyAttribute. We hook BeforeTargets so the
+       items land in @(AssemblyAttribute) before the SDK's
+       GenerateAssemblyInfo task consumes them. -->
+  <Target Name="EmitBundledLocaleAttributes" BeforeTargets="GenerateAssemblyInfo;CoreGenerateAssemblyInfo;BeforeCompile">
+    <ItemGroup>
+      <_LocaleSource Include="Lang\Strings.*.axaml" />
+      <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+        <_Parameter1>BundledLocale</_Parameter1>
+        <_Parameter2>%(_LocaleSource.Filename)</_Parameter2>
+      </AssemblyAttribute>
+    </ItemGroup>
+  </Target>
 
   <!-- One-file standalone publish settings.
        SelfContained + IncludeAllContentForSelfExtract = no .NET runtime needed

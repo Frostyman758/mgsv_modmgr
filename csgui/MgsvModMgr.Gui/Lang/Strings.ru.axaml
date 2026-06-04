@@ -1,0 +1,191 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=netstandard">
+  <!--
+    English UI strings,
+    tooltip, watermark, dialog title and dialog body in the app. Each
+    additional locale ships its own copy of this file (Strings.de.axaml,
+    Strings.ja.axaml, ...) with the same x:Key set and translated values.
+
+    Keys are dot-namespaced by feature:
+      Str.App.*        application-wide chrome (title, window buttons)
+      Str.Sidebar.*    tooltips on the icon nav rail
+      Str.Mods.*       installed-mods page (header, toolbar, columns)
+      Str.Nexus.*      Nexus browser page (header, card grid, detail view)
+      Str.Settings.*   settings page (fields, theme, maintenance)
+      Str.Log.*        activity log + conflict viewer
+      Str.Footer.*     bottom status strip
+      Str.Confirm.*    confirm/error dialog defaults
+      Str.AddMod.*     file picker + add-mod error messaging
+      Str.Errors.*     toplevel error dialog titles + bodies
+      Str.Subtitle.*   plural-aware mod-count footer text
+
+    Selection: App.axaml merges this dictionary in. Switching languages
+    later means swapping which Strings.*.axaml is merged at startup.
+
+    XAML callers:    Text="{DynamicResource Str.Mods.Title}"
+    Code callers:    L.S("Str.Mods.Title")  (see Lang/L.cs)
+  -->
+
+  <!-- Per-locale metadata. Every Strings.*.axaml MUST define
+       Str.Meta.LanguageName as the locale's display name in its own
+       language (so the dropdown reads "English" / "Français" /
+       "日本語" — each user sees their target language in its own
+       script). LocaleRegistry parses this key when enumerating
+       available locales at startup. -->
+  <sys:String x:Key="Str.Meta.LanguageName">Russian</sys:String>
+
+  <!-- App chrome -->
+  <sys:String x:Key="Str.App.Title">MGSV Mod Manager</sys:String>
+  <sys:String x:Key="Str.App.WinMinimise">Свернуть</sys:String>
+  <sys:String x:Key="Str.App.WinMaxRestore">Развернуть / Восстановить</sys:String>
+  <sys:String x:Key="Str.App.WinClose">Закрыть</sys:String>
+
+  <!-- Sidebar tooltips -->
+  <sys:String x:Key="Str.Sidebar.Mods">Установленные моды</sys:String>
+  <sys:String x:Key="Str.Sidebar.Apply">Применить ожидающие изменения к файлам игры</sys:String>
+  <sys:String x:Key="Str.Sidebar.Revert">Вернуть файлы игры в исходное состояние</sys:String>
+  <sys:String x:Key="Str.Sidebar.Log">Журнал активности (после последнего применения)</sys:String>
+  <sys:String x:Key="Str.Sidebar.ExportDict">Сформировать новый список путей с учетом установленных модов</sys:String> <!---->
+  <sys:String x:Key="Str.Sidebar.Nexus">Обзор модов с Nexus</sys:String>
+  <sys:String x:Key="Str.Sidebar.Settings">Корневая папка игры, путь для DatFpk...</sys:String>
+  <sys:String x:Key="Str.Sidebar.About">Об утилите</sys:String>
+
+  <!-- Installed mods page -->
+  <sys:String x:Key="Str.Mods.Title">Установленные моды</sys:String>
+  <sys:String x:Key="Str.Mods.MoveUp">Переместить выше в порядке</sys:String>
+  <sys:String x:Key="Str.Mods.MoveDown">Переместить ниже в порядке</sys:String>
+  <sys:String x:Key="Str.Mods.SearchWatermark">Искать по списку</sys:String>
+  <sys:String x:Key="Str.Mods.Remove">Удалить мод (после нажатия "Применить")</sys:String>
+  <sys:String x:Key="Str.Mods.Add">Добавить файл мода (.mgsv)</sys:String>
+
+  <!-- DataGrid column headers (kept uppercase to match the existing
+       visual treatment; per-locale CSS-style transforms would be a
+       later refinement) -->
+  <sys:String x:Key="Str.Mods.Col.Name">NAME</sys:String>
+  <sys:String x:Key="Str.Mods.Col.Tags">TAGS</sys:String>
+  <sys:String x:Key="Str.Mods.Col.Version">VERSION</sys:String>
+  <sys:String x:Key="Str.Mods.Col.Qar">QAR</sys:String>
+  <sys:String x:Key="Str.Mods.Col.GameDir">GAMEDIR</sys:String>
+  <sys:String x:Key="Str.Mods.Col.Enabled">ENABLED</sys:String>
+
+  <!-- Row context menu -->
+  <sys:String x:Key="Str.Mods.Ctx.Toggle">Выделение включено</sys:String>
+  <sys:String x:Key="Str.Mods.Ctx.MoveUp">Переместить вверх</sys:String>
+  <sys:String x:Key="Str.Mods.Ctx.MoveDown">Переместить вниз</sys:String>
+  <sys:String x:Key="Str.Mods.Ctx.Remove">Удалить...</sys:String>
+
+  <!-- Mod-count footer subtitle (HeaderSubtitle in MainViewModel) -->
+  <sys:String x:Key="Str.Subtitle.None">Нет установленных модов. Добавьте мод, чтобы начать.</sys:String>
+  <sys:String x:Key="Str.Subtitle.One">1 установленный мод.</sys:String>
+  <sys:String x:Key="Str.Subtitle.Many">{0} установленных модов.</sys:String>
+
+  <!-- Nexus browser -->
+  <sys:String x:Key="Str.Nexus.Title">Моды на Nexus</sys:String>
+  <sys:String x:Key="Str.Nexus.Subtitle">Обзор, поиск и установка модов с сайта nexusmods.com</sys:String>
+  <sys:String x:Key="Str.Nexus.SearchWatermark">Обзор опубликованных модов</sys:String>
+  <sys:String x:Key="Str.Nexus.Trending">Популярное</sys:String>
+  <sys:String x:Key="Str.Nexus.LatestAdded">Последние добавленные</sys:String>
+  <sys:String x:Key="Str.Nexus.LatestUpdated">Последние обновлённые</sys:String>
+  <sys:String x:Key="Str.Nexus.Refresh">Обновить</sys:String>
+  <sys:String x:Key="Str.Nexus.SignInTitle">Авторизоваться на Nexusmods</sys:String>
+  <sys:String x:Key="Str.Nexus.SignInBody">Для доступа к каталогу Nexusmods требуется API ключ. Сгенерируйте ключ на nexusmods.com → My Account → API и вставьте его в Настройки.</sys:String>
+  <sys:String x:Key="Str.Nexus.OpenSettings">Открыть настройки</sys:String>
+  <sys:String x:Key="Str.Nexus.Loading">Загрузка популярных модов...</sys:String>
+  <sys:String x:Key="Str.Nexus.Filtering">Фильтры:</sys:String>
+  <sys:String x:Key="Str.Nexus.ClearFilter">Сбросить фильтры</sys:String>
+  <sys:String x:Key="Str.Nexus.BackToBrowse">Вернуться к обзору</sys:String>
+  <sys:String x:Key="Str.Nexus.OpenOnNexus">Открыть на Nexus</sys:String>
+  <sys:String x:Key="Str.Nexus.Install">Установить</sys:String>
+  <sys:String x:Key="Str.Nexus.InstallTip">Скачайте мод с портала Nexus и установите его в игре через этот менеджер.</sys:String>
+  <sys:String x:Key="Str.Nexus.ShowCategory">Отобразить все моды в этой категории</sys:String>
+  <sys:String x:Key="Str.Nexus.ShowAuthor">Отобразить все моды этого автора</sys:String>
+  <sys:String x:Key="Str.Nexus.By">от</sys:String>
+  <sys:String x:Key="Str.Nexus.Downloads">Загрузки</sys:String>
+  <sys:String x:Key="Str.Nexus.Endorsements">Рекомендаций</sys:String>
+  <sys:String x:Key="Str.Nexus.Version">Версия</sys:String>
+  <sys:String x:Key="Str.Nexus.About">ИНФОРМАЦИЯ</sys:String>
+  <sys:String x:Key="Str.Nexus.Requirements">ТРЕБОВАНИЯ</sys:String>
+  <sys:String x:Key="Str.Nexus.Tags">ТЭГИ</sys:String>
+
+  <!-- Settings page -->
+  <sys:String x:Key="Str.Settings.Title">Настройки</sys:String>
+  <sys:String x:Key="Str.Settings.Subtitle">Укажите расположение MGSV:TPP и DatFpk.</sys:String>
+  <sys:String x:Key="Str.Settings.GameRoot">КОРНЕВАЯ ПАПКА ИГРЫ</sys:String>
+  <sys:String x:Key="Str.Settings.GameRootHelp">Папка, в которой находится mgsvtpp.exe.</sys:String>
+  <sys:String x:Key="Str.Settings.GameRootWatermark">C:\Program Files (x86)\Steam\steamapps\common\MGS_TPP</sys:String>
+  <sys:String x:Key="Str.Settings.Browse">Обзор...</sys:String>
+  <sys:String x:Key="Str.Settings.DatFpk">DATFPK</sys:String>
+  <sys:String x:Key="Str.Settings.DatFpkHelp">Путь к DatFpk</sys:String>
+  <sys:String x:Key="Str.Settings.DatFpkWatermark">C:\tools\datfpk.exe (/usr/local/bin/datfpk)</sys:String>
+  <sys:String x:Key="Str.Settings.NexusKey">NEXUSMODS API КЛЮЧ</sys:String>
+  <sys:String x:Key="Str.Settings.NexusKeyHelp">Авторизоваться через Nexusmods, чтобы приложение получило API ключ, или укажите его вручную.</sys:String>
+  <sys:String x:Key="Str.Settings.NexusKeyWatermark">Укажите персональный API ключ от Nexusmods</sys:String>
+  <sys:String x:Key="Str.Settings.SsoTip">Подтвердите вход в Nexusmods через Ваш бразуер.</sys:String>
+  <sys:String x:Key="Str.Settings.SignIn">Авторизация через Nexusmods</sys:String>
+  <sys:String x:Key="Str.Settings.Theme">ТЕМА</sys:String>
+  <sys:String x:Key="Str.Settings.ThemeLight">Светлая</sys:String>
+  <sys:String x:Key="Str.Settings.ThemeDark">Тёмная</sys:String>
+  <sys:String x:Key="Str.Settings.ThemeAuto">Системная</sys:String>
+  <sys:String x:Key="Str.Settings.ThemeAutoTip">Тема определена настройками системы</sys:String>
+  <sys:String x:Key="Str.Settings.ThemeHelp">Изменить обложку / панель / цветовую палитру. Цвета состояний установки остаются без изменений.</sys:String>
+  <sys:String x:Key="Str.Settings.Language">ЯЗЫК</sys:String>
+  <sys:String x:Key="Str.Settings.LanguageHelp">Изменить язык.</sys:String>
+  <sys:String x:Key="Str.Settings.Back">Назад</sys:String>
+  <sys:String x:Key="Str.Settings.Save">Сохранить</sys:String>
+  <sys:String x:Key="Str.Settings.Maintenance">УСТРАНЕНИЕ НЕПОЛАДОК</sys:String>
+  <sys:String x:Key="Str.Settings.MaintenanceHelp">Очистка кэша и восстановление без вмешательство в файлы игры и установленных модов.</sys:String>
+  <sys:String x:Key="Str.Settings.ResetApply">Сбросить состояние применения</sys:String>
+
+  <!-- Log / conflict page -->
+  <sys:String x:Key="Str.Log.Title">ЖУРНАЛ АКТИВНОСТИ</sys:String>
+  <sys:String x:Key="Str.Log.Back">Вернуться назад</sys:String>
+  <sys:String x:Key="Str.Log.Conflicts">КОНФЛИКТЫ ФАЙЛОВ</sys:String>
+  <sys:String x:Key="Str.Log.NoConflicts">Конфликтов не обнаружено.</sys:String>
+  <sys:String x:Key="Str.Log.Winner">будет установлено:</sys:String>
+  <sys:String x:Key="Str.Log.Overridden">будет перезаписано:</sys:String>
+
+  <!-- Footer -->
+  <sys:String x:Key="Str.Footer.HideTip">Спрятать до установки..</sys:String>
+  <sys:String x:Key="Str.Footer.GameRoot">Папка игры:</sys:String>
+  <sys:String x:Key="Str.Footer.DatFpk">datfpk:</sys:String>
+
+  <!-- Confirm dialog (generic) -->
+  <sys:String x:Key="Str.Confirm.Title">Подтвердить</sys:String>
+  <sys:String x:Key="Str.Confirm.Cancel">Отмена</sys:String>
+  <sys:String x:Key="Str.Confirm.Ok">Подтвердить</sys:String>
+
+  <!-- Add-mod flow -->
+  <sys:String x:Key="Str.AddMod.PickerTitle">Добавить файл мода (.mgsv)</sys:String>
+  <sys:String x:Key="Str.AddMod.FilterModsArchives">Моды и архивы</sys:String>
+  <sys:String x:Key="Str.AddMod.FilterMods">Моды SnakeBite</sys:String>
+  <sys:String x:Key="Str.AddMod.FilterArchives">Архивы</sys:String>
+  <sys:String x:Key="Str.AddMod.NoneTitle">Моды не обнаружены</sys:String>
+  <sys:String x:Key="Str.AddMod.NoneBody">Не обнаружен файл мода (.mgsv).</sys:String>
+  <!-- "{0} of {1} could not be added" -->
+  <sys:String x:Key="Str.AddMod.FailedTitle">{0} из {1} не могут быть установлены</sys:String>
+  <!-- "and {0} more failure(s)" -->
+  <sys:String x:Key="Str.AddMod.MoreFailures">и ещё ошибки: {0}</sys:String>
+
+  <!-- Settings flow -->
+  <sys:String x:Key="Str.Settings.GameRootPicker">Выбрать корневую папку для игры</sys:String>
+  <sys:String x:Key="Str.Settings.DatFpkPicker">Указать DatFpk</sys:String>
+  <sys:String x:Key="Str.Settings.FilterExecutables">Файлы исполнителей (.exe)</sys:String>
+  <sys:String x:Key="Str.Settings.ResetPrompt">Очистка кэша и восстановление без вмешательство в файлы игры и установленных модов.</sys:String>
+  <sys:String x:Key="Str.Errors.ResetFailed">Ошибка сброса</sys:String>
+  <sys:String x:Key="Str.Errors.SaveFailed">Ошибка сохранения</sys:String>
+  <sys:String x:Key="Str.Errors.SaveFailedBody">Требуются пути к игре и DatFpk</sys:String>
+  <sys:String x:Key="Str.Errors.RemoveFailed">Ошибка удаления</sys:String>
+  <sys:String x:Key="Str.Errors.CannotExport">Невозможно экспортировать</sys:String>
+  <sys:String x:Key="Str.Errors.CannotExportBody">Папка игры не определена.</sys:String>
+  <sys:String x:Key="Str.Errors.ExportFailed">Ошибка экспортирования</sys:String>
+  <sys:String x:Key="Str.Errors.SignInFailed">Ошибка авторизации</sys:String>
+  <sys:String x:Key="Str.Errors.SignInFailedSuffix">Вы всё ещё можете указать API ключ вручную</sys:String>
+
+  <!-- Nexus error texts -->
+  <sys:String x:Key="Str.Nexus.Err.ApiKey">API Ключ не подошёл.</sys:String>
+  <sys:String x:Key="Str.Nexus.Err.Timeout">Время ожидания истекло. Попробуйте ещё раз.</sys:String>
+  <!-- "Failed to load Nexus mods: {0}" -->
+  <sys:String x:Key="Str.Nexus.Err.LoadFmt">Не удалось загрузить моды с Nexusmods: {0}</sys:String>
+
+</ResourceDictionary>

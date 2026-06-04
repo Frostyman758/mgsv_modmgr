@@ -1,0 +1,175 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=netstandard">
+  <!--
+    Arabic (العربية) UI strings — same x:Key set as Strings.axaml.
+
+    Conventions:
+    - Nexus website labels the user must find on the (English) site are
+      kept in English: My Account, API, Approve, Manual download, Files.
+    - Technical tokens stay Latin: datfpk, QAR, GAMEDIR, .mgsv,
+      PathDictionary.txt, SnakeBite, file paths, mgsvtpp.exe.
+    - &#x200E; (LRM) is inserted before Latin tokens that begin with
+      punctuation ('.mgsv', '/usr/...', 'tmp\host_*') so they render
+      correctly inside RTL sentences.
+    - "mod" is translated as "تعديل" (pl. "تعديلات").
+  -->
+
+  <!-- Per-locale metadata -->
+  <sys:String x:Key="Str.Meta.LanguageName">العربية</sys:String>
+
+  <!-- App chrome -->
+  <sys:String x:Key="Str.App.Title"> MGSV مدير تعديلات</sys:String>
+  <sys:String x:Key="Str.App.WinMinimise">تصغير</sys:String>
+  <sys:String x:Key="Str.App.WinMaxRestore">تكبير / استعادة</sys:String>
+  <sys:String x:Key="Str.App.WinClose">إغلاق</sys:String>
+
+  <!-- Sidebar tooltips -->
+  <sys:String x:Key="Str.Sidebar.Mods">التعديلات المثبّتة</sys:String>
+  <sys:String x:Key="Str.Sidebar.Apply">تطبيق التغييرات المعلّقة على نسخة اللعبة</sys:String>
+  <sys:String x:Key="Str.Sidebar.Revert">استعادة ملفات اللعبة الأصلية والتراجع عن جميع تغييرات التعديلات في نسخة اللعبة</sys:String>
+  <sys:String x:Key="Str.Sidebar.Log">سجل النشاط من آخر عملية تطبيق</sys:String>
+  <sys:String x:Key="Str.Sidebar.ExportDict">اعتمادًا على جميع التعديلات المثبّتة ExplicitPathDictionary.txt و PathDictionary.txt إعادة بناء</sys:String>
+  <sys:String x:Key="Str.Sidebar.Nexus">Nexus Mods تصفّح</sys:String>
+  <sys:String x:Key="Str.Sidebar.Settings">datfpk مجلد اللعبة الرئيسي ومسار</sys:String>
+  <sys:String x:Key="Str.Sidebar.About">حول هذا المدير</sys:String>
+
+  <!-- Installed mods page -->
+  <sys:String x:Key="Str.Mods.Title">التعديلات المثبّتة</sys:String>
+  <sys:String x:Key="Str.Mods.MoveUp">نقل التعديل المحدد لأعلى في ترتيب التحميل</sys:String>
+  <sys:String x:Key="Str.Mods.MoveDown">نقل التعديل المحدد لأسفل في ترتيب التحميل</sys:String>
+  <sys:String x:Key="Str.Mods.SearchWatermark">البحث في القائمة</sys:String>
+  <sys:String x:Key="Str.Mods.Remove">إزالة التعديل المحدد (شغّل «تطبيق» بعدها لإعادة البناء بدونه)</sys:String>
+  <sys:String x:Key="Str.Mods.Add">.mgsv إضافة أرشيف تعديل </sys:String>
+
+  <!-- DataGrid column headers (Arabic has no letter case; the
+       uppercase note from the English file does not apply) -->
+  <sys:String x:Key="Str.Mods.Col.Name">الاسم</sys:String>
+  <sys:String x:Key="Str.Mods.Col.Tags">الوسوم</sys:String>
+  <sys:String x:Key="Str.Mods.Col.Version">الإصدار</sys:String>
+  <sys:String x:Key="Str.Mods.Col.Qar">QAR</sys:String>
+  <sys:String x:Key="Str.Mods.Col.GameDir">GAMEDIR</sys:String>
+  <sys:String x:Key="Str.Mods.Col.Enabled">مفعّل</sys:String>
+
+  <!-- Row context menu -->
+  <sys:String x:Key="Str.Mods.Ctx.Toggle">تبديل التفعيل</sys:String>
+  <sys:String x:Key="Str.Mods.Ctx.MoveUp">نقل لأعلى</sys:String>
+  <sys:String x:Key="Str.Mods.Ctx.MoveDown">نقل لأسفل</sys:String>
+  <sys:String x:Key="Str.Mods.Ctx.Remove">...إزالة</sys:String>
+
+  <!-- Mod-count footer subtitle. NOTE: Arabic needs dual/paucal
+       plural forms the None/One/Many registry can't express, so
+       Many uses a count-prefix phrasing that is grammatical for
+       any number. -->
+  <sys:String x:Key="Str.Subtitle.None">لا توجد تعديلات مثبّتة بعد. انقر على «+ إضافة تعديل» للبدء.</sys:String>
+  <sys:String x:Key="Str.Subtitle.One">تعديل واحد مثبّت.</sys:String>
+  <sys:String x:Key="Str.Subtitle.Many">.عدد التعديلات المثبّتة: {0}</sys:String>
+
+  <!-- Nexus browser -->
+  <sys:String x:Key="Str.Nexus.Title">Nexus Mods</sys:String>
+  <sys:String x:Key="Str.Nexus.Subtitle">nexusmods.com تصفّح وابحث وثبّت التعديلات من</sys:String>
+  <sys:String x:Key="Str.Nexus.SearchWatermark">البحث في التعديلات المحمّلة</sys:String>
+  <sys:String x:Key="Str.Nexus.Trending">الرائجة</sys:String>
+  <sys:String x:Key="Str.Nexus.LatestAdded">أحدث الإضافات</sys:String>
+  <sys:String x:Key="Str.Nexus.LatestUpdated">أحدث التحديثات</sys:String>
+  <sys:String x:Key="Str.Nexus.Refresh">تحديث</sys:String>
+  <sys:String x:Key="Str.Nexus.SignInTitle">Nexus Mods تسجيل الدخول إلى</sys:String>
+  <sys:String x:Key="Str.Nexus.SignInBody">API &lt;- My Account &lt;- nexusmods.com ثم الصقه في الإعداداتNexus Mods أنشئ مفتاحًا من .API يتطلّب تصفّح كتالوج التعديلات مفتاح  شخصيًا من</sys:String>
+  <sys:String x:Key="Str.Nexus.OpenSettings">فتح الإعدادات</sys:String>
+  <sys:String x:Key="Str.Nexus.Loading">...جارٍ تحميل التعديلات الرائجة</sys:String>
+  <sys:String x:Key="Str.Nexus.Filtering">التصفية:</sys:String>
+  <sys:String x:Key="Str.Nexus.ClearFilter">مسح التصفية</sys:String>
+  <sys:String x:Key="Str.Nexus.BackToBrowse">العودة إلى التصفّح</sys:String>
+  <sys:String x:Key="Str.Nexus.OpenOnNexus">Nexus فتح في</sys:String>
+  <sys:String x:Key="Str.Nexus.Install">تثبيت</sys:String>
+  <sys:String x:Key="Str.Nexus.InstallTip">.ثم أفلت الأرشيف المحفوظ على زر + في صفحة التعديلات ،«Manual download» وانقر هناك على ،Nexus الخاص بالتعديل على Files افتح تبويب</sys:String>
+  <sys:String x:Key="Str.Nexus.ShowCategory">عرض جميع التعديلات في هذا التصنيف</sys:String>
+  <sys:String x:Key="Str.Nexus.ShowAuthor">عرض جميع تعديلات هذا المؤلف</sys:String>
+  <sys:String x:Key="Str.Nexus.By">بواسطة</sys:String>
+  <sys:String x:Key="Str.Nexus.Downloads">التنزيلات</sys:String>
+  <sys:String x:Key="Str.Nexus.Endorsements">التزكيات</sys:String>
+  <sys:String x:Key="Str.Nexus.Version">الإصدار</sys:String>
+  <sys:String x:Key="Str.Nexus.About">نبذة</sys:String>
+  <sys:String x:Key="Str.Nexus.Requirements">المتطلبات</sys:String>
+  <sys:String x:Key="Str.Nexus.Tags">الوسوم</sys:String>
+
+  <!-- Settings page -->
+  <sys:String x:Key="Str.Settings.Title">الإعدادات</sys:String>
+  <sys:String x:Key="Str.Settings.Subtitle">datfpk.exe وملف MGSV:TPP حدّد للمدير مكان</sys:String>
+  <sys:String x:Key="Str.Settings.GameRoot">مجلد اللعبة الرئيسي</sys:String>
+  <sys:String x:Key="Str.Settings.GameRootHelp">.mgsvtpp.exe المجلد الذي يحتوي على</sys:String>
+  <sys:String x:Key="Str.Settings.GameRootWatermark">C:\Program Files (x86)\Steam\steamapps\common\MGS_TPP</sys:String>
+  <sys:String x:Key="Str.Settings.Browse">...استعراض</sys:String>
+  <sys:String x:Key="Str.Settings.DatFpk">DATFPK</sys:String>
+  <sys:String x:Key="Str.Settings.DatFpkHelp">.للحزم وفك الحزم. مطلوب لعملية التطبيق datfpk مسار أداة</sys:String>
+  <sys:String x:Key="Str.Settings.DatFpkWatermark">C:\tools\datfpk.exe   (أو &#x200E;/usr/local/bin/datfpk)</sys:String>
+  <sys:String x:Key="Str.Settings.NexusKey">NEXUS MODSالخاص بـ API مفتاح</sys:String>
+  <sys:String x:Key="Str.Settings.NexusKeyHelp">.شخصيًا يدويًا API أو الصق مفتاح ،API لتفويض هذا التطبيق والحصول على مفتاح Nexus سجّل الدخول عبر</sys:String>
+  <sys:String x:Key="Str.Settings.NexusKeyWatermark">الشخصي هنا API الصق مفتاح</sys:String>
+  <sys:String x:Key="Str.Settings.SsoTip">.تلقائيًا Approve بمجرد النقر على API في متصفحك هناك، يُملأ مفتاح Nexusتُفتَح صفحة الموافقة الخاصة بـ</sys:String>
+  <sys:String x:Key="Str.Settings.SignIn">تسجيل الدخول عبر Nexus</sys:String>
+  <sys:String x:Key="Str.Settings.Theme">السمة</sys:String>
+  <sys:String x:Key="Str.Settings.ThemeLight">فاتحة</sys:String>
+  <sys:String x:Key="Str.Settings.ThemeDark">داكنة</sys:String>
+  <sys:String x:Key="Str.Settings.ThemeAuto">تلقائية</sys:String>
+  <sys:String x:Key="Str.Settings.ThemeAutoTip">اتباع السمة الحالية لنظام التشغيل.</sys:String>
+  <sys:String x:Key="Str.Settings.ThemeHelp">تبديل ألوان الخلفية واللوحات والنصوص. تبقى ألوان حالة التثبيت الحمراء/الكهرمانية كما هي.</sys:String>
+  <sys:String x:Key="Str.Settings.Language">اللغة</sys:String>
+  <sys:String x:Key="Str.Settings.LanguageHelp">تبديل جميع التسميات والأزرار والتلميحات في التطبيق. يسري فورًا ويبقى محفوظًا بعد إعادة التشغيل.</sys:String>
+  <sys:String x:Key="Str.Settings.Back">رجوع</sys:String>
+  <sys:String x:Key="Str.Settings.Save">حفظ</sys:String>
+  <sys:String x:Key="Str.Settings.Maintenance">الصيانة</sys:String>
+  <sys:String x:Key="Str.Settings.MaintenanceHelp">مسح ذاكرة التخزين المؤقت لعملية التطبيق ومجلدات العمل المؤقتة الخاصة بكل مضيف. ستعيد عملية التطبيق التالية بناء كل مضيف من الصفر. لا يمسّ هذا نسخة اللعبة ولا قائمة التعديلات.</sys:String>
+  <sys:String x:Key="Str.Settings.ResetApply">إعادة تعيين حالة التطبيق</sys:String>
+
+  <!-- Log / conflict page -->
+  <sys:String x:Key="Str.Log.Title">سجل النشاط</sys:String>
+  <sys:String x:Key="Str.Log.Back">العودة إلى التعديلات</sys:String>
+  <sys:String x:Key="Str.Log.Conflicts">تعارضات الملفات</sys:String>
+  <sys:String x:Key="Str.Log.NoConflicts">لم يُرصَد أي تعارض في الملفات. التعديلات المفعّلة لا تتنازع على أي ملف في ترتيب التحميل الحالي.</sys:String>
+  <sys:String x:Key="Str.Log.Winner">الفائز:</sys:String>
+  <sys:String x:Key="Str.Log.Overridden">المتجاوَز:</sys:String>
+
+  <!-- Footer -->
+  <sys:String x:Key="Str.Footer.HideTip">انقر للإخفاء. يظهر تلقائيًا أثناء تشغيل عملية التطبيق.</sys:String>
+  <sys:String x:Key="Str.Footer.GameRoot">مجلد اللعبة:</sys:String>
+  <sys:String x:Key="Str.Footer.DatFpk">datfpk:</sys:String>
+
+  <!-- Confirm dialog (generic) -->
+  <sys:String x:Key="Str.Confirm.Title">تأكيد</sys:String>
+  <sys:String x:Key="Str.Confirm.Cancel">إلغاء</sys:String>
+  <sys:String x:Key="Str.Confirm.Ok">تأكيد</sys:String>
+
+  <!-- Add-mod flow -->
+  <sys:String x:Key="Str.AddMod.PickerTitle">اختر تعديلات &#x200E;أو أرشيفات .mgsv </sys:String>
+  <sys:String x:Key="Str.AddMod.FilterModsArchives">تعديلات + أرشيفات</sys:String>
+  <sys:String x:Key="Str.AddMod.FilterMods">SnakeBite تعديلات</sys:String>
+  <sys:String x:Key="Str.AddMod.FilterArchives">أرشيفات</sys:String>
+  <sys:String x:Key="Str.AddMod.NoneTitle">لا توجد تعديلات للإضافة</sys:String>
+  <sys:String x:Key="Str.AddMod.NoneBody">لم يحتوِ أي من الملفات المحددة على ملف &#x200E;.قابل للتثبيت .mgsv</sys:String>
+  <sys:String x:Key="Str.AddMod.FailedTitle">تعذّرت إضافة {0} من أصل {1}</sys:String>
+  <sys:String x:Key="Str.AddMod.MoreFailures">و{0} من حالات الفشل الأخرى</sys:String>
+
+  <!-- Settings flow -->
+  <sys:String x:Key="Str.Settings.GameRootPicker">الرئيسي MGSV:TPP اختر مجلد</sys:String>
+  <sys:String x:Key="Str.Settings.DatFpkPicker">datfpk اختر ملف</sys:String>
+  <sys:String x:Key="Str.Settings.FilterExecutables">ملفات تنفيذية</sys:String>
+  <sys:String x:Key="Str.Settings.ResetPrompt">هل تريد مسح ذاكرة التخزين المؤقت لعملية التطبيق ومجلدات &#x200E;المؤقتة؟ tmp\host_*
+
+ستعيد عملية التطبيق التالية بناء كل مضيف من الصفر. لا يمسّ هذا نسخة اللعبة ولا قائمة التعديلات المسجّلة.</sys:String>
+  <sys:String x:Key="Str.Errors.ResetFailed">فشلت إعادة التعيين</sys:String>
+  <sys:String x:Key="Str.Errors.SaveFailed">فشل الحفظ</sys:String>
+  <sys:String x:Key="Str.Errors.SaveFailedBody">.datfpk كلا المسارين مطلوبان: مجلد اللعبة الرئيسي و</sys:String>
+  <sys:String x:Key="Str.Errors.RemoveFailed">فشلت الإزالة</sys:String>
+  <sys:String x:Key="Str.Errors.CannotExport">يتعذّر التصدير</sys:String>
+  <sys:String x:Key="Str.Errors.CannotExportBody">مجلد اللعبة الرئيسي غير محدد. استخدم أيقونة الترس أولًا.</sys:String>
+  <sys:String x:Key="Str.Errors.ExportFailed">فشل التصدير</sys:String>
+  <sys:String x:Key="Str.Errors.SignInFailed">فشل تسجيل الدخول</sys:String>
+  <sys:String x:Key="Str.Errors.SignInFailedSuffix">API &lt;- My Account &lt;- nexusmods.com شخصي يدويًا من API لا يزال بإمكانك لصق مفتاح</sys:String>
+
+  <!-- Nexus error texts -->
+  <sys:String x:Key="Str.Nexus.Err.ApiKey">.تحقّق منه مجددًا في الإعدادات .API رُفض مفتاح</sys:String>
+  <sys:String x:Key="Str.Nexus.Err.Timeout">انتهت مهلة الطلب. تحقّق من اتصالك وحاول مجددًا.</sys:String>
+  <sys:String x:Key="Str.Nexus.Err.LoadFmt">{0} :Nexus فشل تحميل تعديلات</sys:String>
+
+</ResourceDictionary>

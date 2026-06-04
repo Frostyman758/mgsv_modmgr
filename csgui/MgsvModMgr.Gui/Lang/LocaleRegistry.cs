@@ -3,11 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
-using Avalonia.Platform;
 
 namespace MgsvModMgr.Gui.Lang;
 
@@ -49,44 +47,49 @@ public static class LocaleRegistry
     /// <summary>The locale currently merged into Application.Resources.</summary>
     public static LocaleInfo? Current { get; private set; }
 
+    /// <summary>
+    /// Build-time discovered list of bundled locale codes. The csproj
+    /// emits one <c>[assembly: AssemblyMetadata("BundledLocale", "Strings.&lt;code&gt;")]</c>
+    /// attribute for every <c>Lang/Strings.*.axaml</c> file at compile
+    /// time, so this enumeration is guaranteed to match exactly what
+    /// was bundled — no probing, no exception storms, no code lists
+    /// to maintain in sync. Adding a new locale = drop the .axaml
+    /// file in Lang/ and rebuild; this list reflects it automatically.
+    /// </summary>
+    private const string FilenamePrefix = "Strings.";
+    private static IEnumerable<string> BundledCodes()
+    {
+        var asm = typeof(LocaleRegistry).Assembly;
+        foreach (var attr in asm.GetCustomAttributes<AssemblyMetadataAttribute>())
+        {
+            if (attr.Key != "BundledLocale") continue;
+            var v = attr.Value;
+            if (string.IsNullOrEmpty(v)) continue;
+            // Value is the raw %(Filename) — strip the "Strings." prefix
+            // (the prefix-strip in MSBuild evaluates before item batching,
+            // so it has to happen here instead).
+            if (v.StartsWith(FilenamePrefix, StringComparison.Ordinal))
+                v = v.Substring(FilenamePrefix.Length);
+            if (v.Length > 0) yield return v;
+        }
+    }
+
     private static List<LocaleInfo> Discover()
     {
         var list = new List<LocaleInfo>();
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        // Enumerate the locale codes by scanning the GUI assembly's
-        // manifest resource names. Avalonia's build pipeline compiles
-        // each .axaml under a name shaped like
-        //   "modmgr_gui!/Lang/Strings.en.axaml"
-        // (or similar — exact prefix varies by Avalonia version). We
-        // pattern-match the file-name tail rather than the full prefix
-        // so the discovery survives any future internal renaming.
-        //
-        // AssetLoader.GetAssets only enumerates <AvaloniaResource> items
-        // (Assets/, Fonts/), NOT <AvaloniaXaml> compiled files, so we
-        // can't use that here — the manifest scan is the path that
-        // works regardless of registration kind.
-        var codes = new List<string>();
-        var rx = new Regex(@"Strings\.(?<code>[A-Za-z0-9_-]+)\.axaml$",
-                           RegexOptions.Compiled);
-        foreach (var name in EnumerateLocaleResourceNames())
-        {
-            var m = rx.Match(name);
-            if (!m.Success) continue;
-            codes.Add(m.Groups["code"].Value);
-        }
-
-        foreach (var code in codes)
+        foreach (var code in BundledCodes())
         {
             if (!seen.Add(code)) continue;
             var loaded = TryLoadByCode(code);
             if (loaded is not null) list.Add(loaded);
         }
 
-        // Guarantee English is present even if the scan above came
-        // back empty (e.g. an Avalonia version that bundles XAML in
-        // some new location we don't recognise).
-        if (!seen.Contains("en"))
+        // Safety net: if the metadata-driven discovery turned up
+        // nothing (a stripped or otherwise unusual build), force-try
+        // English so the UI always has something to render.
+        if (list.Count == 0)
         {
             var en = TryLoadByCode("en");
             if (en is not null) list.Add(en);
@@ -95,37 +98,24 @@ public static class LocaleRegistry
         return list.OrderBy(l => l.DisplayName, StringComparer.CurrentCultureIgnoreCase).ToList();
     }
 
-    /// <summary>
-    /// Pull every manifest-resource name that mentions
-    /// <c>Strings.*.axaml</c> out of every loaded assembly. We scan all
-    /// loaded assemblies (not just the GUI's own) because Avalonia
-    /// sometimes stages compiled XAML behind synthetic helper
-    /// assemblies, and the cost of one extra pass over a short string
-    /// list is trivial.
-    /// </summary>
-    private static IEnumerable<string> EnumerateLocaleResourceNames()
-    {
-        foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
-        {
-            string[] names;
-            try { names = asm.GetManifestResourceNames(); }
-            catch { continue; }
-            foreach (var n in names)
-            {
-                if (n.IndexOf("Strings.", StringComparison.OrdinalIgnoreCase) >= 0
-                    && n.EndsWith(".axaml", StringComparison.OrdinalIgnoreCase))
-                {
-                    yield return n;
-                }
-            }
-        }
-    }
-
     private static LocaleInfo? TryLoadByCode(string code)
     {
+        // No AssetLoader.Exists() pre-check: it returns false for
+        // compiled-XAML URIs even when AvaloniaXamlLoader.Load would
+        // happily resolve them. Just attempt the load — most probes
+        // miss (we walk a ~90-code ISO list against the ~2 locales
+        // actually shipped) and each miss throws
+        // Avalonia.Markup.Xaml.XamlLoadException ("No precompiled
+        // XAML found for ..."). We swallow *every* exception here
+        // rather than naming the type: a malformed bundled locale
+        // file would throw a different XamlParseException / XamlIl
+        // exception, and the right behaviour for "this locale file
+        // is broken" is the same as "this locale isn't shipped" —
+        // skip it, keep going, the dropdown still works minus that
+        // one entry.
+        var uri = new Uri(LangFolder + $"Strings.{code}.axaml");
         try
         {
-            var uri = new Uri(LangFolder + $"Strings.{code}.axaml");
             if (AvaloniaXamlLoader.Load(uri) is not ResourceDictionary dict) return null;
             var display = TryGetMetaName(dict) ?? code;
             return new LocaleInfo(code, display, dict);
