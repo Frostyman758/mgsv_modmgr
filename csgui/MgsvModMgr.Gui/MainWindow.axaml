@@ -507,13 +507,43 @@
           <!-- Card grid: visible once trending has loaded AND no card
                drilled into. WrapPanel is HorizontalAlignment=Center so
                the row of cards stays centred under the page header
-               regardless of window width / how many fit per row. -->
-          <ScrollViewer IsVisible="{Binding IsNexusListVisible}"
+               regardless of window width / how many fit per row.
+               ScrollChanged fires the VM's LoadMoreNexus when the
+               user nears the bottom, driving infinite scroll against
+               the GraphQL `mods()` query's offset/count pagination. -->
+          <ScrollViewer x:Name="NexusGridScroll"
+                        IsVisible="{Binding IsNexusListVisible}"
                         HorizontalScrollBarVisibility="Disabled"
                         VerticalScrollBarVisibility="Auto"
-                        Padding="20,16,20,20">
-            <ItemsControl ItemsSource="{Binding NexusMods}"
-                          HorizontalAlignment="Center">
+                        Padding="20,16,20,20"
+                        ScrollChanged="NexusGridScroll_ScrollChanged">
+            <StackPanel HorizontalAlignment="Stretch" Spacing="12">
+              <!-- Active facet filter — appears at the top of the grid
+                   when the user clicked into "by Author" / a category
+                   chip / a tag chip from the detail view. The ✕ chip
+                   clears the filter and reloads the full grid. -->
+              <Border IsVisible="{Binding HasAnyFacetFilter}"
+                      HorizontalAlignment="Center"
+                      Background="{DynamicResource PanelAlt}"
+                      BorderBrush="{DynamicResource DirtyBrush}"
+                      BorderThickness="1" CornerRadius="14"
+                      Padding="14,6">
+                <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                  <TextBlock Text="Filtering:" Foreground="{DynamicResource TextDim}" FontSize="11"
+                             VerticalAlignment="Center"/>
+                  <TextBlock Text="{Binding FacetFilterDisplay}"
+                             Foreground="{DynamicResource Text}"
+                             FontWeight="SemiBold" FontSize="12"
+                             VerticalAlignment="Center"/>
+                  <Button Classes="ghost" Padding="6,2"
+                          Content="✕"
+                          ToolTip.Tip="Clear filter"
+                          Command="{Binding ClearFacetFiltersCommand}"/>
+                </StackPanel>
+              </Border>
+
+              <ItemsControl ItemsSource="{Binding NexusMods}"
+                            HorizontalAlignment="Center">
               <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                   <WrapPanel Orientation="Horizontal"
@@ -570,7 +600,8 @@
                   </Border>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
-            </ItemsControl>
+              </ItemsControl>
+            </StackPanel>
           </ScrollViewer>
 
           <!-- Detail view: hero spans the FULL viewport width so the
@@ -671,18 +702,29 @@
                              FontSize="24" FontWeight="SemiBold"
                              TextWrapping="Wrap"/>
                   <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                    <Border Classes="chip-tag"
-                            IsVisible="{Binding NexusSelectedMod.Category, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-                      <TextBlock Text="{Binding NexusSelectedMod.Category}"/>
-                    </Border>
-                    <!-- Two-Run TextBlock so "by " stays in dim text and
-                         only the author name itself paints in DirtyBrush. -->
-                    <TextBlock VerticalAlignment="Center">
-                      <Run Text="by " Foreground="{DynamicResource TextDim}"/><Run
-                            Text="{Binding NexusSelectedMod.Author}"
-                            Foreground="{DynamicResource DirtyBrush}"
-                            FontWeight="SemiBold"/>
-                    </TextBlock>
+                    <!-- Category chip is now a Button so clicking it
+                         routes to the browse grid filtered to that
+                         category via FilterByCurrentCategoryCommand. -->
+                    <Button Classes="chip-button"
+                            IsVisible="{Binding NexusSelectedMod.Category, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                            Command="{Binding FilterByCurrentCategoryCommand}"
+                            ToolTip.Tip="Show all mods in this category">
+                      <Border Classes="chip-tag">
+                        <TextBlock Text="{Binding NexusSelectedMod.Category}"/>
+                      </Border>
+                    </Button>
+                    <!-- "by <author>" — clicking the author name routes
+                         to the grid filtered to that author's mods. -->
+                    <Button Classes="link-button"
+                            Command="{Binding FilterByCurrentAuthorCommand}"
+                            ToolTip.Tip="Show all mods by this author">
+                      <TextBlock VerticalAlignment="Center">
+                        <Run Text="by " Foreground="{DynamicResource TextDim}"/><Run
+                              Text="{Binding NexusSelectedMod.Author}"
+                              Foreground="{DynamicResource DirtyBrush}"
+                              FontWeight="SemiBold"/>
+                      </TextBlock>
+                    </Button>
                   </StackPanel>
                 </StackPanel>
 
@@ -726,7 +768,8 @@
                 </StackPanel>
               </Grid>
 
-              <!-- About card -->
+              <!-- About card — short summary, always available from the
+                   list query. -->
               <Border Classes="info-card">
                 <StackPanel Spacing="10">
                   <TextBlock Text="ABOUT"
@@ -735,6 +778,94 @@
                   <TextBlock Text="{Binding NexusSelectedMod.Summary}"
                              TextWrapping="Wrap" LineHeight="20"
                              Foreground="{DynamicResource Text}"/>
+                </StackPanel>
+              </Border>
+
+              <!-- Description card — the full body text from the v2
+                   mod() query. Fetched lazily on detail-view open;
+                   hidden until DetailsLoaded fires. -->
+              <Border Classes="info-card"
+                      IsVisible="{Binding NexusSelectedMod.HasFullDescription}">
+                <StackPanel Spacing="10">
+                  <TextBlock Text="DESCRIPTION"
+                             Foreground="{DynamicResource TextDim}"
+                             FontSize="11" FontWeight="SemiBold"/>
+                  <TextBlock Text="{Binding NexusSelectedMod.FullDescription}"
+                             TextWrapping="Wrap" LineHeight="20"
+                             Foreground="{DynamicResource Text}"/>
+                </StackPanel>
+              </Border>
+
+              <!-- Requirements card — list of mods this one needs.
+                   Each row carries an Open button to jump to the
+                   required mod's Nexus page in the browser. -->
+              <Border Classes="info-card"
+                      IsVisible="{Binding NexusSelectedMod.HasRequirements}">
+                <StackPanel Spacing="10">
+                  <TextBlock Text="REQUIREMENTS"
+                             Foreground="{DynamicResource TextDim}"
+                             FontSize="11" FontWeight="SemiBold"/>
+                  <ItemsControl ItemsSource="{Binding NexusSelectedMod.Requirements}">
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate>
+                        <StackPanel Spacing="6"/>
+                      </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:NexusRequirementRow">
+                        <Border Background="{DynamicResource PanelAlt}"
+                                BorderBrush="{DynamicResource Border}"
+                                BorderThickness="1" CornerRadius="8"
+                                Padding="12,8">
+                          <Grid ColumnDefinitions="*,auto" ColumnSpacing="10">
+                            <StackPanel Grid.Column="0" Spacing="2">
+                              <TextBlock Text="{Binding ModName}"
+                                         FontWeight="SemiBold"
+                                         TextTrimming="CharacterEllipsis"/>
+                              <TextBlock Text="{Binding Notes}"
+                                         IsVisible="{Binding HasNotes}"
+                                         Foreground="{DynamicResource TextDim}"
+                                         FontSize="11"
+                                         TextWrapping="Wrap"/>
+                            </StackPanel>
+                            <Border Grid.Column="1" Classes="chip-tag"
+                                    VerticalAlignment="Center"
+                                    HorizontalAlignment="Right">
+                              <TextBlock Text="{Binding Label}"/>
+                            </Border>
+                          </Grid>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </Border>
+
+              <!-- Tag chips — clickable; each filters the grid by that tag. -->
+              <Border Classes="info-card"
+                      IsVisible="{Binding NexusSelectedMod.Tags.Count}">
+                <StackPanel Spacing="10">
+                  <TextBlock Text="TAGS"
+                             Foreground="{DynamicResource TextDim}"
+                             FontSize="11" FontWeight="SemiBold"/>
+                  <ItemsControl ItemsSource="{Binding NexusSelectedMod.Tags}">
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" ItemSpacing="6" LineSpacing="6"/>
+                      </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <Button Classes="chip-button"
+                                Click="NexusTag_Click"
+                                Tag="{Binding}">
+                          <Border Classes="chip-tag">
+                            <TextBlock Text="{Binding}"/>
+                          </Border>
+                        </Button>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
                 </StackPanel>
               </Border>
 

@@ -24,6 +24,47 @@ public sealed class NexusModCard : INotifyPropertyChanged
     /// <summary>Direct nexusmods.com URL for the "Open in browser" affordance.</summary>
     public string  WebUrl       { get; init; } = "";
 
+    private string _fullDescription = "";
+    /// <summary>
+    /// Full description body (fetched lazily on detail-view open via
+    /// the v2 <c>mod()</c> query — list endpoints only return summary).
+    /// </summary>
+    public string FullDescription
+    {
+        get => _fullDescription;
+        set
+        {
+            if (_fullDescription == value) return;
+            _fullDescription = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(HasFullDescription));
+        }
+    }
+    public bool HasFullDescription => !string.IsNullOrWhiteSpace(_fullDescription);
+
+    /// <summary>Tag chips shown on the detail view. Click-routed to set a tag filter.</summary>
+    public System.Collections.ObjectModel.ObservableCollection<string> Tags { get; }
+        = new();
+
+    /// <summary>Required mods + DLCs. Each row clickable to open the requirement's web URL.</summary>
+    public System.Collections.ObjectModel.ObservableCollection<NexusRequirementRow> Requirements { get; }
+        = new();
+    public bool HasRequirements => Requirements.Count > 0;
+
+    private bool _detailsLoaded;
+    /// <summary>True once we've fetched the single-mod query for this card.</summary>
+    public bool DetailsLoaded
+    {
+        get => _detailsLoaded;
+        set
+        {
+            if (_detailsLoaded == value) return;
+            _detailsLoaded = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(HasRequirements));
+        }
+    }
+
     private Bitmap? _thumbnail;
     /// <summary>
     /// Loaded asynchronously off PictureUrl. Null while in-flight or

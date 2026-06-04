@@ -67,6 +67,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
         RefreshNexusCommand           = new RelayCommand(() => _ = LoadNexusAsync());
         OpenNexusFilesPageCommand     = new RelayCommand(OpenSelectedNexusFilesPage);
         NexusSsoSignInCommand         = new RelayCommand(SignInWithNexusAsync);
+        ProbeNexusGraphQLCommand      = new RelayCommand(ProbeNexusGraphQLAsync);
+        FilterByCurrentAuthorCommand   = new RelayCommand(FilterByCurrentAuthor);
+        FilterByCurrentCategoryCommand = new RelayCommand(FilterByCurrentCategory);
+        ClearFacetFiltersCommand       = new RelayCommand(ClearFacetFilters);
 
         // Settings page.
         BrowseGameRootCommand = new RelayCommand(BrowseGameRootAsync);
@@ -292,6 +296,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public ICommand RefreshNexusCommand            { get; }
     public ICommand OpenNexusFilesPageCommand      { get; }
     public ICommand NexusSsoSignInCommand          { get; }
+    public ICommand ProbeNexusGraphQLCommand       { get; }
+    public ICommand FilterByCurrentAuthorCommand   { get; }
+    public ICommand FilterByCurrentCategoryCommand { get; }
+    public ICommand ClearFacetFiltersCommand       { get; }
 
     // ── Nexus Mods browser ───────────────────────────────────────────
     /// <summary>Cards rendered on the Nexus browser page (filtered view).</summary>
@@ -301,35 +309,45 @@ public sealed class MainViewModel : INotifyPropertyChanged
     /// derived from this via the current search query.</summary>
     private readonly List<NexusModCard> _allNexusMods = new();
 
-    /// <summary>Toolbar search box on the Nexus page. Filters the loaded
-    /// list client-side by name / author / summary substring match.</summary>
+    /// <summary>
+    /// Toolbar search box on the Nexus page. Drives a real GraphQL
+    /// wildcard query against the full Nexus catalog (not a client-
+    /// side filter against the loaded set). Typing triggers a brief
+    /// debounce — we wait ~350 ms after the last keystroke before
+    /// issuing the API call so a quick "snake" doesn't fire four
+    /// requests on the way.
+    /// </summary>
     private string _nexusSearchText = "";
     public  string  NexusSearchText
     {
         get => _nexusSearchText;
-        set { if (Set(ref _nexusSearchText, value)) ApplyNexusSearch(); }
+        set { if (Set(ref _nexusSearchText, value)) ScheduleNexusSearchDebounce(); }
     }
 
-    private void ApplyNexusSearch()
+    private Avalonia.Threading.DispatcherTimer? _nexusSearchDebounceTimer;
+    private void ScheduleNexusSearchDebounce()
     {
-        var q = (_nexusSearchText ?? "").Trim();
-        NexusMods.Clear();
-        if (q.Length == 0)
+        _nexusSearchDebounceTimer?.Stop();
+        _nexusSearchDebounceTimer = new Avalonia.Threading.DispatcherTimer
         {
-            foreach (var m in _allNexusMods) NexusMods.Add(m);
-        }
-        else
+            Interval = TimeSpan.FromMilliseconds(350),
+        };
+        _nexusSearchDebounceTimer.Tick += (_, _) =>
         {
-            foreach (var m in _allNexusMods)
-            {
-                if ((m.Name    ?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (m.Author  ?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (m.Summary ?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false))
-                {
-                    NexusMods.Add(m);
-                }
-            }
-        }
+            _nexusSearchDebounceTimer?.Stop();
+            _nexusSearchDebounceTimer = null;
+            // Only fire if we're on the Nexus page and have an API key —
+            // otherwise this would needlessly thrash the server.
+            if (!string.IsNullOrWhiteSpace(_manager.State.NexusApiKey))
+                _ = LoadNexusAsync(append: false);
+        };
+        _nexusSearchDebounceTimer.Start();
+    }
+
+    /// <summary>Fires from the ScrollViewer at the end of the card grid.</summary>
+    public async Task LoadMoreNexusAsync()
+    {
+        if (CanLoadMoreNexus) await LoadNexusAsync(append: true);
     }
 
     /// <summary>
@@ -346,7 +364,49 @@ public sealed class MainViewModel : INotifyPropertyChanged
             {
                 OnPropertyChanged(nameof(IsNexusDetailVisible));
                 OnPropertyChanged(nameof(IsNexusListVisible));
+                // Lazily fetch the full mod (description / tags /
+                // requirements) the first time the user drills in.
+                if (value is not null && !value.DetailsLoaded)
+                    _ = LoadNexusModDetailsAsync(value);
             }
+        }
+    }
+
+    private async Task LoadNexusModDetailsAsync(NexusModCard card)
+    {
+        var key = _manager.State.NexusApiKey;
+        if (string.IsNullOrWhiteSpace(key)) return;
+        try
+        {
+            var gql = new NexusGraphQL(key);
+            // gameId for MGSV TPP is 1059 — same id mods are scoped to.
+            var detail = await gql.GetModAsync(card.ModId, gameId: 1059);
+
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                // Description from Nexus is a BBCode + HTML soup
+                // ([center], [color], <br/>, etc.). Strip it down to
+                // readable plain text — Avalonia TextBlock doesn't
+                // render markup natively, and the raw form looked
+                // worse than no description at all.
+                card.FullDescription = NexusDescription.CleanForDisplay(detail.Description);
+                card.Tags.Clear();
+                foreach (var t in detail.Tags) card.Tags.Add(t);
+                card.Requirements.Clear();
+                foreach (var r in detail.Requirements)
+                    card.Requirements.Add(new NexusRequirementRow
+                    {
+                        ModName             = r.ModName,
+                        Notes               = r.Notes,
+                        Url                 = r.Url,
+                        ExternalRequirement = r.ExternalRequirement,
+                    });
+                card.DetailsLoaded = true;
+            });
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Nexus: detail fetch failed for mod {card.ModId}: {ex.Message}");
         }
     }
     public bool IsNexusDetailVisible => _nexusSelectedMod is not null;
@@ -365,6 +425,57 @@ public sealed class MainViewModel : INotifyPropertyChanged
     /// an nxm:// URL which our registered handler routes back to this
     /// app, where it lands in <see cref="HandleNxmUrlAsync"/>.
     /// </summary>
+    /// <summary>
+    /// Click on the "by <author>" line in the detail view → return to
+    /// the browse grid filtered to that author's mods.
+    /// </summary>
+    private void FilterByCurrentAuthor()
+    {
+        var who = _nexusSelectedMod?.Author;
+        if (string.IsNullOrWhiteSpace(who)) return;
+        NexusAuthorFilter   = who;
+        NexusCategoryFilter = null;
+        NexusTagFilter      = null;
+        NexusSelectedMod    = null;       // back to grid
+        _ = LoadNexusAsync(append: false);
+    }
+
+    /// <summary>
+    /// Click on the category chip in the detail view → return to the
+    /// browse grid filtered to that category.
+    /// </summary>
+    private void FilterByCurrentCategory()
+    {
+        var cat = _nexusSelectedMod?.Category;
+        if (string.IsNullOrWhiteSpace(cat)) return;
+        NexusAuthorFilter   = null;
+        NexusCategoryFilter = cat;
+        NexusTagFilter      = null;
+        NexusSelectedMod    = null;
+        _ = LoadNexusAsync(append: false);
+    }
+
+    /// <summary>Public so the tag-chip data template can bind to it.</summary>
+    public void FilterByTag(string tag)
+    {
+        if (string.IsNullOrWhiteSpace(tag)) return;
+        NexusAuthorFilter   = null;
+        NexusCategoryFilter = null;
+        NexusTagFilter      = tag;
+        NexusSelectedMod    = null;
+        _ = LoadNexusAsync(append: false);
+    }
+
+    /// <summary>Bound by the "× clear filter" chip above the card grid.</summary>
+    private void ClearFacetFilters()
+    {
+        if (!HasAnyFacetFilter) return;
+        NexusAuthorFilter   = null;
+        NexusCategoryFilter = null;
+        NexusTagFilter      = null;
+        _ = LoadNexusAsync(append: false);
+    }
+
     private void OpenSelectedNexusFilesPage()
     {
         var url = _nexusSelectedMod?.WebUrl;
@@ -400,6 +511,85 @@ public sealed class MainViewModel : INotifyPropertyChanged
         finally { _isSsoInFlight = false; }
     }
     private bool _isSsoInFlight;
+
+    /// <summary>
+    /// Fire-and-forget schema discovery for the Nexus Mods v2 GraphQL
+    /// endpoint. Runs three probes (root query field list, Mod type
+    /// shape, a couple of best-guess list queries) and dumps raw
+    /// responses to the activity log. Output is then copy-paste-able
+    /// into a chat so the actual queries can be written against the
+    /// verified schema instead of guessed.
+    /// </summary>
+    private async Task ProbeNexusGraphQLAsync()
+    {
+        var key = _manager.State.NexusApiKey;
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            AppendLog("GraphQL probe needs an API key. Sign in or paste one in Settings first.");
+            return;
+        }
+
+        CurrentPage = Page.Log;
+        AppendLog("");
+        AppendLog("================================================");
+        AppendLog("=== NEXUS GRAPHQL SCHEMA PROBE ===");
+        AppendLog("=== Copy everything below this line and paste it back. ===");
+        AppendLog("================================================");
+
+        var gql = new NexusGraphQL(key);
+
+        // Probe 1: list every root query field. Tells us the exact
+        // names of any browse/search/list operations.
+        AppendLog("");
+        AppendLog("[1/4] root-query field names + arg names:");
+        await RunProbe(gql, @"
+            {
+              __schema {
+                queryType {
+                  fields {
+                    name
+                    args { name type { name kind ofType { name kind } } }
+                  }
+                }
+              }
+            }");
+
+        // Probe 2: dump the Mod type's full field list with types.
+        AppendLog("");
+        AppendLog("[2/4] Mod type fields:");
+        await RunProbe(gql, @"
+            { __type(name: ""Mod"") { name kind fields { name type { name kind ofType { name kind } } } } }");
+
+        // Probe 3: same for Game (we need to know gameId vs domainName).
+        AppendLog("");
+        AppendLog("[3/4] Game type fields:");
+        await RunProbe(gql, @"
+            { __type(name: ""Game"") { name kind fields { name type { name kind ofType { name kind } } } } }");
+
+        // Probe 4: any *Filter input types (search filter shape, etc.).
+        AppendLog("");
+        AppendLog("[4/4] Input-object types ending in 'Filter':");
+        await RunProbe(gql, @"
+            { __schema { types { name kind inputFields { name type { name kind ofType { name kind } } } } } }");
+
+        AppendLog("");
+        AppendLog("================================================");
+        AppendLog("=== END OF PROBE ===");
+        AppendLog("================================================");
+    }
+
+    private async Task RunProbe(NexusGraphQL gql, string query)
+    {
+        try
+        {
+            var raw = await gql.ExecuteRawAsync(query);
+            AppendLog(raw);
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"  ERROR: {ex.Message}");
+        }
+    }
 
     private static void OpenInBrowser(string url)
     {
@@ -475,9 +665,6 @@ public sealed class MainViewModel : INotifyPropertyChanged
     /// <summary>True only when we have cards to show AND no error/loading state up.</summary>
     public bool NexusContentReady => !IsNexusLoading && !HasNexusError;
 
-    /// <summary>Cached game-categories map (id → name); set once per session.</summary>
-    private Dictionary<int, string>? _nexusCategories;
-
     /// <summary>Which Nexus endpoint the card grid pulls from.</summary>
     public enum NexusFilter { Trending, LatestAdded, LatestUpdated }
     private NexusFilter _currentNexusFilter = NexusFilter.Trending;
@@ -498,6 +685,41 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public bool IsLatestAddedFilter   => _currentNexusFilter == NexusFilter.LatestAdded;
     public bool IsLatestUpdatedFilter => _currentNexusFilter == NexusFilter.LatestUpdated;
 
+    // Click-routed facet filters from the detail view. When non-null,
+    // the grid loads only mods matching that author / category / tag.
+    private string? _nexusAuthorFilter;
+    public  string? NexusAuthorFilter
+    {
+        get => _nexusAuthorFilter;
+        private set { if (Set(ref _nexusAuthorFilter, value)) { OnPropertyChanged(nameof(HasAnyFacetFilter)); OnPropertyChanged(nameof(FacetFilterDisplay)); } }
+    }
+    private string? _nexusCategoryFilter;
+    public  string? NexusCategoryFilter
+    {
+        get => _nexusCategoryFilter;
+        private set { if (Set(ref _nexusCategoryFilter, value)) { OnPropertyChanged(nameof(HasAnyFacetFilter)); OnPropertyChanged(nameof(FacetFilterDisplay)); } }
+    }
+    private string? _nexusTagFilter;
+    public  string? NexusTagFilter
+    {
+        get => _nexusTagFilter;
+        private set { if (Set(ref _nexusTagFilter, value)) { OnPropertyChanged(nameof(HasAnyFacetFilter)); OnPropertyChanged(nameof(FacetFilterDisplay)); } }
+    }
+    public bool HasAnyFacetFilter =>
+        !string.IsNullOrEmpty(_nexusAuthorFilter)
+        || !string.IsNullOrEmpty(_nexusCategoryFilter)
+        || !string.IsNullOrEmpty(_nexusTagFilter);
+    public string FacetFilterDisplay
+    {
+        get
+        {
+            if (!string.IsNullOrEmpty(_nexusAuthorFilter))   return $"by {_nexusAuthorFilter}";
+            if (!string.IsNullOrEmpty(_nexusCategoryFilter)) return $"category: {_nexusCategoryFilter}";
+            if (!string.IsNullOrEmpty(_nexusTagFilter))      return $"tag: {_nexusTagFilter}";
+            return "";
+        }
+    }
+
     /// <summary>
     /// Called when the user navigates to the Nexus page. If cards are
     /// already loaded we no-op (so flipping tabs doesn't re-hit the API).
@@ -510,7 +732,19 @@ public sealed class MainViewModel : INotifyPropertyChanged
         _ = LoadNexusAsync();
     }
 
-    public async Task LoadNexusAsync()
+    /// <summary>Page-size for each GraphQL <c>mods</c> request.</summary>
+    private const int NexusPageSize = 24;
+
+    /// <summary>
+    /// Total mod count the server reports for the current filter +
+    /// search. Used to gate the "load more" call so we stop hitting
+    /// the API once we've fetched everything.
+    /// </summary>
+    private int _nexusTotalAvailable;
+    public bool CanLoadMoreNexus => !IsNexusLoading
+                                 && _allNexusMods.Count < _nexusTotalAvailable;
+
+    public async Task LoadNexusAsync(bool append = false)
     {
         var key = _manager.State.NexusApiKey;
         if (string.IsNullOrWhiteSpace(key)) return;
@@ -520,45 +754,51 @@ public sealed class MainViewModel : INotifyPropertyChanged
         NexusError     = "";
         try
         {
-            var client = new NexusClient(key);
+            var gql = new NexusGraphQL(key);
 
-            // Categories first (cached process-wide). Failure here is
-            // non-fatal — cards just won't show category chips.
-            _nexusCategories ??= await client.GetCategoryMapAsync();
-
-            // Pick the endpoint matching the active filter pill. We
-            // fetch the active filter first, then union in the other
-            // two so the visible pool is closer to 25-30 unique mods
-            // instead of the API's hard 10-per-list cap. The active
-            // filter's mods land first in the list to preserve "this
-            // is what Trending looks like" semantics.
-            var primary = _currentNexusFilter switch
+            var sort = _currentNexusFilter switch
             {
-                NexusFilter.LatestAdded   => await client.GetLatestAddedAsync(),
-                NexusFilter.LatestUpdated => await client.GetLatestUpdatedAsync(),
-                _                         => await client.GetTrendingAsync(),
+                NexusFilter.LatestAdded   => NexusGraphQL.Sort.LatestAdded,
+                NexusFilter.LatestUpdated => NexusGraphQL.Sort.LatestUpdated,
+                _                         => NexusGraphQL.Sort.Trending,
             };
-            List<NexusModListing> secondary, tertiary;
-            try { secondary = await client.GetLatestAddedAsync();   } catch { secondary = new(); }
-            try { tertiary  = await client.GetLatestUpdatedAsync(); } catch { tertiary  = new(); }
-            var seen = new HashSet<int>();
-            var list = new List<NexusModListing>();
-            foreach (var m in primary.Concat(secondary).Concat(tertiary))
-                if (seen.Add(m.ModId)) list.Add(m);
 
-            // Filter out the empty stubs that occasionally appear in
-            // the trending list — unpublished mods, deleted authors,
-            // listings the API returns with blank fields. A mod with
-            // no name, picture, or author isn't useful to browse.
-            list = list.Where(m =>
-                !string.IsNullOrWhiteSpace(m.Name) &&
-                !string.IsNullOrWhiteSpace(m.PictureUrl) &&
-                !string.IsNullOrWhiteSpace(m.Author)).ToList();
+            // Search text (if any) is now a real backend wildcard
+            // match against the mod name — no more client-side
+            // substring filter pretending to be search.
+            var search = string.IsNullOrWhiteSpace(_nexusSearchText) ? null : _nexusSearchText;
+            var offset = append ? _allNexusMods.Count : 0;
 
-            _allNexusMods.Clear();
-            foreach (var m in list)
+            var page = await gql.ListModsAsync(
+                gameDomainName: NexusClient.GameDomain,
+                sort:           sort,
+                offset:         offset,
+                count:          NexusPageSize,
+                search:         search,
+                author:         _nexusAuthorFilter,
+                category:       _nexusCategoryFilter,
+                tag:            _nexusTagFilter);
+
+            // Drop the empty stubs (deleted/unpublished mods occasionally
+            // surface in the listing with blank fields).
+            var filtered = page.Mods
+                .Select((m, i) => (Mod: m, Category: i < page.Categories.Count ? page.Categories[i] : ""))
+                .Where(p => !string.IsNullOrWhiteSpace(p.Mod.Name)
+                         && !string.IsNullOrWhiteSpace(p.Mod.PictureUrl)
+                         && !string.IsNullOrWhiteSpace(p.Mod.Author))
+                .ToList();
+
+            // Initial load = reset; "load more" = append.
+            if (!append)
             {
-                var catName = (_nexusCategories.TryGetValue(m.CategoryId, out var n) ? n : "") ?? "";
+                _allNexusMods.Clear();
+                NexusMods.Clear();
+            }
+
+            var imageClient = new NexusClient(key);
+            foreach (var (m, catName) in filtered)
+            {
+                var domain = string.IsNullOrEmpty(m.DomainName) ? NexusClient.GameDomain : m.DomainName;
                 var card = new NexusModCard
                 {
                     ModId        = m.ModId,
@@ -570,16 +810,18 @@ public sealed class MainViewModel : INotifyPropertyChanged
                     Endorsements = m.EndorsementCount,
                     Downloads    = m.Downloads,
                     Version      = m.Version,
-                    WebUrl       = $"https://www.nexusmods.com/{m.DomainName}/mods/{m.ModId}",
+                    WebUrl       = $"https://www.nexusmods.com/{domain}/mods/{m.ModId}",
                 };
                 _allNexusMods.Add(card);
-                // Fire-and-forget thumbnail; updates the card's
-                // Thumbnail property when done. UI swaps in via INPC.
-                _ = LoadThumbnailAsync(card, client);
+                NexusMods.Add(card);
+                _ = LoadThumbnailAsync(card, imageClient);
             }
-            ApplyNexusSearch();
+
+            _nexusTotalAvailable = page.TotalCount;
+
             OnPropertyChanged(nameof(NexusContentReady));
             OnPropertyChanged(nameof(IsNexusListVisible));
+            OnPropertyChanged(nameof(CanLoadMoreNexus));
         }
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
         {
@@ -596,6 +838,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         finally
         {
             IsNexusLoading = false;
+            OnPropertyChanged(nameof(CanLoadMoreNexus));
         }
     }
 
@@ -1096,8 +1339,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
             {
                 _allNexusMods.Clear();
                 NexusMods.Clear();
-                _nexusCategories = null;
-                NexusError       = "";
+                NexusError = "";
+                _nexusTotalAvailable = 0;
             }
             OnPropertyChanged(nameof(GameRoot));
             OnPropertyChanged(nameof(DatFpk));

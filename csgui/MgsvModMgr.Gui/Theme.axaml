@@ -597,6 +597,39 @@
         <Setter Property="Padding"         Value="10,12" />
     </Style>
 
+    <!-- chip-button / link-button: borderless transparent buttons used
+         to make tag chips and the "by Author" line clickable on the
+         Nexus detail view. They strip all the default Button chrome so
+         only the inner Border / TextBlock renders. -->
+    <Style Selector="Button.chip-button">
+        <Setter Property="Background"      Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding"         Value="0" />
+        <Setter Property="Cursor"          Value="Hand" />
+    </Style>
+    <Style Selector="Button.chip-button /template/ ContentPresenter">
+        <Setter Property="Background"  Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.chip-button:pointerover /template/ ContentPresenter">
+        <Setter Property="Background"  Value="Transparent" />
+        <Setter Property="Opacity"     Value="0.8" />
+    </Style>
+    <Style Selector="Button.link-button">
+        <Setter Property="Background"      Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding"         Value="2,0" />
+        <Setter Property="Cursor"          Value="Hand" />
+    </Style>
+    <Style Selector="Button.link-button /template/ ContentPresenter">
+        <Setter Property="Background"  Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.link-button:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Opacity"    Value="0.8" />
+    </Style>
+
     <!-- Nexus browser mod card: square-ish panel with a darker thumbnail
          strip on top and the title/category/summary stacked below. Hover
          brightens the bg and brings up a faint DirtyBrush-tinted border

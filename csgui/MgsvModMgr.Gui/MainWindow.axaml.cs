@@ -548,6 +548,27 @@ public partial class MainWindow : Window
         return false;
     }
 
+    /// <summary>
+    /// Infinite scroll: when the user is within ~600 px of the bottom
+    /// of the Nexus card grid, request the next page from the VM. The
+    /// VM gates the call against CanLoadMoreNexus, so repeated fires
+    /// during the scroll animation are harmless.
+    /// </summary>
+    private void NexusTag_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (sender is Button b && b.Tag is string tag && DataContext is MainViewModel vm)
+            vm.FilterByTag(tag);
+    }
+
+    private void NexusGridScroll_ScrollChanged(object? sender, ScrollChangedEventArgs e)
+    {
+        if (sender is not ScrollViewer sv) return;
+        if (DataContext is not MainViewModel vm) return;
+        var bottomGap = sv.Extent.Height - (sv.Offset.Y + sv.Viewport.Height);
+        if (bottomGap < 600 && vm.CanLoadMoreNexus)
+            _ = vm.LoadMoreNexusAsync();
+    }
+
     private void NexusCard_PointerPressed(object? sender, PointerPressedEventArgs e)
     {
         // Click anywhere on the card → drill into the detail view for
