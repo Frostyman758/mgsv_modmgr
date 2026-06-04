@@ -6,6 +6,8 @@ public sealed class State
 {
     public string GameRoot { get; set; } = "";
     public string DatFpk   { get; set; } = "";
+    /// <summary>Personal API key from nexusmods.com/users/myaccount?tab=api.</summary>
+    public string NexusApiKey { get; set; } = "";
     public ObservableCollection<ModInfo> Mods { get; } = new();
 
     /// <summary>
@@ -20,7 +22,7 @@ public static class StateIo
 {
     public static void Load(State s, string statePath)
     {
-        s.GameRoot = ""; s.DatFpk = ""; s.Mods.Clear(); s.HiddenColumns.Clear();
+        s.GameRoot = ""; s.DatFpk = ""; s.NexusApiKey = ""; s.Mods.Clear(); s.HiddenColumns.Clear();
         if (!File.Exists(statePath)) return;
 
         ModInfo? cur = null;
@@ -32,6 +34,7 @@ public static class StateIo
             if (line.StartsWith("game_root=")) { s.GameRoot = line[10..]; cur = null; continue; }
             if (line.StartsWith("datfpk="))    { s.DatFpk   = line[7..];  cur = null; continue; }
             if (line.StartsWith("hidecol="))   { var n = line[8..]; if (n.Length > 0) s.HiddenColumns.Add(n); cur = null; continue; }
+            if (line.StartsWith("nexus_apikey=")) { s.NexusApiKey = line[13..]; cur = null; continue; }
             if (line == "[mod]")               { cur = new ModInfo(); s.Mods.Add(cur); continue; }
             if (cur is null) continue;
 
@@ -78,6 +81,7 @@ public static class StateIo
         f.WriteLine($"game_root={s.GameRoot}");
         f.WriteLine($"datfpk={s.DatFpk}");
         foreach (var c in s.HiddenColumns) f.WriteLine($"hidecol={c}");
+        if (!string.IsNullOrEmpty(s.NexusApiKey)) f.WriteLine($"nexus_apikey={s.NexusApiKey}");
         foreach (var m in s.Mods)
         {
             f.WriteLine();

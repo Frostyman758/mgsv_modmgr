@@ -6,4 +6,11 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- SharpCompress: zip / rar / 7z / tar extraction inside
+         NexusDownloader. Pulled here (not in the Gui project) so Core
+         can do the archive work without taking a UI-layer dependency. -->
+    <PackageReference Include="SharpCompress" Version="0.40.0" />
+  </ItemGroup>
+
 </Project>

@@ -488,6 +488,20 @@ public partial class MainWindow : Window
         if (DataContext is MainViewModel vm) vm.HideFooter();
     }
 
+    private void NexusCard_PointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        // Click anywhere on the card → drill into the detail view for
+        // that mod. The card's DataContext is the NexusModCard binding
+        // target; the page-level VM owns the selection state.
+        if (sender is Border b
+            && b.DataContext is NexusModCard card
+            && DataContext is MainViewModel vm)
+        {
+            vm.NexusSelectedMod = card;
+            e.Handled = true;
+        }
+    }
+
     // ────────────────────────────────────────────────────────────────
     // Search pill: collapses ↔ expands via the Border's Width transition.
     // ────────────────────────────────────────────────────────────────

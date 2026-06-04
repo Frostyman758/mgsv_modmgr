@@ -57,7 +57,15 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         // Page navigation.
         ShowModsCommand     = new RelayCommand(() => CurrentPage = Page.Mods);
+        ShowNexusCommand    = new RelayCommand(() => { EnsureNexusSeeded(); CurrentPage = Page.Nexus; });
         ShowSettingsCommand = new RelayCommand(() => { LoadSettingsFields(); CurrentPage = Page.Settings; });
+        ClearNexusSelectionCommand    = new RelayCommand(() => NexusSelectedMod = null);
+        OpenNexusInBrowserCommand     = new RelayCommand(OpenSelectedNexusInBrowser);
+        SetTrendingFilterCommand      = new RelayCommand(() => { CurrentNexusFilter = NexusFilter.Trending;      _ = LoadNexusAsync(); });
+        SetLatestAddedFilterCommand   = new RelayCommand(() => { CurrentNexusFilter = NexusFilter.LatestAdded;   _ = LoadNexusAsync(); });
+        SetLatestUpdatedFilterCommand = new RelayCommand(() => { CurrentNexusFilter = NexusFilter.LatestUpdated; _ = LoadNexusAsync(); });
+        RefreshNexusCommand           = new RelayCommand(() => _ = LoadNexusAsync());
+        OpenNexusFilesPageCommand     = new RelayCommand(OpenSelectedNexusFilesPage);
 
         // Settings page.
         BrowseGameRootCommand = new RelayCommand(BrowseGameRootAsync);
@@ -143,6 +151,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
             _currentPage = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsModsPage));
+            OnPropertyChanged(nameof(IsNexusPage));
             OnPropertyChanged(nameof(IsSettingsPage));
             OnPropertyChanged(nameof(IsLogPage));
         }
@@ -195,6 +204,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     public bool IsModsPage     => CurrentPage == Page.Mods;
+    public bool IsNexusPage    => CurrentPage == Page.Nexus;
     public bool IsSettingsPage => CurrentPage == Page.Settings;
     public bool IsLogPage      => CurrentPage == Page.Log;
 
@@ -229,8 +239,283 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public ICommand ExportDictCommand    { get; }
 
     /// <summary>Page-navigation commands bound to the sidebar.</summary>
-    public ICommand ShowModsCommand     { get; }
-    public ICommand ShowSettingsCommand { get; }
+    public ICommand ShowModsCommand                { get; }
+    public ICommand ShowNexusCommand               { get; }
+    public ICommand ShowSettingsCommand            { get; }
+    public ICommand ClearNexusSelectionCommand     { get; }
+    public ICommand OpenNexusInBrowserCommand      { get; }
+    public ICommand SetTrendingFilterCommand       { get; }
+    public ICommand SetLatestAddedFilterCommand    { get; }
+    public ICommand SetLatestUpdatedFilterCommand  { get; }
+    public ICommand RefreshNexusCommand            { get; }
+    public ICommand OpenNexusFilesPageCommand      { get; }
+
+    // ── Nexus Mods browser ───────────────────────────────────────────
+    /// <summary>Cards rendered on the Nexus browser page (filtered view).</summary>
+    public ObservableCollection<NexusModCard> NexusMods { get; } = new();
+
+    /// <summary>Full pool of cards fetched from the API; NexusMods is
+    /// derived from this via the current search query.</summary>
+    private readonly List<NexusModCard> _allNexusMods = new();
+
+    /// <summary>Toolbar search box on the Nexus page. Filters the loaded
+    /// list client-side by name / author / summary substring match.</summary>
+    private string _nexusSearchText = "";
+    public  string  NexusSearchText
+    {
+        get => _nexusSearchText;
+        set { if (Set(ref _nexusSearchText, value)) ApplyNexusSearch(); }
+    }
+
+    private void ApplyNexusSearch()
+    {
+        var q = (_nexusSearchText ?? "").Trim();
+        NexusMods.Clear();
+        if (q.Length == 0)
+        {
+            foreach (var m in _allNexusMods) NexusMods.Add(m);
+        }
+        else
+        {
+            foreach (var m in _allNexusMods)
+            {
+                if ((m.Name    ?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (m.Author  ?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (m.Summary ?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false))
+                {
+                    NexusMods.Add(m);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Currently-detail-viewed mod. Null = the user is on the grid;
+    /// non-null = drill-down on a single mod's image + summary + actions.
+    /// </summary>
+    private NexusModCard? _nexusSelectedMod;
+    public  NexusModCard? NexusSelectedMod
+    {
+        get => _nexusSelectedMod;
+        set
+        {
+            if (Set(ref _nexusSelectedMod, value))
+            {
+                OnPropertyChanged(nameof(IsNexusDetailVisible));
+                OnPropertyChanged(nameof(IsNexusListVisible));
+            }
+        }
+    }
+    public bool IsNexusDetailVisible => _nexusSelectedMod is not null;
+    public bool IsNexusListVisible   => _nexusSelectedMod is null && NexusContentReady;
+
+    private void OpenSelectedNexusInBrowser()
+    {
+        var url = _nexusSelectedMod?.WebUrl;
+        if (string.IsNullOrEmpty(url)) return;
+        OpenInBrowser(url);
+    }
+
+    /// <summary>
+    /// Sends the user to the mod's Files tab — that's where the green
+    /// "Mod Manager Download" button lives. Clicking it on Nexus fires
+    /// an nxm:// URL which our registered handler routes back to this
+    /// app, where it lands in <see cref="HandleNxmUrlAsync"/>.
+    /// </summary>
+    private void OpenSelectedNexusFilesPage()
+    {
+        var url = _nexusSelectedMod?.WebUrl;
+        if (string.IsNullOrEmpty(url)) return;
+        OpenInBrowser(url + "?tab=files");
+    }
+
+    private static void OpenInBrowser(string url)
+    {
+        try
+        {
+            // Cross-platform "open URL in default browser": UseShellExecute
+            // delegates to xdg-open on Linux, open on macOS, ShellExecute
+            // on Windows.
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName        = url,
+                UseShellExecute = true,
+            });
+        }
+        catch { }
+    }
+
+    /// <summary>Set true when there's no API key configured yet — drives
+    /// the "paste your key in Settings" empty-state panel.</summary>
+    public bool NexusNeedsApiKey => string.IsNullOrWhiteSpace(_manager.State.NexusApiKey);
+
+    /// <summary>Bound by the Settings page TextBox.</summary>
+    private string _nexusApiKeyField = "";
+    public  string  NexusApiKeyField
+    {
+        get => _nexusApiKeyField;
+        set => Set(ref _nexusApiKeyField, value);
+    }
+
+    // Loading / error UI state for the Nexus page.
+    private bool _isNexusLoading;
+    public  bool  IsNexusLoading
+    {
+        get => _isNexusLoading;
+        private set { if (Set(ref _isNexusLoading, value)) { OnPropertyChanged(nameof(NexusContentReady)); OnPropertyChanged(nameof(IsNexusListVisible)); } }
+    }
+    private string _nexusError = "";
+    public  string  NexusError
+    {
+        get => _nexusError;
+        private set { if (Set(ref _nexusError, value)) { OnPropertyChanged(nameof(HasNexusError)); OnPropertyChanged(nameof(NexusContentReady)); OnPropertyChanged(nameof(IsNexusListVisible)); } }
+    }
+    public bool HasNexusError => !string.IsNullOrEmpty(_nexusError);
+    /// <summary>True only when we have cards to show AND no error/loading state up.</summary>
+    public bool NexusContentReady => !IsNexusLoading && !HasNexusError;
+
+    /// <summary>Cached game-categories map (id → name); set once per session.</summary>
+    private Dictionary<int, string>? _nexusCategories;
+
+    /// <summary>Which Nexus endpoint the card grid pulls from.</summary>
+    public enum NexusFilter { Trending, LatestAdded, LatestUpdated }
+    private NexusFilter _currentNexusFilter = NexusFilter.Trending;
+    public  NexusFilter  CurrentNexusFilter
+    {
+        get => _currentNexusFilter;
+        private set
+        {
+            if (Set(ref _currentNexusFilter, value))
+            {
+                OnPropertyChanged(nameof(IsTrendingFilter));
+                OnPropertyChanged(nameof(IsLatestAddedFilter));
+                OnPropertyChanged(nameof(IsLatestUpdatedFilter));
+            }
+        }
+    }
+    public bool IsTrendingFilter      => _currentNexusFilter == NexusFilter.Trending;
+    public bool IsLatestAddedFilter   => _currentNexusFilter == NexusFilter.LatestAdded;
+    public bool IsLatestUpdatedFilter => _currentNexusFilter == NexusFilter.LatestUpdated;
+
+    /// <summary>
+    /// Called when the user navigates to the Nexus page. If cards are
+    /// already loaded we no-op (so flipping tabs doesn't re-hit the API).
+    /// Otherwise spins up the active-filter fetch in the background.
+    /// </summary>
+    private void EnsureNexusSeeded()
+    {
+        if (NexusMods.Count > 0) return;
+        if (string.IsNullOrWhiteSpace(_manager.State.NexusApiKey)) return;
+        _ = LoadNexusAsync();
+    }
+
+    public async Task LoadNexusAsync()
+    {
+        var key = _manager.State.NexusApiKey;
+        if (string.IsNullOrWhiteSpace(key)) return;
+        if (IsNexusLoading) return;
+
+        IsNexusLoading = true;
+        NexusError     = "";
+        try
+        {
+            var client = new NexusClient(key);
+
+            // Categories first (cached process-wide). Failure here is
+            // non-fatal — cards just won't show category chips.
+            _nexusCategories ??= await client.GetCategoryMapAsync();
+
+            // Pick the endpoint matching the active filter pill. We
+            // fetch the active filter first, then union in the other
+            // two so the visible pool is closer to 25-30 unique mods
+            // instead of the API's hard 10-per-list cap. The active
+            // filter's mods land first in the list to preserve "this
+            // is what Trending looks like" semantics.
+            var primary = _currentNexusFilter switch
+            {
+                NexusFilter.LatestAdded   => await client.GetLatestAddedAsync(),
+                NexusFilter.LatestUpdated => await client.GetLatestUpdatedAsync(),
+                _                         => await client.GetTrendingAsync(),
+            };
+            List<NexusModListing> secondary, tertiary;
+            try { secondary = await client.GetLatestAddedAsync();   } catch { secondary = new(); }
+            try { tertiary  = await client.GetLatestUpdatedAsync(); } catch { tertiary  = new(); }
+            var seen = new HashSet<int>();
+            var list = new List<NexusModListing>();
+            foreach (var m in primary.Concat(secondary).Concat(tertiary))
+                if (seen.Add(m.ModId)) list.Add(m);
+
+            // Filter out the empty stubs that occasionally appear in
+            // the trending list — unpublished mods, deleted authors,
+            // listings the API returns with blank fields. A mod with
+            // no name, picture, or author isn't useful to browse.
+            list = list.Where(m =>
+                !string.IsNullOrWhiteSpace(m.Name) &&
+                !string.IsNullOrWhiteSpace(m.PictureUrl) &&
+                !string.IsNullOrWhiteSpace(m.Author)).ToList();
+
+            _allNexusMods.Clear();
+            foreach (var m in list)
+            {
+                var catName = (_nexusCategories.TryGetValue(m.CategoryId, out var n) ? n : "") ?? "";
+                var card = new NexusModCard
+                {
+                    ModId        = m.ModId,
+                    Name         = m.Name,
+                    Author       = m.Author,
+                    Category     = catName,
+                    Summary      = m.Summary,
+                    PictureUrl   = m.PictureUrl,
+                    Endorsements = m.EndorsementCount,
+                    Downloads    = m.Downloads,
+                    Version      = m.Version,
+                    WebUrl       = $"https://www.nexusmods.com/{m.DomainName}/mods/{m.ModId}",
+                };
+                _allNexusMods.Add(card);
+                // Fire-and-forget thumbnail; updates the card's
+                // Thumbnail property when done. UI swaps in via INPC.
+                _ = LoadThumbnailAsync(card, client);
+            }
+            ApplyNexusSearch();
+            OnPropertyChanged(nameof(NexusContentReady));
+            OnPropertyChanged(nameof(IsNexusListVisible));
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            NexusError = "API key was rejected. Re-check it in Settings.";
+        }
+        catch (TaskCanceledException)
+        {
+            NexusError = "Request timed out. Check your connection and try again.";
+        }
+        catch (Exception ex)
+        {
+            NexusError = $"Failed to load Nexus mods: {ex.Message}";
+        }
+        finally
+        {
+            IsNexusLoading = false;
+        }
+    }
+
+    private static async Task LoadThumbnailAsync(NexusModCard card, NexusClient client)
+    {
+        if (string.IsNullOrEmpty(card.PictureUrl)) return;
+        try
+        {
+            var bytes = await client.FetchImageBytesAsync(card.PictureUrl);
+            using var ms = new MemoryStream(bytes);
+            var bmp = new Avalonia.Media.Imaging.Bitmap(ms);
+            // Flip onto the UI thread for the INPC firing.
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(
+                () => card.Thumbnail = bmp);
+        }
+        catch
+        {
+            // Thumbnail fetch failures are silent — the card's
+            // placeholder glyph already covers the empty case.
+        }
+    }
 
     /// <summary>Settings-page commands.</summary>
     public ICommand BrowseGameRootCommand { get; }
@@ -254,7 +539,114 @@ public sealed class MainViewModel : INotifyPropertyChanged
             LoadSettingsFields();
             CurrentPage = Page.Settings;
         }
+
+        // nxm:// handoff: if we were launched directly with a URL, the
+        // Program env var holds it. If we were already running and the
+        // second instance dropped a URL into nxm_inbox.txt, we pick it
+        // up via the file watcher. Both feed into the same handler.
+        StartNxmListener();
+
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Subscribes to two sources of incoming <c>nxm://</c> URLs:
+    /// one-shot env var set by Program.Main when the app cold-starts
+    /// from a protocol click, and a FileSystemWatcher on nxm_inbox.txt
+    /// for handoffs from a second instance fired while we're running.
+    /// </summary>
+    private void StartNxmListener()
+    {
+        var pending = Environment.GetEnvironmentVariable("MGSV_PENDING_NXM");
+        if (!string.IsNullOrWhiteSpace(pending))
+        {
+            Environment.SetEnvironmentVariable("MGSV_PENDING_NXM", null);
+            _ = HandleNxmUrlAsync(pending);
+        }
+
+        try
+        {
+            var dir = AppContext.BaseDirectory;
+            var fsw = new FileSystemWatcher(dir, "nxm_inbox.txt")
+            {
+                NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.CreationTime,
+                EnableRaisingEvents = true,
+            };
+            FileSystemEventHandler h = (_, _) =>
+            {
+                try
+                {
+                    var path = Program.NxmInboxPath;
+                    if (!File.Exists(path)) return;
+                    var url = File.ReadAllText(path).Trim();
+                    File.Delete(path);
+                    if (!string.IsNullOrWhiteSpace(url))
+                        Avalonia.Threading.Dispatcher.UIThread.Post(
+                            () => _ = HandleNxmUrlAsync(url));
+                }
+                catch { }
+            };
+            fsw.Changed += h;
+            fsw.Created += h;
+        }
+        catch { /* watcher is best-effort */ }
+    }
+
+    /// <summary>
+    /// End-to-end: parse the URL, exchange the token, stream the
+    /// archive, peel out any <c>.mgsv</c> files, then drop them into
+    /// the existing mod-install pipeline. Errors land in the activity
+    /// log; the page navigates to it so the user sees progress.
+    /// </summary>
+    private async Task HandleNxmUrlAsync(string url)
+    {
+        var key = _manager.State.NexusApiKey;
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            AppendLog("Nexus: received a download URL but no API key is configured. Open Settings to paste your key.");
+            CurrentPage = Page.Settings;
+            return;
+        }
+        var nxm = NexusDownloader.TryParse(url);
+        if (nxm is null)
+        {
+            AppendLog($"Nexus: ignored malformed download URL: {url}");
+            return;
+        }
+
+        CurrentPage = Page.Log;
+        AppendLog($"Nexus: incoming download {url}");
+        try
+        {
+            var dropDir = Path.Combine(Path.GetTempPath(), "mgsv_modmgr_nxm");
+            var client  = new NexusClient(key);
+            var files   = await Task.Run(() =>
+                NexusDownloader.DownloadAndExtractAsync(client, nxm, dropDir, AppendLog));
+
+            // Hand each extracted .mgsv to the existing add-mod pipeline.
+            foreach (var f in files)
+            {
+                try
+                {
+                    await Task.Run(() => _manager.AddMod(f));
+                    AppendLog($"Nexus: installed {Path.GetFileName(f)}");
+                }
+                catch (Exception ex)
+                {
+                    AppendLog($"Nexus: add-mod failed for {Path.GetFileName(f)}: {ex.Message}");
+                }
+                finally
+                {
+                    try { File.Delete(f); } catch { }
+                }
+            }
+            SyncRows();
+            MarkDirty();
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Nexus: download failed: {ex.Message}");
+        }
     }
 
     // ─── Mod-list sync ─────────────────────────────────────────────────────
@@ -424,8 +816,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private void LoadSettingsFields()
     {
-        GameRootField = _manager.State.GameRoot;
-        DatFpkField   = _manager.State.DatFpk;
+        GameRootField    = _manager.State.GameRoot;
+        DatFpkField      = _manager.State.DatFpk;
+        NexusApiKeyField = _manager.State.NexusApiKey;
     }
 
     private async Task BrowseGameRootAsync()
@@ -480,8 +873,24 @@ public sealed class MainViewModel : INotifyPropertyChanged
         try
         {
             _manager.Init(GameRootField.Trim(), DatFpkField.Trim());
+            // Persist the Nexus key alongside the other settings. Empty
+            // string is allowed — that just means "not signed in yet."
+            var newKey = (NexusApiKeyField ?? "").Trim();
+            var keyChanged = _manager.State.NexusApiKey != newKey;
+            _manager.State.NexusApiKey = newKey;
+            _manager.SaveState();
+            // Invalidate Nexus caches if the key actually changed, so
+            // the next nav to Nexus re-fetches with the new credential.
+            if (keyChanged)
+            {
+                _allNexusMods.Clear();
+                NexusMods.Clear();
+                _nexusCategories = null;
+                NexusError       = "";
+            }
             OnPropertyChanged(nameof(GameRoot));
             OnPropertyChanged(nameof(DatFpk));
+            OnPropertyChanged(nameof(NexusNeedsApiKey));
             CurrentPage = Page.Mods;
         }
         catch (Exception ex) { await ShowError("Save failed", ex.Message); }

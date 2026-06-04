@@ -4,6 +4,7 @@ namespace MgsvModMgr.Gui;
 public enum Page
 {
     Mods,
+    Nexus,
     Settings,
     Log,
 }

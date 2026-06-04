@@ -21,34 +21,55 @@
       <DockPanel LastChildFill="False">
 
         <!-- Fluent UI System Icons glyphs (bundled font, MIT). Codepoints:
-             F574 = WindowApps,   E45B = Checkmark,    E1A2 = ArrowUndo,
-             F582 = WindowConsole,E7B0 = DocumentText, EFD2 = Settings,
-             EA5B = Info -->
+             EB09 = Library (Mods),  E45B = Checkmark (Apply),
+             E1A2 = ArrowUndo,       F582 = WindowConsole (Log),
+             E7B0 = DocumentText,    E974 = Globe (Nexus),
+             EFD2 = Settings,        EA5B = Info -->
+        <!-- Top stack:
+             - Mods (library) and Nexus (globe) are always visible — those
+               are the two top-level views the user moves between.
+             - Apply / Revert / Log / DictExport only make sense in the
+               install context; they live inside a Border.sidebar-collapse
+               that animates MaxHeight + Opacity down to zero while the
+               user is on the Nexus page, then slides back when they
+               click Mods. ClipToBounds keeps the slide tidy. -->
         <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,16,0,0"
                     HorizontalAlignment="Center">
           <Button Classes="sidebar" Classes.active="{Binding IsModsPage}"
                   ToolTip.Tip="Installed mods"
-                  Content="&#xF574;"
+                  Content="&#xEB09;"
                   Command="{Binding ShowModsCommand}"/>
-          <Button Classes="sidebar" Classes.dirty="{Binding IsDirty}"
-                  ToolTip.Tip="Apply pending changes to the game install"
-                  Content="&#xE45B;"
-                  IsEnabled="{Binding !IsApplying}"
-                  Command="{Binding ApplyCommand}"/>
-          <Button Classes="sidebar"
-                  ToolTip.Tip="Restore the original game files; undo every mod change in the install"
-                  Content="&#xE1A2;"
-                  IsEnabled="{Binding !IsApplying}"
-                  Command="{Binding RevertCommand}"/>
-          <Button Classes="sidebar" Classes.active="{Binding IsLogPage}"
-                  ToolTip.Tip="Activity log from the last Apply"
-                  Content="&#xF582;"
-                  Command="{Binding ToggleLogCommand}"/>
-          <Button Classes="sidebar"
-                  ToolTip.Tip="Rebuild PathDictionary.txt and ExplicitPathDictionary.txt against every installed mod"
-                  Content="&#xE7B0;"
-                  IsEnabled="{Binding !IsApplying}"
-                  Command="{Binding ExportDictCommand}"/>
+
+          <Border Classes="sidebar-collapse"
+                  Classes.collapsed="{Binding IsNexusPage}">
+            <StackPanel Spacing="6" HorizontalAlignment="Center">
+              <Button Classes="sidebar" Classes.dirty="{Binding IsDirty}"
+                      ToolTip.Tip="Apply pending changes to the game install"
+                      Content="&#xE45B;"
+                      IsEnabled="{Binding !IsApplying}"
+                      Command="{Binding ApplyCommand}"/>
+              <Button Classes="sidebar"
+                      ToolTip.Tip="Restore the original game files; undo every mod change in the install"
+                      Content="&#xE1A2;"
+                      IsEnabled="{Binding !IsApplying}"
+                      Command="{Binding RevertCommand}"/>
+              <Button Classes="sidebar" Classes.active="{Binding IsLogPage}"
+                      ToolTip.Tip="Activity log from the last Apply"
+                      Content="&#xF582;"
+                      Command="{Binding ToggleLogCommand}"/>
+              <Button Classes="sidebar"
+                      ToolTip.Tip="Rebuild PathDictionary.txt and ExplicitPathDictionary.txt against every installed mod"
+                      Content="&#xE7B0;"
+                      IsEnabled="{Binding !IsApplying}"
+                      Command="{Binding ExportDictCommand}"/>
+            </StackPanel>
+          </Border>
+
+          <!-- Nexus Mods browser (globe glyph) — always visible. -->
+          <Button Classes="sidebar" Classes.active="{Binding IsNexusPage}"
+                  ToolTip.Tip="Browse Nexus Mods"
+                  Content="&#xE974;"
+                  Command="{Binding ShowNexusCommand}"/>
         </StackPanel>
 
         <StackPanel DockPanel.Dock="Bottom" Spacing="6" Margin="0,0,0,16"
@@ -174,6 +195,79 @@
                     ToolTip.Tip="Add a .mgsv mod archive"
                     IsEnabled="{Binding !IsApplying}"
                     Command="{Binding AddCommand}"/>
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <!-- ─── Nexus browser header ─── -->
+      <!-- Same shape as the Mods header: title + subtitle on the left,
+           a horizontal toolbar of action buttons on the right. The
+           filter buttons (Trending / Latest added / Latest updated)
+           highlight via Classes.active when their mode is current. -->
+      <Border Grid.Row="0" Padding="24,18,24,14" Background="{DynamicResource Bg}"
+              IsVisible="{Binding IsNexusPage}">
+        <Grid ColumnDefinitions="*,auto">
+          <StackPanel Grid.Column="0" Spacing="2">
+            <TextBlock Text="Nexus Mods" FontSize="22" FontWeight="SemiBold"/>
+            <TextBlock Text="Browse, search, and install mods from nexusmods.com"
+                       Foreground="{DynamicResource TextDim}" FontSize="12"/>
+          </StackPanel>
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8"
+                      VerticalAlignment="Center" Margin="0,0,-4,0">
+            <!-- Always-expanded inline search box. Filters the currently
+                 loaded mod set (trending / latest / updated) by Name /
+                 Author / Summary substring. Full-catalogue text search
+                 needs the GraphQL endpoint — not wired yet. -->
+            <Border Width="220" Height="40"
+                    Background="Transparent"
+                    BorderBrush="{DynamicResource Border}"
+                    BorderThickness="1"
+                    CornerRadius="8">
+              <Grid ColumnDefinitions="36,*">
+                <TextBlock Grid.Column="0" Text="&#xEF9A;"
+                           FontFamily="{DynamicResource IconFont}"
+                           FontSize="15"
+                           Foreground="{DynamicResource TextDim}"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"/>
+                <TextBox Grid.Column="1"
+                         Classes="search-pill"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         VerticalContentAlignment="Center"
+                         Padding="0,0,12,0"
+                         FontSize="13"
+                         Watermark="Search loaded mods"
+                         Foreground="White"
+                         CaretBrush="White"
+                         Text="{Binding NexusSearchText, Mode=TwoWay}">
+                  <TextBox.Resources>
+                    <SolidColorBrush x:Key="TextControlPlaceholderForeground"            Color="White" Opacity="0.45"/>
+                    <SolidColorBrush x:Key="TextControlPlaceholderForegroundPointerOver" Color="White" Opacity="0.55"/>
+                    <SolidColorBrush x:Key="TextControlPlaceholderForegroundFocused"     Color="White" Opacity="0.4"/>
+                  </TextBox.Resources>
+                </TextBox>
+              </Grid>
+            </Border>
+            <Button Classes="ghost icon" Content="&#xE178;"
+                    Classes.active="{Binding IsTrendingFilter}"
+                    ToolTip.Tip="Trending"
+                    IsEnabled="{Binding !IsNexusLoading}"
+                    Command="{Binding SetTrendingFilterCommand}"/>
+            <Button Classes="ghost icon" Content="&#xEC73;"
+                    Classes.active="{Binding IsLatestAddedFilter}"
+                    ToolTip.Tip="Latest added"
+                    IsEnabled="{Binding !IsNexusLoading}"
+                    Command="{Binding SetLatestAddedFilterCommand}"/>
+            <Button Classes="ghost icon" Content="&#xE347;"
+                    Classes.active="{Binding IsLatestUpdatedFilter}"
+                    ToolTip.Tip="Latest updated"
+                    IsEnabled="{Binding !IsNexusLoading}"
+                    Command="{Binding SetLatestUpdatedFilterCommand}"/>
+            <Button Classes="ghost icon" Content="&#xE0BC;"
+                    ToolTip.Tip="Refresh"
+                    IsEnabled="{Binding !IsNexusLoading}"
+                    Command="{Binding RefreshNexusCommand}"/>
           </StackPanel>
         </Grid>
       </Border>
@@ -341,6 +435,315 @@
         </DataGrid>
       </Border>
 
+      <!-- ─── Nexus browser content ─── -->
+      <Border Grid.Row="1" Margin="0,4,0,0"
+              Background="{DynamicResource Panel}"
+              BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0"
+              IsVisible="{Binding IsNexusPage}">
+        <Grid>
+          <!-- Empty state: shown when no API key has been entered yet. -->
+          <Border IsVisible="{Binding NexusNeedsApiKey}"
+                  HorizontalAlignment="Center" VerticalAlignment="Center"
+                  Padding="32,28"
+                  MaxWidth="520"
+                  Background="{DynamicResource PanelAlt}"
+                  BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                  CornerRadius="12">
+            <StackPanel Spacing="14" HorizontalAlignment="Center">
+              <TextBlock Text="&#xEA7A;"
+                         FontFamily="{DynamicResource IconFont}"
+                         FontSize="34"
+                         Foreground="{DynamicResource DirtyBrush}"
+                         HorizontalAlignment="Center"/>
+              <TextBlock Text="Sign in to Nexus Mods"
+                         FontSize="18" FontWeight="SemiBold"
+                         HorizontalAlignment="Center"/>
+              <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextDim}"
+                         TextAlignment="Center" FontSize="13" LineHeight="20">
+                Browsing the mod catalogue needs a Nexus Mods Personal API key.
+                Generate one at nexusmods.com → My Account → API and paste it
+                into Settings.
+              </TextBlock>
+              <Button Classes="primary" Content="Open Settings"
+                      HorizontalAlignment="Center" Padding="18,8"
+                      Command="{Binding ShowSettingsCommand}"/>
+            </StackPanel>
+          </Border>
+
+          <!-- Loading state: visible while the trending API call is in
+               flight. Centred amber spinner-y text using DirtyBrush. -->
+          <StackPanel IsVisible="{Binding IsNexusLoading}"
+                      HorizontalAlignment="Center" VerticalAlignment="Center"
+                      Spacing="12">
+            <TextBlock Text="&#xE8B6;"
+                       FontFamily="{DynamicResource IconFont}"
+                       FontSize="34"
+                       Foreground="{DynamicResource DirtyBrush}"
+                       HorizontalAlignment="Center"/>
+            <TextBlock Text="Loading trending mods..."
+                       Foreground="{DynamicResource TextDim}"
+                       HorizontalAlignment="Center"/>
+          </StackPanel>
+
+          <!-- Error state -->
+          <Border IsVisible="{Binding HasNexusError}"
+                  HorizontalAlignment="Center" VerticalAlignment="Center"
+                  Padding="24,20" MaxWidth="480"
+                  Background="{DynamicResource PanelAlt}"
+                  BorderBrush="{DynamicResource DirtyBrush}" BorderThickness="1"
+                  CornerRadius="10">
+            <StackPanel Spacing="10">
+              <TextBlock Text="{Binding NexusError}"
+                         Foreground="{DynamicResource Text}"
+                         TextWrapping="Wrap" TextAlignment="Center"/>
+              <Button Classes="ghost" Content="Open Settings"
+                      HorizontalAlignment="Center"
+                      Command="{Binding ShowSettingsCommand}"/>
+            </StackPanel>
+          </Border>
+
+          <!-- Card grid: visible once trending has loaded AND no card
+               drilled into. WrapPanel is HorizontalAlignment=Center so
+               the row of cards stays centred under the page header
+               regardless of window width / how many fit per row. -->
+          <ScrollViewer IsVisible="{Binding IsNexusListVisible}"
+                        HorizontalScrollBarVisibility="Disabled"
+                        VerticalScrollBarVisibility="Auto"
+                        Padding="20,16,20,20">
+            <ItemsControl ItemsSource="{Binding NexusMods}"
+                          HorizontalAlignment="Center">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <WrapPanel Orientation="Horizontal"
+                             ItemSpacing="16" LineSpacing="16"
+                             HorizontalAlignment="Center"/>
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:NexusModCard">
+                  <Border Classes="nexus-card"
+                          Width="260" Height="270"
+                          PointerPressed="NexusCard_PointerPressed">
+                    <Grid RowDefinitions="120,*">
+                      <!-- Thumbnail strip. Placeholder glyph shows
+                           while the image is in flight (or on fetch
+                           failure); the Image swaps in via INPC once
+                           PictureUrl has been downloaded. -->
+                      <Border Grid.Row="0" Background="#1F1F23"
+                              CornerRadius="10,10,0,0"
+                              BorderThickness="0,0,0,1"
+                              BorderBrush="{DynamicResource Border}"
+                              ClipToBounds="True">
+                        <Grid>
+                          <TextBlock Text="&#xE974;"
+                                     FontFamily="{DynamicResource IconFont}"
+                                     FontSize="42"
+                                     Opacity="0.25"
+                                     Foreground="{DynamicResource Text}"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center"
+                                     IsVisible="{Binding !HasThumbnail}"/>
+                          <Image Source="{Binding Thumbnail}"
+                                 Stretch="UniformToFill"
+                                 IsVisible="{Binding HasThumbnail}"/>
+                        </Grid>
+                      </Border>
+                      <!-- Card body -->
+                      <StackPanel Grid.Row="1" Spacing="6" Margin="14,10,14,12">
+                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold"
+                                   FontSize="14"
+                                   TextTrimming="CharacterEllipsis"/>
+                        <Border Classes="chip-tag" HorizontalAlignment="Left"
+                                IsVisible="{Binding Category, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                          <TextBlock Text="{Binding Category}"/>
+                        </Border>
+                        <TextBlock Text="{Binding Summary}"
+                                   Foreground="{DynamicResource TextDim}"
+                                   FontSize="11"
+                                   TextWrapping="Wrap"
+                                   MaxHeight="44"
+                                   TextTrimming="CharacterEllipsis"/>
+                      </StackPanel>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+
+          <!-- Detail view: hero spans the FULL viewport width so the
+               cover art doesn't get caged in a narrow column on small
+               windows / Steam Deck. Everything below the hero is text
+               content, which stays in a centred 940 px column for
+               readability. ScrollViewer fills the page cell and keeps
+               the scrollbar visible so the user can always see they're
+               not at the bottom yet. -->
+          <ScrollViewer IsVisible="{Binding IsNexusDetailVisible}"
+                        HorizontalScrollBarVisibility="Disabled"
+                        VerticalScrollBarVisibility="Visible"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch">
+            <StackPanel Spacing="18">
+
+              <!-- Top action row: Back / Open-on-Nexus.
+                   Wrapped in a centred 940 column so it lines up with
+                   the text content below — only the hero spans full
+                   viewport width. -->
+              <Grid ColumnDefinitions="auto,*,auto"
+                    MaxWidth="940" HorizontalAlignment="Stretch"
+                    Margin="24,18,24,0">
+                <Button Grid.Column="0" Classes="ghost" Padding="12,7"
+                        Command="{Binding ClearNexusSelectionCommand}">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="&#xE112;"
+                               FontFamily="{DynamicResource IconFont}"
+                               FontSize="14"
+                               VerticalAlignment="Center"/>
+                    <TextBlock Text="Back to browse" VerticalAlignment="Center"/>
+                  </StackPanel>
+                </Button>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+                  <Button Classes="ghost" Padding="14,7"
+                          Content="Open on Nexus"
+                          Command="{Binding OpenNexusInBrowserCommand}"/>
+                  <!-- Install: routes the user to the mod's Files tab.
+                       Clicking "Mod Manager Download" there fires nxm://
+                       which our registered protocol handler catches and
+                       feeds into HandleNxmUrlAsync → download → extract
+                       → AddMod → mod appears in Installed mods. -->
+                  <Button Classes="primary" Padding="18,8"
+                          Content="Install"
+                          ToolTip.Tip="Open the mod's Files tab; click 'Mod Manager Download' there to send the file back to this app"
+                          Command="{Binding OpenNexusFilesPageCommand}"/>
+                </StackPanel>
+              </Grid>
+
+              <!-- Hero image with a *responsive cap*. MaxWidth=940 with
+                   HorizontalAlignment=Stretch is the magic combo:
+                   - Wide / fullscreen → hero caps at 940 px and centres
+                     in the viewport with gutters (the original look).
+                   - Narrow / Steam-Deck → viewport < 940, so the cap
+                     stops applying and the hero stretches edge-to-edge.
+                   The handoff is continuous: as you drag the window
+                   smaller, the hero stays 940 until the viewport hits
+                   940, then it tracks the viewport width all the way
+                   down. No breakpoints, no animation triggers — just
+                   the layout engine doing what it's supposed to. -->
+              <Border Background="#1F1F23"
+                      BorderBrush="{DynamicResource Border}"
+                      BorderThickness="0,1,0,1"
+                      MaxWidth="940" HorizontalAlignment="Stretch"
+                      MinHeight="180" MaxHeight="320"
+                      ClipToBounds="True">
+                <Grid>
+                  <TextBlock Text="&#xE974;"
+                             FontFamily="{DynamicResource IconFont}"
+                             FontSize="60" Opacity="0.2"
+                             Foreground="{DynamicResource Text}"
+                             HorizontalAlignment="Center"
+                             VerticalAlignment="Center"
+                             IsVisible="{Binding !NexusSelectedMod.HasThumbnail}"/>
+                  <Image Source="{Binding NexusSelectedMod.Thumbnail}"
+                         Stretch="UniformToFill"
+                         IsVisible="{Binding NexusSelectedMod.HasThumbnail}"/>
+                </Grid>
+              </Border>
+
+              <!-- All non-hero content lives in a centred 940 column with
+                   side margins matching the page padding. Wrapper lets
+                   the hero break out to full viewport width while text
+                   stays readable. -->
+              <StackPanel MaxWidth="940" HorizontalAlignment="Stretch"
+                          Margin="24,0,24,28" Spacing="18">
+
+              <!-- Title row: name + chip + author on the LEFT, three
+                   compact stat tiles on the RIGHT, sharing one horizontal
+                   strip. Frees up vertical real-estate so the About card
+                   below has room to breathe on short windows. -->
+              <Grid ColumnDefinitions="*,auto" ColumnSpacing="20">
+                <StackPanel Grid.Column="0" Spacing="8" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding NexusSelectedMod.Name}"
+                             FontSize="24" FontWeight="SemiBold"
+                             TextWrapping="Wrap"/>
+                  <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <Border Classes="chip-tag"
+                            IsVisible="{Binding NexusSelectedMod.Category, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                      <TextBlock Text="{Binding NexusSelectedMod.Category}"/>
+                    </Border>
+                    <!-- Two-Run TextBlock so "by " stays in dim text and
+                         only the author name itself paints in DirtyBrush. -->
+                    <TextBlock VerticalAlignment="Center">
+                      <Run Text="by " Foreground="{DynamicResource TextDim}"/><Run
+                            Text="{Binding NexusSelectedMod.Author}"
+                            Foreground="{DynamicResource DirtyBrush}"
+                            FontWeight="SemiBold"/>
+                    </TextBlock>
+                  </StackPanel>
+                </StackPanel>
+
+                <!-- Inline 3-tile stat row aligned to the title block. -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal"
+                            Spacing="10" VerticalAlignment="Center">
+                  <Border Classes="stat-tile" Width="120">
+                    <StackPanel Spacing="2" HorizontalAlignment="Center">
+                      <TextBlock Text="{Binding NexusSelectedMod.Downloads, StringFormat='{}{0:N0}'}"
+                                 FontSize="16" FontWeight="SemiBold"
+                                 HorizontalAlignment="Center"/>
+                      <TextBlock Text="Downloads"
+                                 Foreground="{DynamicResource TextDim}"
+                                 FontSize="10"
+                                 HorizontalAlignment="Center"/>
+                    </StackPanel>
+                  </Border>
+                  <Border Classes="stat-tile" Width="120">
+                    <StackPanel Spacing="2" HorizontalAlignment="Center">
+                      <TextBlock Text="{Binding NexusSelectedMod.Endorsements, StringFormat='{}{0:N0}'}"
+                                 FontSize="16" FontWeight="SemiBold"
+                                 HorizontalAlignment="Center"/>
+                      <TextBlock Text="Endorsements"
+                                 Foreground="{DynamicResource TextDim}"
+                                 FontSize="10"
+                                 HorizontalAlignment="Center"/>
+                    </StackPanel>
+                  </Border>
+                  <Border Classes="stat-tile" Width="120">
+                    <StackPanel Spacing="2" HorizontalAlignment="Center">
+                      <TextBlock Text="{Binding NexusSelectedMod.Version}"
+                                 FontSize="16" FontWeight="SemiBold"
+                                 HorizontalAlignment="Center"
+                                 TextTrimming="CharacterEllipsis"/>
+                      <TextBlock Text="Version"
+                                 Foreground="{DynamicResource TextDim}"
+                                 FontSize="10"
+                                 HorizontalAlignment="Center"/>
+                    </StackPanel>
+                  </Border>
+                </StackPanel>
+              </Grid>
+
+              <!-- About card -->
+              <Border Classes="info-card">
+                <StackPanel Spacing="10">
+                  <TextBlock Text="ABOUT"
+                             Foreground="{DynamicResource TextDim}"
+                             FontSize="11" FontWeight="SemiBold"/>
+                  <TextBlock Text="{Binding NexusSelectedMod.Summary}"
+                             TextWrapping="Wrap" LineHeight="20"
+                             Foreground="{DynamicResource Text}"/>
+                </StackPanel>
+              </Border>
+
+              <!-- TODO: Install/Download via nxm:// handler arrives next
+                   pass. For now Open-on-Nexus at the top routes the
+                   user to the mod page where the "Mod Manager Download"
+                   button fires nxm://. -->
+
+              </StackPanel>
+            </StackPanel>
+          </ScrollViewer>
+        </Grid>
+      </Border>
+
       <!-- ─── Settings page content ─── -->
       <Border Grid.Row="1" Margin="0,4,0,0"
               Background="{DynamicResource Panel}"
@@ -367,18 +770,33 @@
 
             <!-- datfpk -->
             <StackPanel Spacing="6">
-              <TextBlock Text="DATFPK.EXE" Foreground="{DynamicResource TextDim}"
+              <TextBlock Text="DATFPK" Foreground="{DynamicResource TextDim}"
                          FontSize="11" FontWeight="SemiBold"/>
-              <TextBlock Text="Path to the datfpk.exe packer/unpacker. Required by Apply."
+              <TextBlock Text="Path to the datfpk packer/unpacker binary. Required by Apply."
                          Foreground="{DynamicResource TextDim}" FontSize="12"/>
               <Grid ColumnDefinitions="*,auto" Margin="0,4,0,0">
                 <TextBox Grid.Column="0" Classes="path"
-                         Watermark="C:\tools\datfpk.exe"
+                         Watermark="C:\tools\datfpk.exe   (or /usr/local/bin/datfpk)"
                          Text="{Binding DatFpkField, Mode=TwoWay}"/>
                 <Button Grid.Column="1" Classes="ghost" Content="Browse..."
                         Margin="8,0,0,0" Width="100"
                         Command="{Binding BrowseDatFpkCommand}"/>
               </Grid>
+            </StackPanel>
+
+            <!-- Nexus Mods API key -->
+            <StackPanel Spacing="6">
+              <TextBlock Text="NEXUS MODS API KEY" Foreground="{DynamicResource TextDim}"
+                         FontSize="11" FontWeight="SemiBold"/>
+              <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextDim}" FontSize="12">
+                Personal API key from
+                nexusmods.com → My Account → API. Required to browse the
+                Nexus mod catalogue inside this app.
+              </TextBlock>
+              <TextBox Classes="path"
+                       Watermark="paste your Personal API key here"
+                       PasswordChar="•"
+                       Text="{Binding NexusApiKeyField, Mode=TwoWay}"/>
             </StackPanel>
 
             <!-- Save / Cancel: sized to match the Browse buttons above so the
