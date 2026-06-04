@@ -5,19 +5,39 @@ using System.Linq;
 using System.Reflection;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 
 namespace MgsvModMgr.Gui.Lang;
 
 /// <summary>
-/// One discovered locale. <see cref="Code"/> is the bit between
-/// <c>Strings.</c> and <c>.axaml</c> in the file name. <see cref="DisplayName"/>
-/// is read from the <c>Str.Meta.LanguageName</c> key inside the file
-/// (so it shows up in the dropdown in its own script).
-/// <see cref="Dictionary"/> is the live <see cref="ResourceDictionary"/>
-/// the runtime merges into <c>Application.Current.Resources</c>.
+/// One discovered locale.
+/// <list type="bullet">
+/// <item><see cref="Code"/> — the bit between <c>Strings.</c> and
+/// <c>.axaml</c> in the file name.</item>
+/// <item><see cref="DisplayName"/> — read from <c>Str.Meta.LanguageName</c>
+/// inside the file (so it shows up in the dropdown in its own
+/// script).</item>
+/// <item><see cref="IsRightToLeft"/> — read from
+/// <c>Str.Meta.FlowDirection</c> (values <c>ltr</c> / <c>rtl</c>,
+/// default <c>ltr</c>). Controls ONLY the paragraph direction of
+/// text-bearing controls (TextBlock / TextBox content wrap +
+/// alignment). The layout chrome — sidebar position, toolbar button
+/// order, scrollbar side — stays LTR regardless. This split tested
+/// well: Arabic readers get correctly-wrapped paragraphs while the
+/// app's spatial conventions stay consistent across locales (the
+/// same gesture lands on the same control no matter which language
+/// is active).</item>
+/// <item><see cref="Dictionary"/> — the live
+/// <see cref="ResourceDictionary"/> the runtime merges into
+/// <c>Application.Current.Resources</c>.</item>
+/// </list>
 /// </summary>
-public sealed record LocaleInfo(string Code, string DisplayName, ResourceDictionary Dictionary)
+public sealed record LocaleInfo(
+    string Code,
+    string DisplayName,
+    bool IsRightToLeft,
+    ResourceDictionary Dictionary)
 {
     /// <summary>So ComboBox renders the dictionary's own display name.</summary>
     public override string ToString() => DisplayName;
@@ -102,23 +122,20 @@ public static class LocaleRegistry
     {
         // No AssetLoader.Exists() pre-check: it returns false for
         // compiled-XAML URIs even when AvaloniaXamlLoader.Load would
-        // happily resolve them. Just attempt the load — most probes
-        // miss (we walk a ~90-code ISO list against the ~2 locales
-        // actually shipped) and each miss throws
-        // Avalonia.Markup.Xaml.XamlLoadException ("No precompiled
-        // XAML found for ..."). We swallow *every* exception here
-        // rather than naming the type: a malformed bundled locale
-        // file would throw a different XamlParseException / XamlIl
-        // exception, and the right behaviour for "this locale file
-        // is broken" is the same as "this locale isn't shipped" —
-        // skip it, keep going, the dropdown still works minus that
-        // one entry.
+        // happily resolve them. Just attempt the load — a missing
+        // file throws Avalonia.Markup.Xaml.XamlLoadException, which
+        // (along with any other parse / type failure for a corrupt
+        // bundled locale) is caught here so discovery keeps going.
         var uri = new Uri(LangFolder + $"Strings.{code}.axaml");
         try
         {
             if (AvaloniaXamlLoader.Load(uri) is not ResourceDictionary dict) return null;
-            var display = TryGetMetaName(dict) ?? code;
-            return new LocaleInfo(code, display, dict);
+            var display = TryGetString(dict, "Str.Meta.LanguageName") ?? code;
+            var rtl     = string.Equals(
+                              TryGetString(dict, "Str.Meta.FlowDirection")?.Trim(),
+                              "rtl",
+                              StringComparison.OrdinalIgnoreCase);
+            return new LocaleInfo(code, display, rtl, dict);
         }
         catch
         {
@@ -127,16 +144,15 @@ public static class LocaleRegistry
     }
 
     /// <summary>
-    /// Pull the locale's display name out of the just-loaded dictionary.
+    /// Look up a string-valued resource by key in the just-loaded dict.
     /// ResourceDictionary's API is a bit fragmented across Avalonia
-    /// versions — we use the IDictionary indexer via ContainsKey, which
-    /// is the stable surface across 11.x.
+    /// versions — ContainsKey + indexer is the stable surface across
+    /// 11.x.
     /// </summary>
-    private static string? TryGetMetaName(ResourceDictionary dict)
+    private static string? TryGetString(ResourceDictionary dict, string key)
     {
-        if (!dict.ContainsKey("Str.Meta.LanguageName")) return null;
-        var v = dict["Str.Meta.LanguageName"];
-        return v as string;
+        if (!dict.ContainsKey(key)) return null;
+        return dict[key] as string;
     }
 
     /// <summary>
@@ -172,5 +188,36 @@ public static class LocaleRegistry
 
         resources.MergedDictionaries.Add(target.Dictionary);
         Current = target;
+        ApplyRtlClassToMainWindow(target.IsRightToLeft);
+    }
+
+    /// <summary>
+    /// Toggle the <c>rtl</c> class on the main Window so the
+    /// <c>Window.rtl TextBlock</c> / <c>Window.rtl TextBox</c>
+    /// selectors in Theme.axaml flip text paragraph direction without
+    /// touching the surrounding layout.
+    ///
+    /// Safe to call before MainWindow exists (no-op then) — the
+    /// MainWindow constructor re-reads <see cref="Current"/> as a
+    /// belt-and-suspenders re-sync, covering the cold-start case
+    /// where <see cref="Apply"/> ran before the window was built.
+    /// </summary>
+    public static void ApplyRtlClassToMainWindow(bool isRightToLeft)
+    {
+        if (Application.Current?.ApplicationLifetime
+            is not IClassicDesktopStyleApplicationLifetime desktop) return;
+        if (desktop.MainWindow is not { } mw) return;
+        SetRtlClass(mw, isRightToLeft);
+    }
+
+    /// <summary>
+    /// Add or remove the <c>rtl</c> class on a control. Idempotent —
+    /// no-op if the class is already in the right state.
+    /// </summary>
+    public static void SetRtlClass(Control control, bool isRightToLeft)
+    {
+        var present = control.Classes.Contains("rtl");
+        if (isRightToLeft && !present)    control.Classes.Add("rtl");
+        else if (!isRightToLeft && present) control.Classes.Remove("rtl");
     }
 }

@@ -34,6 +34,7 @@
        script). LocaleRegistry parses this key when enumerating
        available locales at startup. -->
   <sys:String x:Key="Str.Meta.LanguageName">Russian</sys:String>
+  <sys:String x:Key="Str.Meta.FlowDirection">ltr</sys:String>
 
   <!-- App chrome -->
   <sys:String x:Key="Str.App.Title">MGSV Mod Manager</sys:String>

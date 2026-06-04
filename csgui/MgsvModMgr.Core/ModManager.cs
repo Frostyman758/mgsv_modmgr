@@ -133,7 +133,16 @@ public sealed partial class ModManager
         mod.GameDirEntries.Sort(StringComparer.Ordinal);
         DeduplicateInPlace(mod.GameDirEntries);
 
-        State.Mods.Add(mod);
+        // Insert at the top of the load order rather than appending.
+        // Top-wins priority is the established rule (see the row-
+        // selection / conflict-resolution logic), so a freshly-added
+        // mod becoming the highest-priority entry matches what the
+        // user almost always wants: "I just installed this, make it
+        // the one that's active." Persistence reads/writes State.Mods
+        // in order so this carries through to state.txt automatically,
+        // and SyncRows mirrors the collection 1:1 so the DataGrid
+        // rows reflect the new order on the next view refresh.
+        State.Mods.Insert(0, mod);
         SaveState();
 
         var dictAdded = DictionaryWriter.UpdateFromMod(mod, State.GameRoot, WorkspaceDir, Log);

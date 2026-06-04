@@ -17,6 +17,7 @@
 
   <!-- Per-locale metadata -->
   <sys:String x:Key="Str.Meta.LanguageName">العربية</sys:String>
+  <sys:String x:Key="Str.Meta.FlowDirection">rtl</sys:String>
 
   <!-- App chrome -->
   <sys:String x:Key="Str.App.Title"> MGSV مدير تعديلات</sys:String>

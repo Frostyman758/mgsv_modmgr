@@ -1,0 +1,195 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=netstandard">
+  <!--
+    German UI strings,
+    tooltip, watermark, dialog title and dialog body in the app. Each
+    additional locale ships its own copy of this file (Strings.de.axaml,
+    Strings.ja.axaml, ...) with the same x:Key set and translated values.
+
+    Keys are dot-namespaced by feature:
+      Str.App.*        application-wide chrome (title, window buttons)
+      Str.Sidebar.*    tooltips on the icon nav rail
+      Str.Mods.*       installed-mods page (header, toolbar, columns)
+      Str.Nexus.*      Nexus browser page (header, card grid, detail view)
+      Str.Settings.*   settings page (fields, theme, maintenance)
+      Str.Log.*        activity log + conflict viewer
+      Str.Footer.*     bottom status strip
+      Str.Confirm.*    confirm/error dialog defaults
+      Str.AddMod.*     file picker + add-mod error messaging
+      Str.Errors.*     toplevel error dialog titles + bodies
+      Str.Subtitle.*   plural-aware mod-count footer text
+
+    Selection: App.axaml merges this dictionary in. Switching languages
+    later means swapping which Strings.*.axaml is merged at startup.
+
+    XAML callers:    Text="{DynamicResource Str.Mods.Title}"
+    Code callers:    L.S("Str.Mods.Title")  (see Lang/L.cs)
+  -->
+
+  <!-- Per-locale metadata. Every Strings.*.axaml MUST define
+       Str.Meta.LanguageName as the locale's display name in its own
+       language (so the dropdown reads "English" / "Français" /
+       "日本語" — each user sees their target language in its own
+       script). LocaleRegistry parses this key when enumerating
+       available locales at startup. -->
+  <sys:String x:Key="Str.Meta.LanguageName">English</sys:String>
+
+  <!-- App chrome -->
+  <sys:String x:Key="Str.App.Title">MGSV Mod Manager</sys:String>
+  <sys:String x:Key="Str.App.WinMinimise">Minimieren</sys:String>
+  <sys:String x:Key="Str.App.WinMaxRestore">Maximieren / Restore</sys:String>
+  <sys:String x:Key="Str.App.WinClose">Schließen</sys:String>
+
+  <!-- Sidebar tooltips -->
+  <sys:String x:Key="Str.Sidebar.Mods">Installierte Mods</sys:String>
+  <sys:String x:Key="Str.Sidebar.Apply">Ausstehende Änderungen in Spielinstallation übernehmen</sys:String>
+  <sys:String x:Key="Str.Sidebar.Revert">Original Spieldateien wiederherstellen; jegliche Modänderungen der Installation rückgängig machen </sys:String>
+  <sys:String x:Key="Str.Sidebar.Log">Aktivitätenprotokoll der letzten Anwendung</sys:String>
+  <sys:String x:Key="Str.Sidebar.ExportDict">PathDictionary.txt und ExplicitPathDictionary.txt basierend auf installierten Mods neu erstellen</sys:String>
+  <sys:String x:Key="Str.Sidebar.Nexus">Nexus Mods durchsuchen</sys:String>
+  <sys:String x:Key="Str.Sidebar.Settings">Spielstammverzeichnispfad, datfpk Pfad</sys:String>
+  <sys:String x:Key="Str.Sidebar.About">Über diese Anwendung</sys:String>
+
+  <!-- Installed mods page -->
+  <sys:String x:Key="Str.Mods.Title">Installierte Mods</sys:String>
+  <sys:String x:Key="Str.Mods.MoveUp">Ausgewählten Mod in Ladereihenfolge nach oben verschieben</sys:String>
+  <sys:String x:Key="Str.Mods.MoveDown">Ausgewählten Mod in Ladereihenfolge nach unten verschieben</sys:String>
+  <sys:String x:Key="Str.Mods.SearchWatermark">Liste durchsuchen</sys:String>
+  <sys:String x:Key="Str.Mods.Remove">Ausgewählten Mod entfernen ("Übernehmen" um Änderung zu speichern)</sys:String>
+  <sys:String x:Key="Str.Mods.Add">Ein .mgsv Modarchiv hinzufügen</sys:String>
+
+  <!-- DataGrid column headers (kept uppercase to match the existing
+       visual treatment; per-locale CSS-style transforms would be a
+       later refinement) -->
+  <sys:String x:Key="Str.Mods.Col.Name">NAME</sys:String>
+  <sys:String x:Key="Str.Mods.Col.Tags">TAGS</sys:String>
+  <sys:String x:Key="Str.Mods.Col.Version">VERSION</sys:String>
+  <sys:String x:Key="Str.Mods.Col.Qar">QAR</sys:String>
+  <sys:String x:Key="Str.Mods.Col.GameDir">SPIELVERZEICHNIS</sys:String>
+  <sys:String x:Key="Str.Mods.Col.Enabled">AKTIVIERT</sys:String>
+
+  <!-- Row context menu -->
+  <sys:String x:Key="Str.Mods.Ctx.Toggle">Aktivierung umschalten</sys:String>
+  <sys:String x:Key="Str.Mods.Ctx.MoveUp">Nach oben verschieben</sys:String>
+  <sys:String x:Key="Str.Mods.Ctx.MoveDown">Nach unten verschieben</sys:String>
+  <sys:String x:Key="Str.Mods.Ctx.Remove">Entfernen...</sys:String>
+
+  <!-- Mod-count footer subtitle (HeaderSubtitle in MainViewModel) -->
+  <sys:String x:Key="Str.Subtitle.None">Noch keine Mods installiert. Klicke '+ Mod hinzufügen' um loszulegen.</sys:String>
+  <sys:String x:Key="Str.Subtitle.One">1 Mod installiert.</sys:String>
+  <sys:String x:Key="Str.Subtitle.Many">{0} Mods installiert.</sys:String>
+
+  <!-- Nexus browser -->
+  <sys:String x:Key="Str.Nexus.Title">Nexus Mods</sys:String>
+  <sys:String x:Key="Str.Nexus.Subtitle">Durchstöber, Suche und Installiere Mods von nexusmods.com</sys:String>
+  <sys:String x:Key="Str.Nexus.SearchWatermark">Suche geladene Mods </sys:String>
+  <sys:String x:Key="Str.Nexus.Trending">Im Trend</sys:String>
+  <sys:String x:Key="Str.Nexus.LatestAdded">Zuletzt hinzugefügt</sys:String>
+  <sys:String x:Key="Str.Nexus.LatestUpdated">Zuletzt aktualisiert</sys:String>
+  <sys:String x:Key="Str.Nexus.Refresh">Neuladen</sys:String>
+  <sys:String x:Key="Str.Nexus.SignInTitle">In Nexus Mods anmelden</sys:String>
+  <sys:String x:Key="Str.Nexus.SignInBody">Um den Modkatalog zu durchsuchen braucht es einen Nexus Mods persönlichen API SChlüssel. Generiere einen unter nexusmods.com → My Profile → API und füge Ihn in den Einstellungen ein.</sys:String>
+  <sys:String x:Key="Str.Nexus.OpenSettings">Einstellungen öffnen</sys:String>
+  <sys:String x:Key="Str.Nexus.Loading">Lade trendige Mods...</sys:String>
+  <sys:String x:Key="Str.Nexus.Filtering">Filtern:</sys:String>
+  <sys:String x:Key="Str.Nexus.ClearFilter">Filter löschen</sys:String>
+  <sys:String x:Key="Str.Nexus.BackToBrowse">Zurück zu Durchstöbern</sys:String>
+  <sys:String x:Key="Str.Nexus.OpenOnNexus">Öffnen über Nexus</sys:String>
+  <sys:String x:Key="Str.Nexus.Install">Installieren</sys:String>
+  <sys:String x:Key="Str.Nexus.InstallTip">Öffne den "Files" Reiter auf Nexus. Klick auf 'Manual download' und zieh dann das gespeicherte archiv auf das + der Modseite.</sys:String>
+  <sys:String x:Key="Str.Nexus.ShowCategory">Zeige alle Mods in dieser Kategorie</sys:String>
+  <sys:String x:Key="Str.Nexus.ShowAuthor">Zeige alle Mods von diesem Author</sys:String>
+  <sys:String x:Key="Str.Nexus.By">von</sys:String>
+  <sys:String x:Key="Str.Nexus.Downloads">Downloads</sys:String>
+  <sys:String x:Key="Str.Nexus.Endorsements">Empfehlungen</sys:String>
+  <sys:String x:Key="Str.Nexus.Version">Version</sys:String>
+  <sys:String x:Key="Str.Nexus.About">ÜBER</sys:String>
+  <sys:String x:Key="Str.Nexus.Requirements">ANFORDERUNGEN</sys:String>
+  <sys:String x:Key="Str.Nexus.Tags">TAGS</sys:String>
+
+  <!-- Settings page -->
+  <sys:String x:Key="Str.Settings.Title">Einstellungen</sys:String>
+  <sys:String x:Key="Str.Settings.Subtitle">Sag dem Manager wo MGSV:TPP und datfpk.exe existieren.</sys:String>
+  <sys:String x:Key="Str.Settings.GameRoot">Spielstammverzeichnis</sys:String>
+  <sys:String x:Key="Str.Settings.GameRootHelp">Der Ordner, welcher mgsvtpp.exe beinhaltet.</sys:String>
+  <sys:String x:Key="Str.Settings.GameRootWatermark">C:\Program Files (x86)\Steam\steamapps\common\MGS_TPP</sys:String>
+  <sys:String x:Key="Str.Settings.Browse">Durchstöbern...</sys:String>
+  <sys:String x:Key="Str.Settings.DatFpk">DATFPK</sys:String>
+  <sys:String x:Key="Str.Settings.DatFpkHelp">Pfad zu datfpk Packer/Entpacker Binärdatei. Erfordlerich um Anzuwenden.</sys:String>
+  <sys:String x:Key="Str.Settings.DatFpkWatermark">C:\tools\datfpk.exe   (oder /usr/local/bin/datfpk)</sys:String>
+  <sys:String x:Key="Str.Settings.NexusKey">NEXUS MODS API SCHLÜSSEL</sys:String>
+  <sys:String x:Key="Str.Settings.NexusKeyHelp">Anmelden über Nexus um diese Anwendung zu authorisieren und einen API Schlüssel zu erhalten, oder füge den persönlichen API Schlüssel manuell hinzu.</sys:String>
+  <sys:String x:Key="Str.Settings.NexusKeyWatermark">Füge deinen persönlichen API Schlüssel hier ein</sys:String>
+  <sys:String x:Key="Str.Settings.SsoTip">Öffne die Nexus Bestätigungsseite in deinem Browser. Sobald du auf "Approve" klickst, wird der API Schlüssel automatisch hinzugefügt.</sys:String>
+  <sys:String x:Key="Str.Settings.SignIn">Anmelden über Nexus</sys:String>
+  <sys:String x:Key="Str.Settings.Theme">THEMA</sys:String>
+  <sys:String x:Key="Str.Settings.ThemeLight">Hell</sys:String>
+  <sys:String x:Key="Str.Settings.ThemeDark">Dunkel</sys:String>
+  <sys:String x:Key="Str.Settings.ThemeAuto">Automatisch</sys:String>
+  <sys:String x:Key="Str.Settings.ThemeAutoTip">Übernehme das Thema des Betriebssystems.</sys:String>
+  <sys:String x:Key="Str.Settings.ThemeHelp">Vertauscht den Hintergrund / Panel / Text Palette. Die Rot/Bernsteinfarbende Installationszustandfarben bleiben gleich.</sys:String>
+  <sys:String x:Key="Str.Settings.Language">SPRACHE</sys:String>
+  <sys:String x:Key="Str.Settings.LanguageHelp">Tauscht jede Bezeichung, Knopf, and Hinweis in der Anwendung. Wird sofort angewandt; besteht nach Neustarts fort.</sys:String>
+  <sys:String x:Key="Str.Settings.Back">Zurück</sys:String>
+  <sys:String x:Key="Str.Settings.Save">Speichern</sys:String>
+  <sys:String x:Key="Str.Settings.Maintenance">WARTUNG</sys:String>
+  <sys:String x:Key="Str.Settings.MaintenanceHelp">Der Übernahme Cache wird bereinigt sowie hostspezifische Arbeitsverzeichnisse. Die nächste Übernahme wird den Host neuerstellen.Lässt Spielverzeichnis und Modliste unberührt.</sys:String>
+  <sys:String x:Key="Str.Settings.ResetApply">Setzt Übernahmestatus zurück</sys:String>
+
+  <!-- Log / conflict page -->
+  <sys:String x:Key="Str.Log.Title">AKTIVITÄTENPROTOKOLL</sys:String>
+  <sys:String x:Key="Str.Log.Back">Zurück zu Mods</sys:String>
+  <sys:String x:Key="Str.Log.Conflicts">DATEIKONFLIKTE</sys:String>
+  <sys:String x:Key="Str.Log.NoConflicts">Keine Dateikonflikte entdeck. Die aktivierten Mods konkurrieren in der aktuellen Ladereihenfolge um keine Dateien..</sys:String>
+  <sys:String x:Key="Str.Log.Winner">Gewinner:</sys:String>
+  <sys:String x:Key="Str.Log.Overridden">überschrieben:</sys:String>
+
+  <!-- Footer -->
+  <sys:String x:Key="Str.Footer.HideTip">Klicke um zu verstecken. Taucht automatisch bei Übernahmeprozess auf.</sys:String>
+  <sys:String x:Key="Str.Footer.GameRoot">Spielstammverzeichnis:</sys:String>
+  <sys:String x:Key="Str.Footer.DatFpk">datfpk:</sys:String>
+
+  <!-- Confirm dialog (generic) -->
+  <sys:String x:Key="Str.Confirm.Title">Bestätigen</sys:String>
+  <sys:String x:Key="Str.Confirm.Cancel">Abbruch</sys:String>
+  <sys:String x:Key="Str.Confirm.Ok">Bestätigen</sys:String>
+
+  <!-- Add-mod flow -->
+  <sys:String x:Key="Str.AddMod.PickerTitle">Wähle .mgsv Mod(s) oder Archiv(e)aus</sys:String>
+  <sys:String x:Key="Str.AddMod.FilterModsArchives">Mods + Archive</sys:String>
+  <sys:String x:Key="Str.AddMod.FilterMods">SnakeBite Mods</sys:String>
+  <sys:String x:Key="Str.AddMod.FilterArchives">Archive</sys:String>
+  <sys:String x:Key="Str.AddMod.NoneTitle">Keine Mods zum hinzufügen</sys:String>
+  <sys:String x:Key="Str.AddMod.NoneBody">Keine der ausgewählten Dateien enthielt eine installierbare .mgsv Mod.</sys:String>
+  <!-- "{0} von {1} konnte nicht hinzugefügt werden" -->
+  <sys:String x:Key="Str.AddMod.FailedTitle">{0} of {1} konnte nicht hinzugefügt werden</sys:String>
+  <!-- "and {0} more failure(s)" -->
+  <sys:String x:Key="Str.AddMod.MoreFailures">und {0} weitere Fehler</sys:String>
+
+  <!-- Settings flow -->
+  <sys:String x:Key="Str.Settings.GameRootPicker">Wähle MGSV:TPP Spielstammverzeichniss</sys:String>
+  <sys:String x:Key="Str.Settings.DatFpkPicker">Wähle datfpk Binärdatei aus</sys:String>
+  <sys:String x:Key="Str.Settings.FilterExecutables">Anwendungen</sys:String>
+  <sys:String x:Key="Str.Settings.ResetPrompt">Übernahme Cache und tmp\host_* Arbeitsverzeichnisse bereinigen?
+
+Die nächste Übernahme wird den Host neuerstellen. Hat KEINEN Einfluss auf Spielverzeichnis und registrierte Modliste.</sys:String>
+  <sys:String x:Key="Str.Errors.ResetFailed">Zurücksetzen fehlgeschlagen</sys:String>
+  <sys:String x:Key="Str.Errors.SaveFailed">Specihern fehlgeschlagen</sys:String>
+  <sys:String x:Key="Str.Errors.SaveFailedBody">Spielstammverzeichnis und datfpk paths werden beide benötigt.</sys:String>
+  <sys:String x:Key="Str.Errors.RemoveFailed">Entfernen fehlgeschlagen</sys:String>
+  <sys:String x:Key="Str.Errors.CannotExport">Kann nicht exportieren</sys:String>
+  <sys:String x:Key="Str.Errors.CannotExportBody">Spielstammverzeichnis nicht festgelegt. Zahnradsymbol zuerst auswählen.</sys:String>
+  <sys:String x:Key="Str.Errors.ExportFailed">Export fehlgeschlagen</sys:String>
+  <sys:String x:Key="Str.Errors.SignInFailed">Anmeldung fehlgeschlagen</sys:String>
+  <sys:String x:Key="Str.Errors.SignInFailedSuffix">
+
+Es besteht immernoch die Option den persönlichen API Schlüssel manuell von "nexusmods.com → My Profile → API" hinzuzufügen.</sys:String>
+
+  <!-- Nexus error texts -->
+  <sys:String x:Key="Str.Nexus.Err.ApiKey">API Schlüssel abgelehnt. Erneut in den Eisntellungen überprüfen.</sys:String>
+  <sys:String x:Key="Str.Nexus.Err.Timeout">Anfrage Time-Out. Überprüfe die Verbindung und versuche es erneut.</sys:String>
+  <!-- "Failed to load Nexus mods: {0}" -->
+  <sys:String x:Key="Str.Nexus.Err.LoadFmt">Laden von Nexus Mods fehlgeschlagen: {0}</sys:String>
+
+</ResourceDictionary>

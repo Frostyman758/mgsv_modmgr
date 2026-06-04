@@ -1,0 +1,181 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=netstandard">
+  <!--
+    Japanese (日本語) UI strings — complete trial translation for
+    end-to-end CJK testing. Mirrors the key set in Strings.en.axaml
+    exactly so falling-back-to-key behaviour stays as a no-op.
+
+    Localisation notes:
+      - "mod" rendered as "MOD" — that's how the JP modding scene
+        writes it (Wikipedia ja: "Mod (コンピュータゲーム)" lemma
+        also leads with "MOD").
+      - "Nexus Mods" stays in Latin script as a brand name.
+      - File paths, executable names, and URLs left in Latin so they
+        still pattern-match what users see in their file picker.
+      - Honorifics omitted on UI labels (imperative tone is standard
+        for game tools); polite -ください forms reserved for dialog
+        bodies that ask the user to do something.
+  -->
+
+  <sys:String x:Key="Str.Meta.LanguageName">日本語</sys:String>
+  <sys:String x:Key="Str.Meta.FlowDirection">ltr</sys:String>
+
+  <!-- App chrome -->
+  <sys:String x:Key="Str.App.Title">MGSV Mod Manager</sys:String>
+  <sys:String x:Key="Str.App.WinMinimise">最小化</sys:String>
+  <sys:String x:Key="Str.App.WinMaxRestore">最大化 / 元に戻す</sys:String>
+  <sys:String x:Key="Str.App.WinClose">閉じる</sys:String>
+
+  <!-- Sidebar tooltips -->
+  <sys:String x:Key="Str.Sidebar.Mods">インストール済みMOD</sys:String>
+  <sys:String x:Key="Str.Sidebar.Apply">保留中の変更をゲームに適用</sys:String>
+  <sys:String x:Key="Str.Sidebar.Revert">ゲームの元のファイルを復元し、全てのMOD変更を取り消す</sys:String>
+  <sys:String x:Key="Str.Sidebar.Log">前回の適用のアクティビティログ</sys:String>
+  <sys:String x:Key="Str.Sidebar.ExportDict">インストール済みMODに基づき PathDictionary.txt と ExplicitPathDictionary.txt を再構築</sys:String>
+  <sys:String x:Key="Str.Sidebar.Nexus">Nexus Mods を閲覧</sys:String>
+  <sys:String x:Key="Str.Sidebar.Settings">ゲームフォルダー、datfpk のパス</sys:String>
+  <sys:String x:Key="Str.Sidebar.About">このマネージャーについて</sys:String>
+
+  <!-- Installed mods page -->
+  <sys:String x:Key="Str.Mods.Title">インストール済みMOD</sys:String>
+  <sys:String x:Key="Str.Mods.MoveUp">選択したMODをロード順で上に移動</sys:String>
+  <sys:String x:Key="Str.Mods.MoveDown">選択したMODをロード順で下に移動</sys:String>
+  <sys:String x:Key="Str.Mods.SearchWatermark">リストを検索</sys:String>
+  <sys:String x:Key="Str.Mods.Remove">選択したMODを削除(削除後に適用を実行してください)</sys:String>
+  <sys:String x:Key="Str.Mods.Add">.mgsv MOD アーカイブを追加</sys:String>
+
+  <!-- DataGrid column headers — kept in Japanese; keeping them
+       uppercase isn't a meaningful style cue in JP, so we render
+       them as ordinary table headers. -->
+  <sys:String x:Key="Str.Mods.Col.Name">名前</sys:String>
+  <sys:String x:Key="Str.Mods.Col.Tags">タグ</sys:String>
+  <sys:String x:Key="Str.Mods.Col.Version">バージョン</sys:String>
+  <sys:String x:Key="Str.Mods.Col.Qar">QAR</sys:String>
+  <sys:String x:Key="Str.Mods.Col.GameDir">GAMEDIR</sys:String>
+  <sys:String x:Key="Str.Mods.Col.Enabled">有効</sys:String>
+
+  <!-- Row context menu -->
+  <sys:String x:Key="Str.Mods.Ctx.Toggle">有効/無効を切り替え</sys:String>
+  <sys:String x:Key="Str.Mods.Ctx.MoveUp">上に移動</sys:String>
+  <sys:String x:Key="Str.Mods.Ctx.MoveDown">下に移動</sys:String>
+  <sys:String x:Key="Str.Mods.Ctx.Remove">削除...</sys:String>
+
+  <!-- Mod-count footer subtitle -->
+  <sys:String x:Key="Str.Subtitle.None">MODはまだインストールされていません。「+ MODを追加」をクリックして始めましょう。</sys:String>
+  <sys:String x:Key="Str.Subtitle.One">1個のMODをインストール済み。</sys:String>
+  <sys:String x:Key="Str.Subtitle.Many">{0}個のMODをインストール済み。</sys:String>
+
+  <!-- Nexus browser -->
+  <sys:String x:Key="Str.Nexus.Title">Nexus Mods</sys:String>
+  <sys:String x:Key="Str.Nexus.Subtitle">nexusmods.com から MOD を閲覧、検索、インストール</sys:String>
+  <sys:String x:Key="Str.Nexus.SearchWatermark">読み込み済みMODを検索</sys:String>
+  <sys:String x:Key="Str.Nexus.Trending">人気</sys:String>
+  <sys:String x:Key="Str.Nexus.LatestAdded">最新追加</sys:String>
+  <sys:String x:Key="Str.Nexus.LatestUpdated">最新更新</sys:String>
+  <sys:String x:Key="Str.Nexus.Refresh">更新</sys:String>
+  <sys:String x:Key="Str.Nexus.SignInTitle">Nexus Mods にサインイン</sys:String>
+  <sys:String x:Key="Str.Nexus.SignInBody">MOD カタログを閲覧するには Nexus Mods の Personal API キーが必要です。nexusmods.com → My Account → API で生成し、設定画面に貼り付けてください。</sys:String>
+  <sys:String x:Key="Str.Nexus.OpenSettings">設定を開く</sys:String>
+  <sys:String x:Key="Str.Nexus.Loading">人気MODを読み込み中...</sys:String>
+  <sys:String x:Key="Str.Nexus.Filtering">フィルタ中:</sys:String>
+  <sys:String x:Key="Str.Nexus.ClearFilter">フィルタを解除</sys:String>
+  <sys:String x:Key="Str.Nexus.BackToBrowse">一覧に戻る</sys:String>
+  <sys:String x:Key="Str.Nexus.OpenOnNexus">Nexus で開く</sys:String>
+  <sys:String x:Key="Str.Nexus.Install">インストール</sys:String>
+  <sys:String x:Key="Str.Nexus.InstallTip">Nexus のファイルタブを開きます。そこで「Manual download」をクリックし、保存したアーカイブを MODページの + ボタンにドロップしてください。</sys:String>
+  <sys:String x:Key="Str.Nexus.ShowCategory">このカテゴリの MOD を全て表示</sys:String>
+  <sys:String x:Key="Str.Nexus.ShowAuthor">この作者の MOD を全て表示</sys:String>
+  <sys:String x:Key="Str.Nexus.By">作者:</sys:String>
+  <sys:String x:Key="Str.Nexus.Downloads">ダウンロード数</sys:String>
+  <sys:String x:Key="Str.Nexus.Endorsements">推奨</sys:String>
+  <sys:String x:Key="Str.Nexus.Version">バージョン</sys:String>
+  <sys:String x:Key="Str.Nexus.About">概要</sys:String>
+  <sys:String x:Key="Str.Nexus.Requirements">必須MOD</sys:String>
+  <sys:String x:Key="Str.Nexus.Tags">タグ</sys:String>
+
+  <!-- Settings page -->
+  <sys:String x:Key="Str.Settings.Title">設定</sys:String>
+  <sys:String x:Key="Str.Settings.Subtitle">MGSV:TPP と datfpk.exe の場所をマネージャーに教えてください。</sys:String>
+  <sys:String x:Key="Str.Settings.GameRoot">ゲームフォルダー</sys:String>
+  <sys:String x:Key="Str.Settings.GameRootHelp">mgsvtpp.exe を含むフォルダー。</sys:String>
+  <sys:String x:Key="Str.Settings.GameRootWatermark">C:\Program Files (x86)\Steam\steamapps\common\MGS_TPP</sys:String>
+  <sys:String x:Key="Str.Settings.Browse">参照...</sys:String>
+  <sys:String x:Key="Str.Settings.DatFpk">DATFPK</sys:String>
+  <sys:String x:Key="Str.Settings.DatFpkHelp">datfpk パッカー/アンパッカーバイナリのパス。適用に必須です。</sys:String>
+  <sys:String x:Key="Str.Settings.DatFpkWatermark">C:\tools\datfpk.exe   (または /usr/local/bin/datfpk)</sys:String>
+  <sys:String x:Key="Str.Settings.NexusKey">NEXUS MODS API キー</sys:String>
+  <sys:String x:Key="Str.Settings.NexusKeyHelp">Nexus でサインインしてこのアプリを認証し、API キーを受け取るか、Personal API キーを手動で貼り付けてください。</sys:String>
+  <sys:String x:Key="Str.Settings.NexusKeyWatermark">Personal API キーをここに貼り付け</sys:String>
+  <sys:String x:Key="Str.Settings.SsoTip">Nexus の認証ページをブラウザで開きます。承認をクリックすると、API キーが自動的に入力されます。</sys:String>
+  <sys:String x:Key="Str.Settings.SignIn">Nexus でサインイン</sys:String>
+  <sys:String x:Key="Str.Settings.Theme">テーマ</sys:String>
+  <sys:String x:Key="Str.Settings.ThemeLight">ライト</sys:String>
+  <sys:String x:Key="Str.Settings.ThemeDark">ダーク</sys:String>
+  <sys:String x:Key="Str.Settings.ThemeAuto">自動</sys:String>
+  <sys:String x:Key="Str.Settings.ThemeAutoTip">OS の現在のテーマに従います。</sys:String>
+  <sys:String x:Key="Str.Settings.ThemeHelp">背景 / パネル / テキストの配色を切り替えます。赤/琥珀色のインストール状態の色はそのままです。</sys:String>
+  <sys:String x:Key="Str.Settings.Language">言語</sys:String>
+  <sys:String x:Key="Str.Settings.LanguageHelp">アプリ内の全てのラベル、ボタン、ツールチップを切り替えます。即座に適用され、再起動後も維持されます。</sys:String>
+  <sys:String x:Key="Str.Settings.Back">戻る</sys:String>
+  <sys:String x:Key="Str.Settings.Save">保存</sys:String>
+  <sys:String x:Key="Str.Settings.Maintenance">メンテナンス</sys:String>
+  <sys:String x:Key="Str.Settings.MaintenanceHelp">適用キャッシュとホスト毎の作業ディレクトリをクリアします。次回の適用では全てのホストをゼロから再構築します。ゲームのインストールや MOD リストには影響しません。</sys:String>
+  <sys:String x:Key="Str.Settings.ResetApply">適用状態をリセット</sys:String>
+
+  <!-- Log / conflict page -->
+  <sys:String x:Key="Str.Log.Title">アクティビティログ</sys:String>
+  <sys:String x:Key="Str.Log.Back">MODに戻る</sys:String>
+  <sys:String x:Key="Str.Log.Conflicts">ファイル競合</sys:String>
+  <sys:String x:Key="Str.Log.NoConflicts">ファイル競合は検出されませんでした。現在のロード順では、有効なMOD同士でファイルが衝突していません。</sys:String>
+  <sys:String x:Key="Str.Log.Winner">優先:</sys:String>
+  <sys:String x:Key="Str.Log.Overridden">上書き:</sys:String>
+
+  <!-- Footer -->
+  <sys:String x:Key="Str.Footer.HideTip">クリックして非表示にします。適用中は自動的に再表示されます。</sys:String>
+  <sys:String x:Key="Str.Footer.GameRoot">ゲームフォルダー:</sys:String>
+  <sys:String x:Key="Str.Footer.DatFpk">datfpk:</sys:String>
+
+  <!-- Confirm dialog (generic) -->
+  <sys:String x:Key="Str.Confirm.Title">確認</sys:String>
+  <sys:String x:Key="Str.Confirm.Cancel">キャンセル</sys:String>
+  <sys:String x:Key="Str.Confirm.Ok">確認</sys:String>
+
+  <!-- Add-mod flow -->
+  <sys:String x:Key="Str.AddMod.PickerTitle">.mgsv MODまたはアーカイブを選択</sys:String>
+  <sys:String x:Key="Str.AddMod.FilterModsArchives">MOD + アーカイブ</sys:String>
+  <sys:String x:Key="Str.AddMod.FilterMods">SnakeBite MOD</sys:String>
+  <sys:String x:Key="Str.AddMod.FilterArchives">アーカイブ</sys:String>
+  <sys:String x:Key="Str.AddMod.NoneTitle">追加するMODがありません</sys:String>
+  <sys:String x:Key="Str.AddMod.NoneBody">選択したファイルには、インストール可能な .mgsv MOD が含まれていませんでした。</sys:String>
+  <!-- "{0} of {1} could not be added" — JP idiom: "{1}個中 {0}個を追加できませんでした" -->
+  <sys:String x:Key="Str.AddMod.FailedTitle">{1}個中 {0}個を追加できませんでした</sys:String>
+  <!-- "and {0} more failure(s)" -->
+  <sys:String x:Key="Str.AddMod.MoreFailures">他 {0}件の失敗</sys:String>
+
+  <!-- Settings flow -->
+  <sys:String x:Key="Str.Settings.GameRootPicker">MGSV:TPP のゲームフォルダーを選択</sys:String>
+  <sys:String x:Key="Str.Settings.DatFpkPicker">datfpk バイナリを選択</sys:String>
+  <sys:String x:Key="Str.Settings.FilterExecutables">実行ファイル</sys:String>
+  <sys:String x:Key="Str.Settings.ResetPrompt">適用キャッシュと tmp\host_* 作業ディレクトリをクリアしますか?
+
+次回の適用では全てのホストをゼロから再構築します。この操作はゲームのインストールや登録済みMODリストには影響しません。</sys:String>
+  <sys:String x:Key="Str.Errors.ResetFailed">リセットに失敗</sys:String>
+  <sys:String x:Key="Str.Errors.SaveFailed">保存に失敗</sys:String>
+  <sys:String x:Key="Str.Errors.SaveFailedBody">ゲームフォルダーと datfpk のパスは両方とも必須です。</sys:String>
+  <sys:String x:Key="Str.Errors.RemoveFailed">削除に失敗</sys:String>
+  <sys:String x:Key="Str.Errors.CannotExport">エクスポートできません</sys:String>
+  <sys:String x:Key="Str.Errors.CannotExportBody">ゲームフォルダーが設定されていません。先に歯車アイコンから設定してください。</sys:String>
+  <sys:String x:Key="Str.Errors.ExportFailed">エクスポートに失敗</sys:String>
+  <sys:String x:Key="Str.Errors.SignInFailed">サインインに失敗</sys:String>
+  <sys:String x:Key="Str.Errors.SignInFailedSuffix">
+
+nexusmods.com → My Account → API から Personal API キーを手動で貼り付けることもできます。</sys:String>
+
+  <!-- Nexus error texts -->
+  <sys:String x:Key="Str.Nexus.Err.ApiKey">API キーが拒否されました。設定で再確認してください。</sys:String>
+  <sys:String x:Key="Str.Nexus.Err.Timeout">リクエストがタイムアウトしました。接続を確認してからもう一度お試しください。</sys:String>
+  <!-- "Failed to load Nexus mods: {0}" -->
+  <sys:String x:Key="Str.Nexus.Err.LoadFmt">Nexus MOD の読み込みに失敗: {0}</sys:String>
+
+</ResourceDictionary>

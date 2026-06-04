@@ -4,9 +4,27 @@
     <!-- Window chrome -->
     <Style Selector="Window">
         <Setter Property="Background" Value="{DynamicResource Bg}" />
-        <Setter Property="FontFamily" Value="Segoe UI" />
+        <Setter Property="FontFamily" Value="{DynamicResource BodyFont}" />
         <Setter Property="FontSize"   Value="13" />
         <Setter Property="Foreground" Value="{DynamicResource Text}" />
+    </Style>
+
+    <!-- RTL paragraph direction for text-bearing controls. Gated on
+         the Window carrying the .rtl class — LocaleRegistry toggles
+         that class when an RTL locale (ara, he, fa, ur, ...) is
+         active. We deliberately scope this to TextBlock + TextBox +
+         the ContentPresenter that backs button content rather than
+         setting Window.FlowDirection itself: the latter mirrors all
+         child layout (Grid columns, StackPanel.Horizontal order,
+         scrollbar side, etc.), which is the WRONG behaviour here.
+         The user explicitly wants chrome to stay LTR so muscle
+         memory carries across locales — only the paragraph wrap
+         and alignment of text content needs to flip. -->
+    <Style Selector="Window.rtl TextBlock">
+        <Setter Property="FlowDirection" Value="RightToLeft" />
+    </Style>
+    <Style Selector="Window.rtl TextBox">
+        <Setter Property="FlowDirection" Value="RightToLeft" />
     </Style>
 
     <!-- Theme picker tiles: three square buttons on the Settings page
@@ -509,7 +527,7 @@
 
     <!-- Context menu styling -->
     <Style Selector="MenuItem">
-        <Setter Property="FontFamily" Value="Segoe UI" />
+        <Setter Property="FontFamily" Value="{DynamicResource BodyFont}" />
         <Setter Property="FontSize"   Value="12" />
         <Setter Property="Padding"    Value="12,6" />
     </Style>

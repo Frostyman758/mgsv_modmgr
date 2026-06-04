@@ -132,6 +132,26 @@
                  codepoints), which is why there's no system-font
                  fallback chain here. -->
             <FontFamily x:Key="IconFont">avares://modmgr_gui/Assets/Fonts/FluentSystemIcons-Resizable.ttf#FluentSystemIcons-Resizable</FontFamily>
+
+            <!-- Body text font chain. Avalonia walks this comma-list
+                 per glyph and uses the first family that has the
+                 character — so Latin / Cyrillic / Arabic / Hebrew
+                 render in Segoe UI on Windows (native look) while
+                 CJK characters automatically fall through to the
+                 platform's matching CJK UI font. No bundled fonts,
+                 no per-locale switching — Microsoft, Apple, and
+                 the Noto family all ship metric-matched UI variants
+                 we can lean on directly.
+
+                 Per-platform CJK fallbacks:
+                   Windows: Yu Gothic UI (JP), Microsoft YaHei UI
+                            (Simplified CN), Microsoft JhengHei UI
+                            (Traditional CN), Malgun Gothic (KR)
+                   macOS:   Hiragino Sans (JP), PingFang SC (CN),
+                            Apple SD Gothic Neo (KR)
+                   Linux:   Noto Sans CJK SC/JP (whichever installed),
+                            Noto Sans for Latin, then generic. -->
+            <FontFamily x:Key="BodyFont">Segoe UI, Yu Gothic UI, Microsoft YaHei UI, Microsoft JhengHei UI, Malgun Gothic, Hiragino Sans, PingFang SC, Apple SD Gothic Neo, Noto Sans CJK SC, Noto Sans CJK JP, Noto Sans, sans-serif</FontFamily>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

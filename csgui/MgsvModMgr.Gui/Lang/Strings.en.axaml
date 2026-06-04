@@ -34,6 +34,12 @@
        script). LocaleRegistry parses this key when enumerating
        available locales at startup. -->
   <sys:String x:Key="Str.Meta.LanguageName">English</sys:String>
+  <!-- Paragraph direction for text-bearing controls (TextBlock /
+       TextBox / ComboBox content / etc.). Values: "ltr" (default) or
+       "rtl". RTL only flips text paragraph wrap + alignment — the
+       layout chrome (sidebar position, toolbar button order, scrollbar
+       side) stays LTR regardless. -->
+  <sys:String x:Key="Str.Meta.FlowDirection">ltr</sys:String>
 
   <!-- App chrome -->
   <sys:String x:Key="Str.App.Title">MGSV Mod Manager</sys:String>

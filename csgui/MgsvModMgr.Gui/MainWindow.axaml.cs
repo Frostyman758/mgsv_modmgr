@@ -50,6 +50,15 @@ public partial class MainWindow : Window
         // the manual resize-grip overlay so KWin / Mutter don't double
         // up with their own title bar.
         ApplyPlatformChrome();
+        // Mirror the current locale's RTL flag onto this window's
+        // .rtl class so Theme.axaml's Window.rtl TextBlock / TextBox
+        // selectors gate text paragraph direction correctly from the
+        // first paint. App.OnFrameworkInitializationCompleted called
+        // LocaleRegistry.Apply() before this window existed, so the
+        // class set in there didn't reach here; this re-sync covers
+        // the cold-start path.
+        if (Lang.LocaleRegistry.Current is { IsRightToLeft: var rtl })
+            Lang.LocaleRegistry.SetRtlClass(this, rtl);
         // DevTools always on so the user can press F12 in the shipped
         // build, drill into any visual, and live-edit Margin / Padding /
         // brushes in the property grid.
