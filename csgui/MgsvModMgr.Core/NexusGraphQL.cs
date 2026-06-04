@@ -148,9 +148,11 @@ public sealed class NexusGraphQL
                 DomainName       = n.TryGetProperty("game", out var g) && g.TryGetProperty("domainName", out var d)
                                    ? d.GetString() ?? ""
                                    : "",
-                // category in v2 is a name string directly, not an id —
-                // map onto CategoryId field as 0 and stash the name in
-                // the listing's "Summary" preface only if needed.
+                // Carry the numeric gameId through to the detail
+                // fetch — v2's mod(modId, gameId) needs both, and
+                // hardcoding the wrong gameId silently returns a
+                // different game's mod with the same modId.
+                GameId = IntOr(n, "gameId"),
                 CategoryId = 0,
             });
         }
@@ -292,6 +294,7 @@ public sealed class NexusGraphQL
               version
               downloads
               endorsements
+              gameId
               game { domainName }
             }
             totalCount

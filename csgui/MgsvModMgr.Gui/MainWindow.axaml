@@ -781,20 +781,10 @@
                 </StackPanel>
               </Border>
 
-              <!-- Description card — the full body text from the v2
-                   mod() query. Fetched lazily on detail-view open;
-                   hidden until DetailsLoaded fires. -->
-              <Border Classes="info-card"
-                      IsVisible="{Binding NexusSelectedMod.HasFullDescription}">
-                <StackPanel Spacing="10">
-                  <TextBlock Text="DESCRIPTION"
-                             Foreground="{DynamicResource TextDim}"
-                             FontSize="11" FontWeight="SemiBold"/>
-                  <TextBlock Text="{Binding NexusSelectedMod.FullDescription}"
-                             TextWrapping="Wrap" LineHeight="20"
-                             Foreground="{DynamicResource Text}"/>
-                </StackPanel>
-              </Border>
+              <!-- (Description card removed — the summary in ABOUT is
+                   enough, and the Nexus description field is a BBCode
+                   soup that doesn't render cleanly here. Users can hit
+                   "Open on Nexus" for the full write-up.) -->
 
               <!-- Requirements card — list of mods this one needs.
                    Each row carries an Open button to jump to the

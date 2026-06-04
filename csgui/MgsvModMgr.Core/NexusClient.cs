@@ -54,55 +54,6 @@ public sealed class NexusClient
         catch { return false; }
     }
 
-    public async Task<List<NexusModListing>> GetTrendingAsync()
-        => await GetModListAsync($"/games/{GameDomain}/mods/trending.json");
-
-    public async Task<List<NexusModListing>> GetLatestAddedAsync()
-        => await GetModListAsync($"/games/{GameDomain}/mods/latest_added.json");
-
-    public async Task<List<NexusModListing>> GetLatestUpdatedAsync()
-        => await GetModListAsync($"/games/{GameDomain}/mods/latest_updated.json");
-
-    private async Task<List<NexusModListing>> GetModListAsync(string path)
-    {
-        using var resp = await _http.SendAsync(Req(HttpMethod.Get, path));
-        resp.EnsureSuccessStatusCode();
-        var json = await resp.Content.ReadAsStringAsync();
-        return JsonSerializer.Deserialize<List<NexusModListing>>(json, JsonOpts) ?? new();
-    }
-
-    /// <summary>
-    /// Game info — used purely to fetch the category-id → name map so
-    /// cards can render a readable category chip instead of an int.
-    /// Result is cached by the caller; this endpoint never changes
-    /// mid-session.
-    /// </summary>
-    public async Task<Dictionary<int, string>> GetCategoryMapAsync()
-    {
-        var map = new Dictionary<int, string>();
-        try
-        {
-            using var resp = await _http.SendAsync(Req(HttpMethod.Get, $"/games/{GameDomain}.json"));
-            resp.EnsureSuccessStatusCode();
-            var json = await resp.Content.ReadAsStringAsync();
-            var doc = JsonSerializer.Deserialize<JsonElement>(json);
-            if (doc.TryGetProperty("categories", out var cats) && cats.ValueKind == JsonValueKind.Array)
-            {
-                foreach (var c in cats.EnumerateArray())
-                {
-                    if (c.TryGetProperty("category_id", out var idEl) &&
-                        c.TryGetProperty("name",        out var nameEl) &&
-                        idEl.TryGetInt32(out var id))
-                    {
-                        map[id] = nameEl.GetString() ?? "";
-                    }
-                }
-            }
-        }
-        catch { /* leave map empty on failure; cards just hide category */ }
-        return map;
-    }
-
     /// <summary>
     /// Fetch a CDN-hosted mod thumbnail. picture_url is public, no
     /// apikey header needed — but we share the same HttpClient for
@@ -183,5 +134,7 @@ public sealed class NexusModListing
     [JsonPropertyName("author")]            public string Author           { get; set; } = "";
     [JsonPropertyName("version")]           public string Version          { get; set; } = "";
     [JsonPropertyName("domain_name")]       public string DomainName       { get; set; } = "";
+    /// <summary>v2 GraphQL pulls this; v1 REST endpoints don't return it.</summary>
+    public int GameId { get; set; }
     [JsonPropertyName("category_id")]       public int    CategoryId       { get; set; }
 }

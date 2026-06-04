@@ -13,6 +13,8 @@ namespace MgsvModMgr.Gui;
 public sealed class NexusModCard : INotifyPropertyChanged
 {
     public int     ModId        { get; init; }
+    /// <summary>v2 GraphQL gameId from the list query — needed for the detail fetch.</summary>
+    public int     GameId       { get; init; }
     public string  Name         { get; init; } = "";
     public string  Author       { get; init; } = "";
     public string  Category     { get; init; } = "";
@@ -23,24 +25,6 @@ public sealed class NexusModCard : INotifyPropertyChanged
     public string  Version      { get; init; } = "";
     /// <summary>Direct nexusmods.com URL for the "Open in browser" affordance.</summary>
     public string  WebUrl       { get; init; } = "";
-
-    private string _fullDescription = "";
-    /// <summary>
-    /// Full description body (fetched lazily on detail-view open via
-    /// the v2 <c>mod()</c> query — list endpoints only return summary).
-    /// </summary>
-    public string FullDescription
-    {
-        get => _fullDescription;
-        set
-        {
-            if (_fullDescription == value) return;
-            _fullDescription = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(HasFullDescription));
-        }
-    }
-    public bool HasFullDescription => !string.IsNullOrWhiteSpace(_fullDescription);
 
     /// <summary>Tag chips shown on the detail view. Click-routed to set a tag filter.</summary>
     public System.Collections.ObjectModel.ObservableCollection<string> Tags { get; }
