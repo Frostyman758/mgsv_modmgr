@@ -46,8 +46,9 @@ public partial class App : Application
     {
         try
         {
-            var workspace = Path.GetDirectoryName(Environment.ProcessPath ?? ".") ?? ".";
-            var statePath = Path.Combine(workspace, "state.txt");
+            // Shared XML config — see StateIo. First-launch
+            // migration handles the legacy state.txt format.
+            var statePath = StateIo.DefaultPath();
             var s = new State();
             StateIo.Load(s, statePath);
             return (s.Language, s.Theme);

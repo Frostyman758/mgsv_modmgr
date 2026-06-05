@@ -41,7 +41,10 @@ public sealed partial class ModManager
     public ModManager(string? workspaceDir = null)
     {
         WorkspaceDir = workspaceDir ?? Path.GetDirectoryName(Environment.ProcessPath ?? ".") ?? ".";
-        StatePath    = Path.Combine(WorkspaceDir, "state.txt");
+        // Shared XML config — same file modbldr reads/writes. See
+        // StateIo for the schema. First-launch migration picks up
+        // the legacy state.txt next to the exe if present.
+        StatePath    = StateIo.DefaultPath();
         BaselineDir  = Path.Combine(WorkspaceDir, "root");
         ModsDir      = Path.Combine(WorkspaceDir, "mods");
         TmpDir       = Path.Combine(WorkspaceDir, "tmp");

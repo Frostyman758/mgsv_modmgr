@@ -27,6 +27,130 @@
         <Setter Property="FlowDirection" Value="RightToLeft" />
     </Style>
 
+    <!-- Custom scrollbar — full template override, not a patch on
+         Fluent's default. Goals:
+           - 16 px hit zone so the cursor catches the bar without
+             precision aiming
+           - Just a floating rounded pill, no track rail / line
+             buttons / page-step buttons cluttering the gutter
+           - DirtyBrush as the thumb fill so the bar lives in the
+             same install-state palette as the rest of the app
+           - Subtle idle opacity so the bar reads as "floating over"
+             the content rather than as a chrome edge
+         The override sidesteps Fluent's compact-vs-expanded state
+         machine entirely — there's only one visual mode and it's
+         always present. -->
+    <Style Selector="ScrollBar">
+        <Setter Property="Background"      Value="Transparent" />
+        <Setter Property="BorderBrush"     Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <!-- Idle = invisible. The fade-out transition carries a 1.4 s
+             delay so the bar lingers after the cursor leaves the hit
+             zone, then dissolves over 1.2 s — gentle enough that the
+             dismiss reads as a natural retreat rather than a flicker.
+             That delay-then-fade is the "macOS scrollbar" feel:
+             nothing to look at while you're working, easy to grab
+             when you reach for it. -->
+        <Setter Property="Opacity"         Value="0" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <DoubleTransition Property="Opacity"
+                                  Delay="0:0:1.4"
+                                  Duration="0:0:1.2"
+                                  Easing="QuadraticEaseOut"/>
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="ScrollBar:pointerover">
+        <!-- Pointer entered the hit zone → swap to the snappy
+             transition and ramp to full opacity. The transitions
+             setter is per-style, so on pointer-leave Avalonia
+             reverts to the base-style's delayed fade instead of
+             snapping out — that's what gives the asymmetric
+             instant-on / lingering-off behaviour. -->
+        <Setter Property="Opacity" Value="1.0" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <DoubleTransition Property="Opacity"
+                                  Duration="0:0:0.12"/>
+            </Transitions>
+        </Setter>
+    </Style>
+
+    <!-- Drag-persistence. While the user's holding the thumb the
+         class "dragging" gets added to the ScrollBar by the global
+         pointer hook in MainWindow.ScrollBarPersist.cs (we can't do
+         this via a selector alone — Avalonia has no ancestor-of-
+         pressed-descendant combinator). With the class set, force
+         opacity high and disable the delayed fade so the bar stays
+         locked-on even if the cursor wanders off the gutter mid-
+         drag. The class clears on PointerCaptureLost / release. -->
+    <Style Selector="ScrollBar.dragging">
+        <Setter Property="Opacity" Value="1.0" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <DoubleTransition Property="Opacity" Duration="0:0:0"/>
+            </Transitions>
+        </Setter>
+    </Style>
+
+    <Style Selector="ScrollBar:vertical">
+        <Setter Property="MinWidth" Value="16" />
+        <Setter Property="Width"    Value="16" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Background="{TemplateBinding Background}">
+                    <Track Orientation="Vertical"
+                           Minimum="{TemplateBinding Minimum}"
+                           Maximum="{TemplateBinding Maximum}"
+                           Value="{TemplateBinding Value, Mode=TwoWay}"
+                           ViewportSize="{TemplateBinding ViewportSize}"
+                           IsDirectionReversed="True">
+                        <Track.Thumb>
+                            <Thumb MinHeight="40">
+                                <Thumb.Template>
+                                    <ControlTemplate>
+                                        <Border Background="{DynamicResource DirtyBrush}"
+                                                CornerRadius="3"
+                                                Margin="5,2"/>
+                                    </ControlTemplate>
+                                </Thumb.Template>
+                            </Thumb>
+                        </Track.Thumb>
+                    </Track>
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+
+    <Style Selector="ScrollBar:horizontal">
+        <Setter Property="MinHeight" Value="16" />
+        <Setter Property="Height"    Value="16" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Background="{TemplateBinding Background}">
+                    <Track Orientation="Horizontal"
+                           Minimum="{TemplateBinding Minimum}"
+                           Maximum="{TemplateBinding Maximum}"
+                           Value="{TemplateBinding Value, Mode=TwoWay}"
+                           ViewportSize="{TemplateBinding ViewportSize}">
+                        <Track.Thumb>
+                            <Thumb MinWidth="40">
+                                <Thumb.Template>
+                                    <ControlTemplate>
+                                        <Border Background="{DynamicResource DirtyBrush}"
+                                                CornerRadius="3"
+                                                Margin="2,5"/>
+                                    </ControlTemplate>
+                                </Thumb.Template>
+                            </Thumb>
+                        </Track.Thumb>
+                    </Track>
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+
     <!-- Theme picker tiles: three square buttons on the Settings page
          (Light / Dark / Auto), each with a glyph + label. Active tile
          carries the DirtyBrush border + bg so the current theme is

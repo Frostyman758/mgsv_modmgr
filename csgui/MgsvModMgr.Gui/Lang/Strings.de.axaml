@@ -33,7 +33,7 @@
        "日本語" — each user sees their target language in its own
        script). LocaleRegistry parses this key when enumerating
        available locales at startup. -->
-  <sys:String x:Key="Str.Meta.LanguageName">English</sys:String>
+  <sys:String x:Key="Str.Meta.LanguageName">Deutsch</sys:String>
 
   <!-- App chrome -->
   <sys:String x:Key="Str.App.Title">MGSV Mod Manager</sys:String>
@@ -110,16 +110,16 @@
 
   <!-- Settings page -->
   <sys:String x:Key="Str.Settings.Title">Einstellungen</sys:String>
-  <sys:String x:Key="Str.Settings.Subtitle">Sag dem Manager wo MGSV:TPP und datfpk.exe existieren.</sys:String>
-  <sys:String x:Key="Str.Settings.GameRoot">Spielstammverzeichnis</sys:String>
+  <sys:String x:Key="Str.Settings.Subtitle">Sagt dem Manager wo MGSV:TPP und datfpk.exe existieren und enthält generelle Einstellungen wie Sprache und API Schlüssel.</sys:String>
+  <sys:String x:Key="Str.Settings.GameRoot">SPIELSTAMMVERZEICHNIS</sys:String>
   <sys:String x:Key="Str.Settings.GameRootHelp">Der Ordner, welcher mgsvtpp.exe beinhaltet.</sys:String>
   <sys:String x:Key="Str.Settings.GameRootWatermark">C:\Program Files (x86)\Steam\steamapps\common\MGS_TPP</sys:String>
   <sys:String x:Key="Str.Settings.Browse">Durchstöbern...</sys:String>
   <sys:String x:Key="Str.Settings.DatFpk">DATFPK</sys:String>
-  <sys:String x:Key="Str.Settings.DatFpkHelp">Pfad zu datfpk Packer/Entpacker Binärdatei. Erfordlerich um Anzuwenden.</sys:String>
+  <sys:String x:Key="Str.Settings.DatFpkHelp">Pfad zu datfpk Packer/Entpacker Binärdatei. Erforderlich um Anzuwenden.</sys:String>
   <sys:String x:Key="Str.Settings.DatFpkWatermark">C:\tools\datfpk.exe   (oder /usr/local/bin/datfpk)</sys:String>
   <sys:String x:Key="Str.Settings.NexusKey">NEXUS MODS API SCHLÜSSEL</sys:String>
-  <sys:String x:Key="Str.Settings.NexusKeyHelp">Anmelden über Nexus um diese Anwendung zu authorisieren und einen API Schlüssel zu erhalten, oder füge den persönlichen API Schlüssel manuell hinzu.</sys:String>
+  <sys:String x:Key="Str.Settings.NexusKeyHelp">Melde dich über Nexus an um diese Anwendung zu authorisieren und einen API Schlüssel zu erhalten, oder füge deinen persönlichen API Schlüssel manuell hinzu.</sys:String>
   <sys:String x:Key="Str.Settings.NexusKeyWatermark">Füge deinen persönlichen API Schlüssel hier ein</sys:String>
   <sys:String x:Key="Str.Settings.SsoTip">Öffne die Nexus Bestätigungsseite in deinem Browser. Sobald du auf "Approve" klickst, wird der API Schlüssel automatisch hinzugefügt.</sys:String>
   <sys:String x:Key="Str.Settings.SignIn">Anmelden über Nexus</sys:String>
@@ -130,12 +130,12 @@
   <sys:String x:Key="Str.Settings.ThemeAutoTip">Übernehme das Thema des Betriebssystems.</sys:String>
   <sys:String x:Key="Str.Settings.ThemeHelp">Vertauscht den Hintergrund / Panel / Text Palette. Die Rot/Bernsteinfarbende Installationszustandfarben bleiben gleich.</sys:String>
   <sys:String x:Key="Str.Settings.Language">SPRACHE</sys:String>
-  <sys:String x:Key="Str.Settings.LanguageHelp">Tauscht jede Bezeichung, Knopf, and Hinweis in der Anwendung. Wird sofort angewandt; besteht nach Neustarts fort.</sys:String>
+  <sys:String x:Key="Str.Settings.LanguageHelp">Verändert jede Bezeichung, Knöpfe und Hinweise der Anwendung. Wird sofort angewandt und besteht nach Neustarts fort.</sys:String>
   <sys:String x:Key="Str.Settings.Back">Zurück</sys:String>
   <sys:String x:Key="Str.Settings.Save">Speichern</sys:String>
   <sys:String x:Key="Str.Settings.Maintenance">WARTUNG</sys:String>
-  <sys:String x:Key="Str.Settings.MaintenanceHelp">Der Übernahme Cache wird bereinigt sowie hostspezifische Arbeitsverzeichnisse. Die nächste Übernahme wird den Host neuerstellen.Lässt Spielverzeichnis und Modliste unberührt.</sys:String>
-  <sys:String x:Key="Str.Settings.ResetApply">Setzt Übernahmestatus zurück</sys:String>
+  <sys:String x:Key="Str.Settings.MaintenanceHelp">Der Übernahme Cache wird bereinigt sowie hostspezifische Arbeitsverzeichnisse. Die nächste Übernahme wird den Host neuerstellen. Lässt Spielverzeichnis und Modliste unberührt.</sys:String>
+  <sys:String x:Key="Str.Settings.ResetApply">Setze Übernahmestatus zurück</sys:String>
 
   <!-- Log / conflict page -->
   <sys:String x:Key="Str.Log.Title">AKTIVITÄTENPROTOKOLL</sys:String>
@@ -168,7 +168,7 @@
   <sys:String x:Key="Str.AddMod.MoreFailures">und {0} weitere Fehler</sys:String>
 
   <!-- Settings flow -->
-  <sys:String x:Key="Str.Settings.GameRootPicker">Wähle MGSV:TPP Spielstammverzeichniss</sys:String>
+  <sys:String x:Key="Str.Settings.GameRootPicker">Wähle MGSV:TPP Spielstammverzeichnis</sys:String>
   <sys:String x:Key="Str.Settings.DatFpkPicker">Wähle datfpk Binärdatei aus</sys:String>
   <sys:String x:Key="Str.Settings.FilterExecutables">Anwendungen</sys:String>
   <sys:String x:Key="Str.Settings.ResetPrompt">Übernahme Cache und tmp\host_* Arbeitsverzeichnisse bereinigen?

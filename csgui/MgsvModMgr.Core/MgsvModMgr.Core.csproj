@@ -11,6 +11,13 @@
          NexusDownloader. Pulled here (not in the Gui project) so Core
          can do the archive work without taking a UI-layer dependency. -->
     <PackageReference Include="SharpCompress" Version="0.40.0" />
+    <!-- Windows DPAPI wrapper. Used by Core/SecretVault to encrypt
+         the Nexus API key against the current user's Windows account
+         before persisting it in manager.xml. On non-Windows the call
+         site silently falls through to a plaintext write (DPAPI is
+         Windows-only); the long-term plan is to wire Keychain (macOS)
+         and libsecret (Linux) when the user base catches up. -->
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="9.0.0" />
   </ItemGroup>
 
 </Project>
